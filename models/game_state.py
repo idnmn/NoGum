@@ -1,8 +1,8 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from models.player import Player
 
-# Модели для всего
+# Модель игры
 @dataclass
 class GameState:
     is_running: bool = True
-    player_pos_x: float = 400.0
-    player_pos_y: float = 300.0
+    player: Player | None = None
