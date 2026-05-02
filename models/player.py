@@ -16,6 +16,7 @@ class Player:
         # состояние рывка (таймеры)
         self._dash_timer: float = 0.0
         self._dash_cooldown_timer: float = 0.0
+        self._dash_ui_timer: float = 0.0
 
         # подтягиваем статы из конфига
         self.max_speed = config.PLAYER_MAX_SPEED
@@ -23,7 +24,10 @@ class Player:
         self.friction = config.PLAYER_FRICTION
         self.dash_speed = config.PLAYER_DASH_SPEED
         self.dash_cooldown = config.PLAYER_DASH_COOLDOWN
+        self._max_dash_cooldown = self.dash_cooldown
         self.dash_duration = config.PLAYER_DASH_DURATION
+        self.current_hp = config.UI_HP_MAX
+        self.max_hp = config.UI_HP_MAX
 
     def update(self, dx: float, dy: float, dt: float, dash_requested: bool) -> None:
         """
@@ -35,11 +39,16 @@ class Player:
         # обновляем таймер для кд
         if self._dash_cooldown_timer > 0:
             self._dash_cooldown_timer -= dt
+        # обновляем таймер для ui
+        if self._dash_ui_timer > 0:
+            self._dash_ui_timer -= dt
 
         # делаем рывок (коли можем)
         if dash_requested and self._dash_cooldown_timer <= 0 and (dx != 0 or dy != 0):
             self._dash_timer = self.dash_duration
             self._dash_cooldown_timer = self.dash_cooldown
+            self._dash_ui_timer = config.UI_DASH_HIDE_DELAY
+
         # обновляем таймер для рывка
         if self._dash_timer > 0:
             self._dash_timer -= dt
@@ -79,3 +88,16 @@ class Player:
         # обновляем позицию и обрабатываем коллизии
         self.body.rect.x += self.vx * dt
         self.body.rect.y += self.vy * dt
+
+    @property
+    def hp_ratio(self) -> float:
+        return max(0.0, min(1.0, self.current_hp / self.max_hp))
+
+    @property
+    def dash_cooldown_ratio(self) -> float:
+        if self._max_dash_cooldown <= 0: return 1.0
+        return max(0.0, min(1.0, 1.0 - (self._dash_cooldown_timer / self._max_dash_cooldown)))
+
+    @property
+    def is_dash_ui_visible(self) -> bool:
+        return self._dash_ui_timer > 0 or self._dash_cooldown_timer > 0

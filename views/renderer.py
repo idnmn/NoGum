@@ -3,13 +3,15 @@ import config
 from models.game_state import GameState
 from models.room_manager import RoomManager
 from models.camera import Camera
+from views.ui_renderer import UIRenderer
 
 
 # рендерер
 class Renderer:
-    def __init__(self, screen: pygame.Surface, world_bounds: pygame.Rect) -> None:
+    def __init__(self, screen: pygame.Surface, world_bounds: pygame.Rect, ui_renderer: UIRenderer) -> None:
         self._screen = screen
         self._world_bounds = world_bounds
+        self._ui_renderer = ui_renderer
 
         # поверхность, на которой рисуется весь мир в абсолютных координатах
         self._world_surface = pygame.Surface((world_bounds.width, world_bounds.height))
@@ -31,6 +33,9 @@ class Renderer:
         if state.player:
             self._draw_player(state.player)
 
+        # рендерим inworld часть ui
+        self._ui_renderer.render_in_world(state, self._world_surface)
+
         # вычисляем координаты вьюпорта
         view_x = int(camera.position.x - config.INTERNAL_WIDTH / 2)
         view_y = int(camera.position.y - config.INTERNAL_HEIGHT / 2)
@@ -46,6 +51,8 @@ class Renderer:
 
         # выводим на экран
         self._screen.blit(scaled_view, (0, 0))
+        # рендерим outworld часть ui
+        self._ui_renderer.render_out_world(state)
         pygame.display.flip()
 
 

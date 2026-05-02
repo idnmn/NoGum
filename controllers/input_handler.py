@@ -14,11 +14,21 @@ class InputHandler:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self._state.is_running = False
+            # нажатия
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self._state.is_running = False
+
                 elif event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT): # Рывок
                     self._dash_requested = True
+
+                elif event.key == pygame.K_TAB: # миникарта
+                    self._state.is_minimap_visible = True
+
+            # отжатия
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_TAB:  # миникарта
+                    self._state.is_minimap_visible = False
 
     def get_move_direction(self) -> tuple[float, float]:
         # возвращает сырой вектор ввода (-1, 0, 1) по осям X и Y

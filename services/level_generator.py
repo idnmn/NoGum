@@ -38,18 +38,17 @@ class LevelGenerator:
         self.rooms.clear()
         self.occupied.clear()
 
-        # 1. ЭТАП TOPOLOGY: BFS строит граф связей с учётом лимита
+        # строим карту при помощи BFS (поиск в ширину, храни господь дискретную математику)
         grid_layout: dict[tuple[int, int], set[str]] = {}
         grid_layout[(start_col, start_row)] = set()
         self.occupied.add((start_col, start_row))
 
-        # deque обеспечивает O(1) извлечение, что критично для циклов генерации
         frontier = deque([(start_col, start_row)])
 
         while frontier and len(grid_layout) < config.MAX_ROOMS:
             col, row = frontier.popleft()
 
-            # Находим свободных соседей
+            # находим свободных соседей
             valid_neighbors = []
             for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
                 nc, nr = col + dx, row + dy
@@ -62,7 +61,7 @@ class LevelGenerator:
             is_start = (col == start_col and row == start_row)
             available = len(valid_neighbors)
 
-            # 🔒 Корректируем количество выходов под оставшийся лимит
+            # корректируем количество выходов под оставшийся лимит
             remaining = config.MAX_ROOMS - len(grid_layout)
             max_exits = min(4 if is_start else available, remaining)
             num_exits = random.randint(1, max_exits)
@@ -72,7 +71,7 @@ class LevelGenerator:
                 if len(grid_layout) >= config.MAX_ROOMS:
                     break
 
-                # Определяем направления соединения
+                # определяем направления соединения
                 if nc > col:
                     d_old, d_new = 'right', 'left'
                 elif nc < col:
@@ -103,12 +102,16 @@ class LevelGenerator:
         for (col, row), connections in grid_layout.items():
             offset_x = col * self.spacing_x + shift_x
             offset_y = row * self.spacing_y + shift_y
-            layout_path = random.choice(self.layout_pool)
-            room = Room(layout_path, offset_x, offset_y, connections)
-            self.rooms.append(room)
 
             #  запоминаем стартовую комнату по исходным координатам
             if col == start_col and row == start_row:
+                room = Room("room layouts/L0", offset_x, offset_y, connections)
                 start_room_ref = room
+            else:
+                layout_path = random.choice(self.layout_pool)
+                room = Room(layout_path, offset_x, offset_y, connections)
+            self.rooms.append(room)
+
+
 
         return self.rooms, start_room_ref

@@ -7,6 +7,8 @@ from models.room_manager import RoomManager
 from models.camera import Camera
 from services.collision import CollisionSystem
 from views.renderer import Renderer
+from views.ui_renderer import UIRenderer
+from views.map_renderer import MinimapRenderer
 
 # Основной движок
 class GameEngine:
@@ -35,7 +37,6 @@ class GameEngine:
         # инструменты и сервисы
         self._clock = pygame.time.Clock()
         self._input = InputHandler(self._state)
-        self._renderer = Renderer(self._screen, self._room_manager.world_bounds)
         self._collision_system = CollisionSystem()
 
         self._camera = Camera()
@@ -62,6 +63,12 @@ class GameEngine:
             self._camera.position = pygame.Vector2(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2)
             self._camera.curr_center = self._camera.position.copy()
             self._camera.prev_center = self._camera.position.copy()
+
+        # рендереры
+        self._map_renderer = MinimapRenderer(self._screen, self._state.player, self._room_manager)
+        self._ui_renderer = UIRenderer(self._screen, self._state)
+        self._ui_renderer._map_renderer = self._map_renderer
+        self._renderer = Renderer(self._screen, self._room_manager.world_bounds, self._ui_renderer)
 
         self._room_manager.update_active_room(self._state.player)
 
