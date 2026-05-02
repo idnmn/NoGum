@@ -11,6 +11,7 @@ WINDOW_TITLE: str = "NoGum!"
 # True  -> Запуск на весь экран (автоматически под монитор)
 # False -> Запуск в окне размером INTERNAL_WIDTH x INTERNAL_HEIGHT
 FULLSCREEN: bool = False
+CAMERA_LERP_SPEED = 1.0 # Скорость движения камеры
 
 # --- ГЕЙМПЛЕЙНЫЕ КОНСТАНТЫ ---
 # Физика движения
