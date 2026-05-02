@@ -7,6 +7,7 @@ class InputHandler:
         self._state = state
         self._dash_requested: bool = False
 
+    # системные ивенты
     def process_events(self) -> None:
         self._dash_requested = False
 
@@ -20,11 +21,11 @@ class InputHandler:
                     self._dash_requested = True
 
     def get_move_direction(self) -> tuple[float, float]:
-        # Возвращает сырой вектор ввода (-1, 0, 1) по осям X и Y
+        # возвращает сырой вектор ввода (-1, 0, 1) по осям X и Y
         keys = pygame.key.get_pressed()
         dx = int(keys[pygame.K_d] or keys[pygame.K_RIGHT]) - int(keys[pygame.K_a] or keys[pygame.K_LEFT])
         dy = int(keys[pygame.K_s] or keys[pygame.K_DOWN]) - int(keys[pygame.K_w] or keys[pygame.K_UP])
         return float(dx), float(dy)
 
-    def is_dash_requested(self) -> bool: # Проверяем отработку рывка
+    def is_dash_requested(self) -> bool: # проверяем отработку рывка
         return self._dash_requested

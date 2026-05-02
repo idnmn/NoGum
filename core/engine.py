@@ -3,6 +3,8 @@ import config
 from models.game_state import GameState
 from controllers.input_handler import InputHandler
 from models.player import Player
+from models.room_manager import RoomManager
+from services.collision import CollisionSystem
 from views.renderer import Renderer
 
 # Основной движок
@@ -22,11 +24,18 @@ class GameEngine:
         self._screen = pygame.display.set_mode(screen_size, display_flags)
         pygame.display.set_caption(config.WINDOW_TITLE)
 
-        self._clock = pygame.time.Clock()
+        # инициализируем игру и объекты
         self._state = GameState()
-        self._state.player = Player()
+
+        self._state.player = Player(x=100.0, y=100.0)
+
+        # инструменты и сервисы
+        self._clock = pygame.time.Clock()
         self._input = InputHandler(self._state)
         self._renderer = Renderer(self._screen)
+        self._collision_system = CollisionSystem()
+        self._room_manager = RoomManager()
+        self._room_manager.update_active_room(self._state.player)
 
     def run(self) -> None:
         while self._state.is_running:
@@ -38,20 +47,16 @@ class GameEngine:
             direction = self._input.get_move_direction() # Вектор направления игрока
 
 
-            # Обновляем позицию
-            self._state.player.update(
-                dx=direction[0],
-                dy=direction[1],
-                dt=dt,
-                acceleration=config.PLAYER_ACCELERATION,
-                friction=config.PLAYER_FRICTION,
-                max_speed=config.PLAYER_MAX_SPEED,
-                dash_speed=config.PLAYER_DASH_SPEED,
-                dash_duration=config.PLAYER_DASH_DURATION,
-                dash_cooldown=config.PLAYER_DASH_COOLDOWN,
-                dash_requested=dash_input
-            )
+            # обновляем игрока
+            self._state.player.update(dx=direction[0], dy=direction[1], dt=dt, dash_requested=dash_input)
 
-            self._renderer.render(self._state)
+            # обновляем активную комнату
+            self._room_manager.update_active_room(self._state.player)
+
+            # обрабатываем коллизию со стенами
+            if self._room_manager.active_room:
+                self._collision_system.resolve(self._state.player, self._room_manager.active_room.walls)
+
+            self._renderer.render(self._state, self._room_manager)
 
         pygame.quit()

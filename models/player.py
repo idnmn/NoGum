@@ -1,72 +1,81 @@
 import math
-from dataclasses import dataclass
+import pygame
+import config
+from models.collidable import CollisionBody
 
-@dataclass
 class Player:
-    x: float = 640.0
-    y: float = 360.0
-    vx: float = 0.0
-    vy: float = 0.0
+    def __init__(self, x: float, y: float) -> None:
+        self.body = CollisionBody(
+            rect=pygame.Rect(x, y, config.PLAYER_SIZE, config.PLAYER_SIZE),
+            layer="dynamic",
+            tags={"player"}
+        )
+        self.vx = 0.0
+        self.vy = 0.0
 
-    # Cостояние рывка
-    _dash_timer: float = 0.0
-    _dash_cooldown_timer: float = 0.0
+        # состояние рывка (таймеры)
+        self._dash_timer: float = 0.0
+        self._dash_cooldown_timer: float = 0.0
 
-    def update(self, dx: float, dy: float, dt: float,
-               acceleration: float, friction: float, max_speed: float,
-               dash_speed: float, dash_duration: float, dash_cooldown: float,
-               dash_requested: bool) -> None:
+        # подтягиваем статы из конфига
+        self.max_speed = config.PLAYER_MAX_SPEED
+        self.acceleration = config.PLAYER_ACCELERATION
+        self.friction = config.PLAYER_FRICTION
+        self.dash_speed = config.PLAYER_DASH_SPEED
+        self.dash_cooldown = config.PLAYER_DASH_COOLDOWN
+        self.dash_duration = config.PLAYER_DASH_DURATION
+
+    def update(self, dx: float, dy: float, dt: float, dash_requested: bool) -> None:
         """
         dx, dy: Направление ввода
         dt: Delta time в секундах
-        acceleration, friction, max_speed: ускорение, трение и макс. скорость
-        dash_... - параметры рывка (длительность, скорость, кд и флаг отработки)
+        dash_requested - флаг отработки рывка
         """
 
-        # Обновляем таймер для кд
+        # обновляем таймер для кд
         if self._dash_cooldown_timer > 0:
             self._dash_cooldown_timer -= dt
 
-        # Делаем рывок (коли можем)
+        # делаем рывок (коли можем)
         if dash_requested and self._dash_cooldown_timer <= 0 and (dx != 0 or dy != 0):
-            self._dash_timer = dash_duration
-            self._dash_cooldown_timer = dash_cooldown
-        # Обновляем таймер для рывка
+            self._dash_timer = self.dash_duration
+            self._dash_cooldown_timer = self.dash_cooldown
+        # обновляем таймер для рывка
         if self._dash_timer > 0:
             self._dash_timer -= dt
 
-        # Используем параметры рывка, пока активен его таймер
-        current_max_speed = dash_speed if self._dash_timer > 0 else max_speed
-        current_accel = acceleration * 10 if self._dash_timer > 0 else acceleration
+        # используем параметры рывка, пока активен его таймер
+        current_max_speed = self.dash_speed if self._dash_timer > 0 else self.max_speed
+        current_accel = self.acceleration * 10 if self._dash_timer > 0 else self.acceleration
 
-        # Вычисляем ускорение из ввода
+        # вычисляем ускорение из ввода
         if dx != 0.0 or dy != 0.0:
             length = math.hypot(dx, dy)
             ax = (dx / length) * current_accel
             ay = (dy / length) * current_accel
         else:
             ax = ay = 0.0
-            # Применяем трение
-            damping = math.exp(-friction * dt)
+            # применяем трение
+            damping = math.exp(-self.friction * dt)
             self.vx *= damping
             self.vy *= damping
 
-        # Интегрируем ускорение в скорость
+        # интегрируем ускорение в скорость
         self.vx += ax * dt
         self.vy += ay * dt
 
-        # Ограничиваем максимальную скорость
+        # ограничиваем максимальную скорость
         current_speed = math.hypot(self.vx, self.vy)
-        if current_speed > max_speed:
+        if current_speed > self.max_speed:
             scale = current_max_speed / current_speed
             self.vx *= scale
             self.vy *= scale
 
-        # Защита от дрейфа
+        # защита от дрейфа
         if current_speed < 2.0:
             self.vx = 0.0
             self.vy = 0.0
 
-        # Обновляем позицию
-        self.x += self.vx * dt
-        self.y += self.vy * dt
+        # обновляем позицию и обрабатываем коллизии
+        self.body.rect.x += self.vx * dt
+        self.body.rect.y += self.vy * dt
