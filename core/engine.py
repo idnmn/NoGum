@@ -30,13 +30,7 @@ class GameEngine:
 
         # инициализируем подземелье ДО игрока, чтобы взять координаты спавна
         self._room_manager = RoomManager()
-        self._room_manager._generate_grid()
         spawn_center = self._room_manager.active_room.bounds.center
-
-        self._state.player = Player(
-            x=spawn_center[0] - config.PLAYER_SIZE / 2,
-            y=spawn_center[1] - config.PLAYER_SIZE / 2
-        )
 
         # инструменты и сервисы
         self._clock = pygame.time.Clock()
@@ -44,12 +38,33 @@ class GameEngine:
         self._renderer = Renderer(self._screen, self._room_manager.world_bounds)
         self._collision_system = CollisionSystem()
 
-        self._room_manager.update_active_room(self._state.player)
-
         self._camera = Camera()
         self._camera.position = pygame.Vector2(spawn_center)
         self._camera.curr_center = self._camera.position.copy()
         self._camera.prev_center = self._camera.position.copy()
+
+        # определяем точку спавна
+        if self._room_manager.start_room:
+            spawn_center = self._room_manager.start_room.bounds.center
+
+            self._state.player = Player(
+                x=spawn_center[0] - config.PLAYER_SIZE / 2,
+                y=spawn_center[1] - config.PLAYER_SIZE / 2
+            )
+
+            # kамера тоже стартует с центра стартовой комнаты
+            self._camera.position = pygame.Vector2(spawn_center)
+            self._camera.curr_center = self._camera.position.copy()
+            self._camera.prev_center = self._camera.position.copy()
+        else:
+            # Fallback на случай ошибки генерации
+            self._state.player = Player(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2)
+            self._camera.position = pygame.Vector2(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2)
+            self._camera.curr_center = self._camera.position.copy()
+            self._camera.prev_center = self._camera.position.copy()
+
+        self._room_manager.update_active_room(self._state.player)
+
 
     def run(self) -> None:
         while self._state.is_running:

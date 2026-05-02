@@ -36,3 +36,6 @@ ROOM_SYMBOL_WALL = "*"
 ROOM_SYMBOL_EMPTY = "0"
 TILE_SIZE: int = 48
 LAYOUTS_DIR: str = "room layouts"
+
+# Генерация
+MAX_ROOMS: int = 30  # Лимит комнат для завершения генерации
