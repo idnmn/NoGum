@@ -9,10 +9,10 @@ class MinimapRenderer:
         self._screen = screen
         self._surface = pygame.Surface((config.MINIMAP_WIDTH, config.MINIMAP_HEIGHT), pygame.SRCALPHA)
 
-        # позиция в правом верхнем углу экрана (динамически под размер окна)
+        # позиция по центру
         self._map_rect = pygame.Rect(
-            screen.get_width() - config.MINIMAP_WIDTH - config.MINIMAP_PADDING,
-            config.MINIMAP_PADDING,
+            int((screen.get_width()  - config.MINIMAP_WIDTH) / 2),
+            int((screen.get_height()  - config.MINIMAP_HEIGHT) / 2),
             config.MINIMAP_WIDTH,
             config.MINIMAP_HEIGHT
         )

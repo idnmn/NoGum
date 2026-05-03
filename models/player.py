@@ -2,9 +2,11 @@ import math
 import pygame
 import config
 from models.collidable import CollisionBody
+from models.renderable import Renderable
 
-class Player:
-    def __init__(self, x: float, y: float) -> None:
+
+class Player(Renderable):
+    def __init__(self, x: float, y: float, sprite: pygame.Surface) -> None:
         self.body = CollisionBody(
             rect=pygame.Rect(x, y, config.PLAYER_SIZE, config.PLAYER_SIZE),
             layer="dynamic",
@@ -12,6 +14,7 @@ class Player:
         )
         self.vx = 0.0
         self.vy = 0.0
+        self.sprite = sprite
 
         # состояние рывка (таймеры)
         self._dash_timer: float = 0.0
@@ -28,6 +31,30 @@ class Player:
         self.dash_duration = config.PLAYER_DASH_DURATION
         self.current_hp = config.UI_HP_MAX
         self.max_hp = config.UI_HP_MAX
+
+        self.visual_offset_y = -config.PLAYER_SIZE // 2
+
+        self.current_tilt = 0.0
+
+    @property
+    def rect(self) -> pygame.Rect:
+        return self.body.rect
+
+    def render(self, surface: pygame.Surface) -> None:
+        draw_x = self.rect.x
+        draw_y = self.rect.y + self.visual_offset_y
+
+        # отрисовка с учётом наклона
+        if abs(self.current_tilt) > 0.5:  # порог
+            rotated = pygame.transform.rotate(self.sprite, -self.current_tilt)
+
+            # корректируем позицию чтобы нижний центр спрайта оставался на месте
+            w_shift = (self.sprite.get_width() - rotated.get_width()) / 2
+            h_shift = self.sprite.get_height() - rotated.get_height()
+
+            surface.blit(rotated, (draw_x + w_shift, draw_y + h_shift))
+        else:
+            surface.blit(self.sprite, (draw_x, draw_y))
 
     def update(self, dx: float, dy: float, dt: float, dash_requested: bool) -> None:
         """
@@ -88,6 +115,17 @@ class Player:
         # обновляем позицию и обрабатываем коллизии
         self.body.rect.x += self.vx * dt
         self.body.rect.y += self.vy * dt
+
+        # нормализуем vx к диапазону [-1, 1] и умножаем на макс. угол
+        tilt_ratio = self.vx / config.PLAYER_MAX_SPEED
+        target_tilt = tilt_ratio * config.PLAYER_TILT_MAX_ANGLE
+
+        # плавная интерполяция
+        self.current_tilt += (target_tilt - self.current_tilt) * config.PLAYER_TILT_SMOOTHING * dt
+
+        # ограничиваем диапазон
+        self.current_tilt = max(-config.PLAYER_TILT_MAX_ANGLE,
+                                min(config.PLAYER_TILT_MAX_ANGLE, self.current_tilt))
 
     @property
     def hp_ratio(self) -> float:

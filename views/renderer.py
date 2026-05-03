@@ -23,15 +23,33 @@ class Renderer:
         # очищаем экран
         self._world_surface.fill(config.BACKGROUND_COLOR)
 
-        # во время перехода камеры рисуем обе комнаты
-        if camera.is_transitioning and room_manager.prev_active_room:
-            self._draw_walls(room_manager.prev_active_room.walls)
-        if room_manager.active_room:
-            self._draw_walls(room_manager.active_room.walls)
+        # очередь рендера
+        render_queue = []
 
-        # отрисовываем игрока
+        # во время перехода камеры рисуем обе комнаты
+        rooms_to_draw = []
+        if camera.is_transitioning and room_manager.prev_active_room:
+            rooms_to_draw.append(room_manager.prev_active_room)
+        if room_manager.active_room:
+            rooms_to_draw.append(room_manager.active_room)
+
+        # отрисовываем полы вне очереди
+        for room in rooms_to_draw:
+            self._world_surface.blit(room.floor_surface, (room.offset.x, room.offset.y))
+
+        for room in rooms_to_draw:
+            render_queue.extend(room.walls)
+
+        # добавляем игрока в очередь
         if state.player:
-            self._draw_player(state.player)
+            render_queue.append(state.player)
+
+        # сортируем очередь по y координате
+        render_queue.sort(key=lambda obj: obj.rect.bottom)
+
+        # рендерим все объекты из очереди
+        for obj in render_queue:
+            obj.render(self._world_surface)
 
         # рендерим inworld часть ui
         self._ui_renderer.render_in_world(state, self._world_surface)
@@ -51,14 +69,9 @@ class Renderer:
 
         # выводим на экран
         self._screen.blit(scaled_view, (0, 0))
+
         # рендерим outworld часть ui
         self._ui_renderer.render_out_world(state)
+
+        # сменяем кадр
         pygame.display.flip()
-
-
-    def _draw_player(self, player: "Player") -> None:
-        pygame.draw.rect(self._world_surface, (255, 255, 255), player.body.rect)
-
-    def _draw_walls(self, walls: list) -> None:
-        for wall in walls:
-            pygame.draw.rect(self._world_surface, (80, 80, 90), wall.body.rect)

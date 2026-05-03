@@ -1,5 +1,6 @@
 import pygame
 import config
+from core.asset_manager import AssetManager
 from models.game_state import GameState
 from controllers.input_handler import InputHandler
 from models.player import Player
@@ -27,11 +28,18 @@ class GameEngine:
         self._screen = pygame.display.set_mode(screen_size, display_flags)
         pygame.display.set_caption(config.WINDOW_TITLE)
 
+        # грузим спрайты
+        assets_manager = AssetManager()
+        wall_sprite = assets_manager.load_sprite("wall.png", (config.TILE_SIZE, config.TILE_SIZE*2))
+        floor_sprite = assets_manager.load_sprite("floor1.png", (config.TILE_SIZE, config.TILE_SIZE))
+        player_sprite = assets_manager.load_sprite("player.png", (config.PLAYER_SIZE,
+                                                                                        config.PLAYER_SIZE+20))
+
         # инициализируем игру и объекты
         self._state = GameState()
 
         # инициализируем подземелье ДО игрока, чтобы взять координаты спавна
-        self._room_manager = RoomManager()
+        self._room_manager = RoomManager(wall_sprite=wall_sprite, floor_sprite=floor_sprite)
         spawn_center = self._room_manager.active_room.bounds.center
 
         # инструменты и сервисы
@@ -50,7 +58,8 @@ class GameEngine:
 
             self._state.player = Player(
                 x=spawn_center[0] - config.PLAYER_SIZE / 2,
-                y=spawn_center[1] - config.PLAYER_SIZE / 2
+                y=spawn_center[1] - config.PLAYER_SIZE / 2,
+                sprite=player_sprite
             )
 
             # kамера тоже стартует с центра стартовой комнаты
@@ -59,7 +68,7 @@ class GameEngine:
             self._camera.prev_center = self._camera.position.copy()
         else:
             # Fallback на случай ошибки генерации
-            self._state.player = Player(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2)
+            self._state.player = Player(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2, player_sprite)
             self._camera.position = pygame.Vector2(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2)
             self._camera.curr_center = self._camera.position.copy()
             self._camera.prev_center = self._camera.position.copy()

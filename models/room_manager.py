@@ -9,8 +9,8 @@ from services.level_generator import LevelGenerator
 
 # класс некого "оркестратора комнат", для удобной работы с несколькими комнатами
 class RoomManager:
-    def __init__(self) -> None:
-        self._generator = LevelGenerator()
+    def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface) -> None:
+        self._generator = LevelGenerator(wall_sprite=wall_sprite, floor_sprite=floor_sprite)
         self.rooms, self.start_room = self._generator.generate(0, 0)
 
         self.active_room: Room | None = self.start_room

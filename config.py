@@ -15,8 +15,10 @@ FULLSCREEN: bool = False
 # --- ГЕЙМПЛЕЙНЫЕ КОНСТАНТЫ ---
 # Физика движения
 PLAYER_MAX_SPEED: float = 600.0  # Пикселей в секунду
-PLAYER_ACCELERATION: float = 2500.0
-PLAYER_FRICTION: float = 15.0
+PLAYER_ACCELERATION: float = 3000.0
+PLAYER_FRICTION: float = 20.0
+PLAYER_TILT_MAX_ANGLE: float = 20.0   # Максимальный угол наклона в градусах
+PLAYER_TILT_SMOOTHING: float = 40.0    # Скорость плавного перехода к целевому углу
 # Рывок
 PLAYER_DASH_SPEED: float = 2000.0  # Скорость во время рывка
 PLAYER_DASH_DURATION: float = 0.15  # Длительность
@@ -26,7 +28,7 @@ PLAYER_DASH_COOLDOWN: float = 5.0  # Кд между рывками
 BACKGROUND_COLOR: tuple[int, int, int] = (30, 30, 30)
 
 # --- РАЗМЕРЫ (в пикселях ВНУТРЕННЕГО разрешения) ---
-PLAYER_SIZE: int = 32
+PLAYER_SIZE: int = 40
 
 # Комната
 ROOM_COLS = 26
@@ -49,8 +51,8 @@ UI_TEXT_COLOR: tuple[int, int, int] = (255, 255, 255)
 
 UI_DASH_BAR_WIDTH: int = 30
 UI_DASH_BAR_HEIGHT: int = 4
-UI_DASH_COLOR: tuple[int, int, int] = (60, 120, 255)
-UI_DASH_BG_COLOR: tuple[int, int, int] = (20, 40, 80)
+UI_DASH_COLOR: tuple[int, int, int] = (115, 245, 155)
+UI_DASH_BG_COLOR: tuple[int, int, int] = (50, 100, 70)
 UI_DASH_OFFSET_Y: float = 20.0
 UI_DASH_HIDE_DELAY: float = 1.0
 
@@ -59,10 +61,12 @@ CAMERA_LERP_SPEED = 1.7 # Скорость движения камеры
 # Mini-Map
 MINIMAP_WIDTH: int = 400
 MINIMAP_HEIGHT: int = 400
-MINIMAP_PADDING: int = 20
 MINIMAP_BG_COLOR: tuple[int, int, int, int] = (30, 30, 30, 200)
 MINIMAP_ROOM_BG_COLOR: tuple[int, int, int] = (30, 30, 30)  # Пол комнат
-MINIMAP_WALL_COLOR: tuple[int, int, int] = (200, 200, 200)  # Стены
-MINIMAP_PLAYER_COLOR: tuple[int, int, int] = (255, 210, 60)
-MINIMAP_BORDER_COLOR: tuple[int, int, int] = (40, 40, 60)
+MINIMAP_WALL_COLOR: tuple[int, int, int] = (150, 80, 50)  # Стены
+MINIMAP_PLAYER_COLOR: tuple[int, int, int] = (165, 175, 60)
+MINIMAP_BORDER_COLOR: tuple[int, int, int] = (40, 40, 40)
+
+# Спрайты
+ASSETS_DIR: str = "assets"
 

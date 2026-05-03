@@ -1,4 +1,5 @@
 import random
+import pygame
 import os
 import config
 from collections import deque
@@ -6,7 +7,8 @@ from models.room import Room
 
 
 class LevelGenerator:
-    def __init__(self, layout_pool: list[str] | None = None) -> None:
+    def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface,
+                 layout_pool: list[str] | None = None) -> None:
         if layout_pool:
             # если список передан вручную используем его
             self.layout_pool = layout_pool
@@ -34,7 +36,10 @@ class LevelGenerator:
         self.spacing_x = (config.ROOM_COLS - 1) * config.TILE_SIZE
         self.spacing_y = (config.ROOM_ROWS - 1) * config.TILE_SIZE
 
-    def generate(self, start_col: int, start_row: int) -> list[Room]:
+        self.wall_sprite = wall_sprite
+        self.floor_sprite = floor_sprite
+
+    def generate(self, start_col: int, start_row: int) -> (list[Room], Room):
         self.rooms.clear()
         self.occupied.clear()
 
@@ -105,13 +110,13 @@ class LevelGenerator:
 
             #  запоминаем стартовую комнату по исходным координатам
             if col == start_col and row == start_row:
-                room = Room("room layouts/L0", offset_x, offset_y, connections)
+                room = Room("room layouts/L0", offset_x, offset_y, connections,
+                            wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite)
                 start_room_ref = room
             else:
                 layout_path = random.choice(self.layout_pool)
-                room = Room(layout_path, offset_x, offset_y, connections)
+                room = Room(layout_path, offset_x, offset_y, connections,
+                            wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite)
             self.rooms.append(room)
-
-
 
         return self.rooms, start_room_ref
