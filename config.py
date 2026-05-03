@@ -63,9 +63,18 @@ MINIMAP_WIDTH: int = 400
 MINIMAP_HEIGHT: int = 400
 MINIMAP_BG_COLOR: tuple[int, int, int, int] = (30, 30, 30, 200)
 MINIMAP_ROOM_BG_COLOR: tuple[int, int, int] = (30, 30, 30)  # Пол комнат
-MINIMAP_WALL_COLOR: tuple[int, int, int] = (150, 80, 50)  # Стены
 MINIMAP_PLAYER_COLOR: tuple[int, int, int] = (165, 175, 60)
 MINIMAP_BORDER_COLOR: tuple[int, int, int] = (40, 40, 40)
+
+MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
+                                            (150, 80, 50), # 1 seed
+                                            (145, 50, 100), # 2
+                                            (70, 100, 100), # 3
+                                            (100, 90, 55), # 4
+                                            (105, 55, 105), # 5
+                                            (50, 90, 60)  # 6
+                                          ]
+MINIMAP_EXPLORED: bool = False # отладочная функция для открытия всей миникарты сразу
 
 # Спрайты
 ASSETS_DIR: str = "assets"

@@ -13,6 +13,7 @@ class RoomManager:
         self._generator = LevelGenerator(wall_sprite=wall_sprite, floor_sprite=floor_sprite)
         self.rooms, self.start_room = self._generator.generate(0, 0)
 
+        self.is_new_explored = False
         self.active_room: Room | None = self.start_room
         self.prev_active_room: Room | None = self.active_room
         self.world_bounds: pygame.Rect | None = None
@@ -31,6 +32,9 @@ class RoomManager:
         # Поиск новой комнаты
         for room in self.rooms:
             if room.contains_point((px, py)):
+                if not room.is_explored:
+                    room.is_explored = True
+                    self.is_new_explored = True
                 return room
 
         if self.active_room is None:

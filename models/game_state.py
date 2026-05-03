@@ -7,3 +7,4 @@ class GameState:
     is_running: bool = True
     player: Player | None = None
     is_minimap_visible: bool = False
+    level_seed: int = 1

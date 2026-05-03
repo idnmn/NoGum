@@ -112,6 +112,7 @@ class LevelGenerator:
             if col == start_col and row == start_row:
                 room = Room("room layouts/L0", offset_x, offset_y, connections,
                             wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite)
+                room.is_explored = True
                 start_room_ref = room
             else:
                 layout_path = random.choice(self.layout_pool)

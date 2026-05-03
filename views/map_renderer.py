@@ -1,11 +1,12 @@
 import pygame
 import config
+from models.game_state import GameState
 from models.room_manager import RoomManager
 from models.player import Player
 
 
 class MinimapRenderer:
-    def __init__(self, screen: pygame.Surface, player: Player, room_manager: RoomManager) -> None:
+    def __init__(self, screen: pygame.Surface, state: GameState, room_manager: RoomManager) -> None:
         self._screen = screen
         self._surface = pygame.Surface((config.MINIMAP_WIDTH, config.MINIMAP_HEIGHT), pygame.SRCALPHA)
 
@@ -27,9 +28,10 @@ class MinimapRenderer:
         self._offset: tuple[float, float] = (0.0, 0.0)
         self._world_bounds: pygame.Rect = pygame.Rect(0, 0, 1, 1)
 
-        self._player = player
+        self._player = state.player
         self._room_manager = room_manager
         self.set_world_bounds(self._room_manager.world_bounds)
+        self._walls_color = config.MINIMAP_WALL_COLOR_LIST[state.level_seed - 1]
 
     # сброс кэша
     def invalidate_cache(self) -> None:
@@ -50,11 +52,12 @@ class MinimapRenderer:
             )
 
     def render(self) -> None:
-        # рендерим статичную часть только при первом вызове или после сброса кэша
-        if self._static_cache is None:
+        # рендерим статичную часть только при открытии новых комнат или пустом кэшэ
+        if self._room_manager.is_new_explored or self._static_cache is None:
             self._static_cache = pygame.Surface(self._map_rect.size, pygame.SRCALPHA)
             self._static_cache.fill((0, 0, 0, 0))
             self._draw_static(self._room_manager)
+            self._room_manager.is_new_explored = False
 
         # очищаем динамический слой
         self._layer.fill((0, 0, 0, 0))
@@ -76,20 +79,21 @@ class MinimapRenderer:
     def _draw_static(self, room_manager: RoomManager) -> None:
         # Фоны комнат
         for room in room_manager.rooms:
-            rx = self._offset[0] + (room.offset.x - self._world_bounds.x) * self._scale
-            ry = self._offset[1] + (room.offset.y - self._world_bounds.y) * self._scale
-            rw = room.bounds.width * self._scale
-            rh = room.bounds.height * self._scale
-            pygame.draw.rect(self._static_cache, config.MINIMAP_ROOM_BG_COLOR, (rx, ry, rw, rh))
+            if room.is_explored or config.MINIMAP_EXPLORED:
+                rx = self._offset[0] + (room.offset.x - self._world_bounds.x) * self._scale
+                ry = self._offset[1] + (room.offset.y - self._world_bounds.y) * self._scale
+                rw = room.bounds.width * self._scale
+                rh = room.bounds.height * self._scale
+                pygame.draw.rect(self._static_cache, config.MINIMAP_ROOM_BG_COLOR, (rx, ry, rw, rh))
 
-        # Стены (каждый тайл рисуется отдельно → пробелы у проходов формируются естественно)
-        for room in room_manager.rooms:
-            for wall in room.walls:
-                mx = self._offset[0] + (wall.body.rect.x - self._world_bounds.x) * self._scale
-                my = self._offset[1] + (wall.body.rect.y - self._world_bounds.y) * self._scale
-                mw = wall.body.rect.width * self._scale
-                mh = wall.body.rect.height * self._scale
-                pygame.draw.rect(self._static_cache, config.MINIMAP_WALL_COLOR, (mx, my, mw, mh))
+                # стены (каждый тайл рисуется отдельно)
+                for wall in room.walls:
+                    mx = self._offset[0] + (wall.body.rect.x - self._world_bounds.x) * self._scale
+                    my = self._offset[1] + (wall.body.rect.y - self._world_bounds.y) * self._scale
+                    mw = wall.body.rect.width * self._scale
+                    mh = wall.body.rect.height * self._scale
+                    pygame.draw.rect(self._static_cache, self._walls_color, (mx, my, mw, mh))
+
 
     # отрисовка игрока
     def _draw_player(self, player: Player) -> None:

@@ -1,5 +1,6 @@
 import pygame
 import config
+from random import randint
 from core.asset_manager import AssetManager
 from models.game_state import GameState
 from controllers.input_handler import InputHandler
@@ -28,17 +29,22 @@ class GameEngine:
         self._screen = pygame.display.set_mode(screen_size, display_flags)
         pygame.display.set_caption(config.WINDOW_TITLE)
 
+        # инициализируем игру
+        self._state = GameState()
+
         # грузим спрайты
         assets_manager = AssetManager()
-        wall_sprite = assets_manager.load_sprite("wall.png", (config.TILE_SIZE, config.TILE_SIZE*2))
-        floor_sprite = assets_manager.load_sprite("floor1.png", (config.TILE_SIZE, config.TILE_SIZE))
+
+        self._state.level_seed = randint(1, 6)
+        wall_sprite = assets_manager.load_sprite(f"wall{self._state.level_seed}.png",
+                                                 (config.TILE_SIZE, config.TILE_SIZE*2))
+        floor_sprite = assets_manager.load_sprite(f"floor{self._state.level_seed}.png",
+                                                  (config.TILE_SIZE, config.TILE_SIZE))
+
         player_sprite = assets_manager.load_sprite("player.png", (config.PLAYER_SIZE,
                                                                                         config.PLAYER_SIZE+20))
 
-        # инициализируем игру и объекты
-        self._state = GameState()
-
-        # инициализируем подземелье ДО игрока, чтобы взять координаты спавна
+        # инициализируем уровень ДО игрока, чтобы взять координаты спавна
         self._room_manager = RoomManager(wall_sprite=wall_sprite, floor_sprite=floor_sprite)
         spawn_center = self._room_manager.active_room.bounds.center
 
@@ -74,7 +80,7 @@ class GameEngine:
             self._camera.prev_center = self._camera.position.copy()
 
         # рендереры
-        self._map_renderer = MinimapRenderer(self._screen, self._state.player, self._room_manager)
+        self._map_renderer = MinimapRenderer(self._screen, self._state, self._room_manager)
         self._ui_renderer = UIRenderer(self._screen, self._state)
         self._ui_renderer._map_renderer = self._map_renderer
         self._renderer = Renderer(self._screen, self._room_manager.world_bounds, self._ui_renderer)
