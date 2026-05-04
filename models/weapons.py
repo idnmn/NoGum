@@ -1,4 +1,5 @@
 import pygame
+import random
 from dataclasses import dataclass
 from models.projectile import *
 
@@ -139,4 +140,7 @@ class Pointer(Weapon):
     def fire(self, projectile_system, state) -> None:
         origin = pygame.Vector2(state.player.body.center)
         direction = state.player.mouse_world_pos - origin
-        projectile_system.spawn(PointerProjectile, origin, direction, state.weapon)
+
+        angle = random.randint(-10, 10)
+
+        projectile_system.spawn(PointerProjectile, origin, direction.rotate(angle), state.weapon)

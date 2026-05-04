@@ -83,3 +83,11 @@ ASSETS_DIR: str = "assets"
 
 # --- ОРУЖИЕ И UI ---
 WEAPON_UI_KEY: int = pygame.K_i
+
+# 🎯 Эффекты попаданий
+IMPACT_PARTICLE_COUNT: int = 4
+IMPACT_PARTICLE_SPEED: float = 300.0
+IMPACT_PARTICLE_LIFETIME: float = 0.3
+IMPACT_SHAKE_AMOUNT: float = 1.5
+IMPACT_SHAKE_DURATION: float = 0.12
+IMPACT_HIT_PAUSE_FRAMES: int = 20

@@ -1,4 +1,6 @@
 import pygame
+from pygame import Vector2
+
 import config
 from random import randint
 from core.asset_manager import AssetManager
@@ -11,6 +13,7 @@ from models.weapons import *
 from services.collision import CollisionSystem
 from services.weapon_system import WeaponSystem
 from services.projectile_system import ProjectileSystem
+from services.particle_system import ParticleSystem
 from views.renderer import Renderer
 from views.ui_renderer import UIRenderer
 from views.map_renderer import MinimapRenderer
@@ -32,6 +35,8 @@ class GameEngine:
         self._screen = pygame.display.set_mode(screen_size, display_flags)
         pygame.display.set_caption(config.WINDOW_TITLE)
 
+        self._hit_pause_frames = 0
+
         # инициализируем игру
         self._state = GameState()
 
@@ -50,7 +55,8 @@ class GameEngine:
         self._input = InputHandler(self._state)
         self._collision_system = CollisionSystem()
         self._weapon_system = WeaponSystem()
-        self._projectile_system = ProjectileSystem()
+        self._projectile_system = ProjectileSystem(on_impact=self._on_wall_impact)
+        self._particle_system = ParticleSystem()
 
         self._camera = Camera()
         self._camera.position = pygame.Vector2(spawn_center)
@@ -109,20 +115,28 @@ class GameEngine:
             else:
                 self._input.process_events(events)
 
-            dash_input = self._input.is_dash_requested() # Отработка рывка
-            direction = self._input.get_move_direction() # Вектор направления игрока
-
             if not self._state.is_paused:
-                # вычисляем координаты мыши для игрока
-                cam_off_x = self._camera.position.x - config.INTERNAL_WIDTH / 2
-                cam_off_y = self._camera.position.y - config.INTERNAL_HEIGHT / 2
-                mouse_screen = pygame.mouse.get_pos()
-                world_mouse = (mouse_screen[0] + cam_off_x, mouse_screen[1] + cam_off_y)
-                self._state.player.set_mouse_pos(world_mouse)
+                # hit-pause логика
+                if self._hit_pause_frames > 0:
+                    self._hit_pause_frames -= 1
+                else:
+                    dash_input = self._input.is_dash_requested()  # Отработка рывка
+                    direction = self._input.get_move_direction()  # Вектор направления игрока
 
+                    #  обновляем игрока
+                    self._state.player.update(dx=direction[0], dy=direction[1], dt=dt, dash_requested=dash_input)
 
-            # обновляем игрока
-            self._state.player.update(dx=direction[0], dy=direction[1], dt=dt, dash_requested=dash_input)
+                    # Обновляем снаряды и частицы
+                    self._projectile_system.update(dt, self._room_manager)
+                    self._particle_system.update(dt)
+
+                    # вычисляем координаты мыши для игрока
+                    cam_off_x = self._camera.position.x - config.INTERNAL_WIDTH / 2
+                    cam_off_y = self._camera.position.y - config.INTERNAL_HEIGHT / 2
+                    mouse_screen = pygame.mouse.get_pos()
+                    world_mouse = (mouse_screen[0] + cam_off_x, mouse_screen[1] + cam_off_y)
+                    self._state.player.set_mouse_pos(world_mouse)
+
 
             # обновляем активную комнату
             new_room = self._room_manager.update_active_room(self._state.player)
@@ -145,7 +159,8 @@ class GameEngine:
             if self._room_manager.active_room:
                 self._collision_system.resolve(self._state.player, self._room_manager.active_room.walls)
 
-            self._renderer.render(self._state, self._room_manager, self._camera, self._projectile_system)
+            self._renderer.render(self._state, self._room_manager, self._camera, self._projectile_system,
+                                  self._particle_system)
 
             # обработка стрельбы
             if self._state.weapon:
@@ -168,3 +183,18 @@ class GameEngine:
 
         self.assets['pointer_sprite'] = assets_manager.load_sprite("pointer.png", (90, 60))
         self.assets['pointer_crosshair'] = assets_manager.load_sprite("pointer_crosshair.png", (20, 20))
+
+    def _on_wall_impact(self, pos: tuple[float, float]) -> None:
+        distance = Vector2((self._state.player.rect.centerx - pos[0],
+                            self._state.player.rect.centery - pos[1])).magnitude()
+        ratio = (1200 - distance) * 0.0015
+        if ratio <= 0:
+            ratio = 0
+
+        self._particle_system.spawn_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
+        self._camera.shake(config.IMPACT_SHAKE_AMOUNT * ratio, config.IMPACT_SHAKE_DURATION)
+
+    def _on_player_impact(self, pos: tuple[float, float]) -> None:
+        self._particle_system.spawn_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
+        self._camera.shake(config.IMPACT_SHAKE_AMOUNT, config.IMPACT_SHAKE_DURATION)
+        self._hit_pause_frames = config.IMPACT_HIT_PAUSE_FRAMES

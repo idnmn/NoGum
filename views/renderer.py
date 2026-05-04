@@ -1,5 +1,6 @@
 import pygame
 import config
+from services.particle_system import ParticleSystem
 from services.projectile_system import ProjectileSystem
 from models.game_state import GameState
 from models.room_manager import RoomManager
@@ -21,7 +22,7 @@ class Renderer:
         self._viewport_buffer = pygame.Surface((config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT))
 
     def render(self, state: GameState, room_manager: RoomManager, camera: Camera,
-               projectile_system: ProjectileSystem) -> None:
+               projectile_system: ProjectileSystem, particle_system: ParticleSystem) -> None:
         # очищаем экран
         self.world_surface.fill(config.BACKGROUND_COLOR)
 
@@ -49,6 +50,9 @@ class Renderer:
         # добавляем снаряды в очередь
         render_queue += projectile_system.projectiles
 
+        # добавляем частицы в очередь
+        render_queue += particle_system.particles
+
         # сортируем очередь по y координате
         render_queue.sort(key=lambda obj: obj.rect.bottom)
 
@@ -62,8 +66,8 @@ class Renderer:
         # projectile_system.render(self.world_surface, (0, 0))
 
         # вычисляем координаты вьюпорта
-        view_x = int(camera.position.x - config.INTERNAL_WIDTH / 2)
-        view_y = int(camera.position.y - config.INTERNAL_HEIGHT / 2)
+        view_x = int(camera.position.x + camera.shake_offset.x - config.INTERNAL_WIDTH / 2)
+        view_y = int(camera.position.y + camera.shake_offset.y - config.INTERNAL_HEIGHT / 2)
         view_rect = pygame.Rect(view_x, view_y, config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT)
 
         view_rect.clamp_ip(self._world_bounds) # ограничиваем размерами мира

@@ -1,11 +1,13 @@
 import pygame
+from typing import Callable
 from models.projectile import Projectile
 from models.weapons import Weapon
 from models.room_manager import RoomManager
 
 class ProjectileSystem:
-    def __init__(self) -> None:
+    def __init__(self, on_impact: Callable[[tuple[float, float]], None]) -> None:
         self.projectiles: list[Projectile] = []
+        self._on_impact = on_impact
 
     def spawn(self, projectile, origin: pygame.Vector2, direction: pygame.Vector2, weapon: Weapon) -> None:
         if direction.length() == 0:
@@ -34,7 +36,7 @@ class ProjectileSystem:
                 for wall in room_manager.active_room.walls:
                     if p.rect.colliderect(wall.body.rect):
                         p.is_active = False
-                        # TODO: Добавить эффект удара/звук
+                        self._on_impact((p.rect.centerx, p.rect.centery))
                         break
 
         # очистка неактивных снарядов
