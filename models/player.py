@@ -3,6 +3,7 @@ import pygame
 import config
 from models.collidable import CollisionBody
 from models.renderable import Renderable
+from models.weapons import Weapon
 
 
 class Player(Renderable):
@@ -36,6 +37,14 @@ class Player(Renderable):
 
         self.current_tilt = 0.0
 
+        self.weapon: Weapon | None = None
+        self.mouse_world_pos = pygame.Vector2(x, y)
+        self.facing_right = True
+
+    def set_mouse_pos(self, pos: tuple[float, float]) -> None:
+        self.mouse_world_pos.update(pos)
+        self.facing_right = self.mouse_world_pos.x >= self.rect.centerx
+
     @property
     def rect(self) -> pygame.Rect:
         return self.body.rect
@@ -44,9 +53,14 @@ class Player(Renderable):
         draw_x = self.rect.x
         draw_y = self.rect.y + self.visual_offset_y
 
+        # зеркалирование (педалирование) спрайта
+        player_sprite = self.sprite
+        if not self.facing_right:
+            player_sprite = pygame.transform.flip(self.sprite, True, False)
+
         # отрисовка с учётом наклона
         if abs(self.current_tilt) > 0.5:  # порог
-            rotated = pygame.transform.rotate(self.sprite, -self.current_tilt)
+            rotated = pygame.transform.rotate(player_sprite, -self.current_tilt)
 
             # корректируем позицию чтобы нижний центр спрайта оставался на месте
             w_shift = (self.sprite.get_width() - rotated.get_width()) / 2
@@ -54,7 +68,32 @@ class Player(Renderable):
 
             surface.blit(rotated, (draw_x + w_shift, draw_y + h_shift))
         else:
-            surface.blit(self.sprite, (draw_x, draw_y))
+            surface.blit(player_sprite, (draw_x, draw_y))
+
+        # отрисовка оружия поверх персонажа
+        if self.weapon and self.weapon.sprite:
+            self._draw_weapon(surface)
+
+    # отрисовка оружия
+    def _draw_weapon(self, surface: pygame.Surface) -> None:
+        dx = self.mouse_world_pos.x - self.rect.centerx
+        dy = self.mouse_world_pos.y - self.rect.centery
+        angle = math.degrees(math.atan2(dy, dx))
+
+        # зеркалирование
+        weapon_sprite = self.weapon.sprite
+        offset_x = self.weapon.offset_x
+        if not self.facing_right:
+            weapon_sprite = pygame.transform.flip(self.weapon.sprite, False, True)
+            offset_x = -offset_x
+
+        # вращаем спрайт оружия
+        rotated = pygame.transform.rotate(weapon_sprite, -angle)
+
+        # позиционируем оружие
+        wx = self.rect.centerx - rotated.get_width() / 2 + offset_x
+        wy = self.rect.centery - rotated.get_height() / 2 + self.weapon.offset_y
+        surface.blit(rotated, (wx, wy))
 
     def update(self, dx: float, dy: float, dt: float, dash_requested: bool) -> None:
         """

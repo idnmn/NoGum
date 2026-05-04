@@ -1,5 +1,6 @@
 import pygame
 import config
+from services.projectile_system import ProjectileSystem
 from models.game_state import GameState
 from models.room_manager import RoomManager
 from models.camera import Camera
@@ -14,14 +15,15 @@ class Renderer:
         self._ui_renderer = ui_renderer
 
         # поверхность, на которой рисуется весь мир в абсолютных координатах
-        self._world_surface = pygame.Surface((world_bounds.width, world_bounds.height))
+        self.world_surface = pygame.Surface((world_bounds.width, world_bounds.height))
 
         # буфер для финального кадра перед масштабированием
         self._viewport_buffer = pygame.Surface((config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT))
 
-    def render(self, state: GameState, room_manager: RoomManager, camera: Camera) -> None:
+    def render(self, state: GameState, room_manager: RoomManager, camera: Camera,
+               projectile_system: ProjectileSystem) -> None:
         # очищаем экран
-        self._world_surface.fill(config.BACKGROUND_COLOR)
+        self.world_surface.fill(config.BACKGROUND_COLOR)
 
         # очередь рендера
         render_queue = []
@@ -35,7 +37,7 @@ class Renderer:
 
         # отрисовываем полы вне очереди
         for room in rooms_to_draw:
-            self._world_surface.blit(room.floor_surface, (room.offset.x, room.offset.y))
+            self.world_surface.blit(room.floor_surface, (room.offset.x, room.offset.y))
 
         for room in rooms_to_draw:
             render_queue.extend(room.walls)
@@ -44,15 +46,20 @@ class Renderer:
         if state.player:
             render_queue.append(state.player)
 
+        # добавляем снаряды в очередь
+        render_queue += projectile_system.projectiles
+
         # сортируем очередь по y координате
         render_queue.sort(key=lambda obj: obj.rect.bottom)
 
         # рендерим все объекты из очереди
         for obj in render_queue:
-            obj.render(self._world_surface)
+            obj.render(self.world_surface)
 
         # рендерим inworld часть ui
-        self._ui_renderer.render_in_world(state, self._world_surface)
+        self._ui_renderer.render_in_world(state, self.world_surface)
+
+        # projectile_system.render(self.world_surface, (0, 0))
 
         # вычисляем координаты вьюпорта
         view_x = int(camera.position.x - config.INTERNAL_WIDTH / 2)
@@ -61,7 +68,7 @@ class Renderer:
 
         view_rect.clamp_ip(self._world_bounds) # ограничиваем размерами мира
 
-        visible_chunk = self._world_surface.subsurface(view_rect) # вырезаем видимый чанк
+        visible_chunk = self.world_surface.subsurface(view_rect) # вырезаем видимый чанк
 
         # масштабируем под размер экрана
         scaled_view = pygame.transform.scale(visible_chunk, self._screen.get_size())

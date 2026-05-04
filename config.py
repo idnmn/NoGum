@@ -1,3 +1,5 @@
+import pygame
+
 # --- ЛОГИЧЕСКОЕ РАЗРЕШЕНИЕ ---
 # Это размер холста на котором происходит вся физика и отрисовка игры.
 INTERNAL_WIDTH: int = 1248
@@ -79,3 +81,5 @@ MINIMAP_EXPLORED: bool = False # отладочная функция для от
 # Спрайты
 ASSETS_DIR: str = "assets"
 
+# --- ОРУЖИЕ И UI ---
+WEAPON_UI_KEY: int = pygame.K_i
