@@ -24,8 +24,23 @@ class ParticleSystem:
         # for _ in range(max_particles):
         #     self._pool.append(Particle(0,0,0,0,0,0,(0,0,0),0))
 
-    def spawn_impact(self, pos: tuple[float, float], color: tuple[int, int, int] = (255, 200, 50)) -> None:
-        for _ in range(config.IMPACT_PARTICLE_COUNT):
+    def spawn_wall_impact(self, pos: tuple[float, float], color: tuple[int, int, int] = (255, 200, 50)) -> None:
+        for _ in range(config.WALL_IMPACT_PARTICLE_COUNT):
+            angle = random.uniform(0, 6.2832)  # 2 * pi
+            speed = random.uniform(config.IMPACT_PARTICLE_SPEED * 0.5, config.IMPACT_PARTICLE_SPEED)
+            vx, vy = pygame.Vector2(speed, 0).rotate_rad(angle)
+
+            self.particles.append(Particle(
+                x=pos[0], y=pos[1],
+                vx=vx, vy=vy,
+                lifetime=config.IMPACT_PARTICLE_LIFETIME,
+                max_lifetime=config.IMPACT_PARTICLE_LIFETIME,
+                color=color,
+                size=random.uniform(2, 4)
+            ))
+
+    def spawn_enemy_impact(self, pos: tuple[float, float], color: tuple[int, int, int] = (255, 200, 50)) -> None:
+        for _ in range(config.ENEMY_IMPACT_PARTICLE_COUNT):
             angle = random.uniform(0, 6.2832)  # 2 * pi
             speed = random.uniform(config.IMPACT_PARTICLE_SPEED * 0.5, config.IMPACT_PARTICLE_SPEED)
             vx, vy = pygame.Vector2(speed, 0).rotate_rad(angle)

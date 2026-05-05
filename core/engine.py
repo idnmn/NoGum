@@ -10,7 +10,9 @@ from models.player import Player
 from models.room_manager import RoomManager
 from models.camera import Camera
 from models.weapons import *
-from services.collision import CollisionSystem
+from services.collision_system import CollisionSystem
+from services.enemy_system import EnemySystem
+from services.spawner import Spawner
 from services.weapon_system import WeaponSystem
 from services.projectile_system import ProjectileSystem
 from services.particle_system import ParticleSystem
@@ -55,8 +57,11 @@ class GameEngine:
         self._input = InputHandler(self._state)
         self._collision_system = CollisionSystem()
         self._weapon_system = WeaponSystem()
-        self._projectile_system = ProjectileSystem(on_impact=self._on_wall_impact)
+        self._projectile_system = ProjectileSystem(on_wall_impact=self._on_wall_impact,
+                                                   on_enemy_impact=self._on_enemy_impact)
         self._particle_system = ParticleSystem()
+        self._enemy_system = EnemySystem()
+        self._spawner = Spawner()
 
         self._camera = Camera()
         self._camera.position = pygame.Vector2(spawn_center)
@@ -99,6 +104,18 @@ class GameEngine:
 
         self._room_manager.update_active_room(self._state.player)
 
+        # начальный спавн (2 bookworm в стартовой комнате)
+        if self._room_manager.start_room:
+            center = self._room_manager.start_room.bounds.center
+            spawn_area = pygame.Rect(center[0] - 120, center[1] - 120, 240, 240)
+            initial_enemies = []
+
+            for _ in range(2):
+                x = random.uniform(spawn_area.x + 52, spawn_area.right - 52)
+                y = random.uniform(spawn_area.y + 52, spawn_area.bottom - 52)
+                initial_enemies.append(self._spawner.spawn_bookworm(x, y))
+            self._enemy_system.enemies.extend(initial_enemies)
+
 
     def run(self) -> None:
         while self._state.is_running:
@@ -126,9 +143,10 @@ class GameEngine:
                     #  обновляем игрока
                     self._state.player.update(dx=direction[0], dy=direction[1], dt=dt, dash_requested=dash_input)
 
-                    # Обновляем снаряды и частицы
-                    self._projectile_system.update(dt, self._room_manager)
+                    # Обновляем системы
+                    self._projectile_system.update(dt, self._room_manager, self._enemy_system.enemies)
                     self._particle_system.update(dt)
+                    self._enemy_system.update(dt, self._state)
 
                     # вычисляем координаты мыши для игрока
                     cam_off_x = self._camera.position.x - config.INTERNAL_WIDTH / 2
@@ -152,21 +170,28 @@ class GameEngine:
             self._camera.update(dt)
 
             # обновляем снаряды
-            self._projectile_system.update(dt, self._room_manager)
+            self._projectile_system.update(dt, self._room_manager, self._enemy_system.enemies)
 
 
             # обрабатываем коллизию со стенами
             if self._room_manager.active_room:
-                self._collision_system.resolve(self._state.player, self._room_manager.active_room.walls)
+                self._collision_system.resolve_obstacles(self._state.player, self._room_manager.active_room.walls)
 
-            self._renderer.render(self._state, self._room_manager, self._camera, self._projectile_system,
-                                  self._particle_system)
+                for enemy in self._enemy_system.enemies:
+                    self._collision_system.resolve_obstacles(enemy, self._room_manager.active_room.walls)
+
+            # обрабатываем коллизию существ
+            entities = self._enemy_system.enemies + [self._state.player]
+            self._collision_system.resolve_movers(entities)
 
             # обработка стрельбы
             if self._state.weapon:
                 shot_fired = self._weapon_system.update(dt, self._state.weapon, self._input.is_shooting_requested())
                 if shot_fired:
                     self._state.weapon.fire(self._projectile_system, self._state)
+
+            self._renderer.render(self._state, self._room_manager, self._camera, self._projectile_system,
+                                  self._particle_system, self._enemy_system)
 
         pygame.quit()
 
@@ -191,10 +216,13 @@ class GameEngine:
         if ratio <= 0:
             ratio = 0
 
-        self._particle_system.spawn_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
+        self._particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
         self._camera.shake(config.IMPACT_SHAKE_AMOUNT * ratio, config.IMPACT_SHAKE_DURATION)
 
+    def _on_enemy_impact(self, pos: tuple[float, float], enemy) -> None:
+        self._particle_system.spawn_enemy_impact(pos, color=enemy.impact_color)
+
     def _on_player_impact(self, pos: tuple[float, float]) -> None:
-        self._particle_system.spawn_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
+        self._particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
         self._camera.shake(config.IMPACT_SHAKE_AMOUNT, config.IMPACT_SHAKE_DURATION)
         self._hit_pause_frames = config.IMPACT_HIT_PAUSE_FRAMES

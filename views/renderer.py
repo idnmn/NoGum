@@ -1,5 +1,6 @@
 import pygame
 import config
+from services.enemy_system import EnemySystem
 from services.particle_system import ParticleSystem
 from services.projectile_system import ProjectileSystem
 from models.game_state import GameState
@@ -22,7 +23,7 @@ class Renderer:
         self._viewport_buffer = pygame.Surface((config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT))
 
     def render(self, state: GameState, room_manager: RoomManager, camera: Camera,
-               projectile_system: ProjectileSystem, particle_system: ParticleSystem) -> None:
+               projectile_system: ProjectileSystem, particle_system: ParticleSystem, enemy_system: EnemySystem) -> None:
         # очищаем экран
         self.world_surface.fill(config.BACKGROUND_COLOR)
 
@@ -52,6 +53,9 @@ class Renderer:
 
         # добавляем частицы в очередь
         render_queue += particle_system.particles
+
+        # добавляем врагов в очередь
+        render_queue += enemy_system.enemies
 
         # сортируем очередь по y координате
         render_queue.sort(key=lambda obj: obj.rect.bottom)

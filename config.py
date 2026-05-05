@@ -18,7 +18,7 @@ FULLSCREEN: bool = False
 # Физика движения
 PLAYER_MAX_SPEED: float = 600.0  # Пикселей в секунду
 PLAYER_ACCELERATION: float = 3000.0
-PLAYER_FRICTION: float = 20.0
+FRICTION: float = 20.0
 PLAYER_TILT_MAX_ANGLE: float = 20.0   # Максимальный угол наклона в градусах
 PLAYER_TILT_SMOOTHING: float = 40.0    # Скорость плавного перехода к целевому углу
 # Рывок
@@ -85,7 +85,8 @@ ASSETS_DIR: str = "assets"
 WEAPON_UI_KEY: int = pygame.K_i
 
 # 🎯 Эффекты попаданий
-IMPACT_PARTICLE_COUNT: int = 4
+WALL_IMPACT_PARTICLE_COUNT: int = 4
+ENEMY_IMPACT_PARTICLE_COUNT: int = 10
 IMPACT_PARTICLE_SPEED: float = 300.0
 IMPACT_PARTICLE_LIFETIME: float = 0.3
 IMPACT_SHAKE_AMOUNT: float = 1.5

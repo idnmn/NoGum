@@ -1,13 +1,16 @@
 import pygame
-from typing import Callable
+from typing import Callable, List
+from models.enemies import Enemy
 from models.projectile import Projectile
 from models.weapons import Weapon
 from models.room_manager import RoomManager
 
 class ProjectileSystem:
-    def __init__(self, on_impact: Callable[[tuple[float, float]], None]) -> None:
+    def __init__(self, on_wall_impact: Callable[[tuple[float, float]], None],
+                 on_enemy_impact: Callable[[tuple[float, float]], None]) -> None:
         self.projectiles: list[Projectile] = []
-        self._on_impact = on_impact
+        self._on_wall_impact = on_wall_impact
+        self._on_enemy_impact = on_enemy_impact
 
     def spawn(self, projectile, origin: pygame.Vector2, direction: pygame.Vector2, weapon: Weapon) -> None:
         if direction.length() == 0:
@@ -21,7 +24,7 @@ class ProjectileSystem:
         self.projectiles.append(projectile(x=origin.x, y=origin.y, size=size,
                                            velocity=vel, damage=weapon.damage, lifetime=10.0))
 
-    def update(self, dt: float, room_manager: RoomManager) -> None:
+    def update(self, dt: float, room_manager: RoomManager, enemies: List[Enemy]) -> None:
         for p in self.projectiles:
             p.rect.x += p.velocity.x * dt
             p.rect.y += p.velocity.y * dt
@@ -36,8 +39,18 @@ class ProjectileSystem:
                 for wall in room_manager.active_room.walls:
                     if p.rect.colliderect(wall.body.rect):
                         p.is_active = False
-                        self._on_impact((p.rect.centerx, p.rect.centery))
+                        self._on_wall_impact((p.rect.centerx, p.rect.centery))
                         break
+
+            # коллизия с врагами
+            for enemy in enemies:
+                if p.rect.colliderect(enemy.body.rect):
+                    p.is_active = False
+                    self._on_enemy_impact((p.rect.centerx, p.rect.centery), enemy)
+                    enemy.take_damage(p.damage)
+                    print('hit')
+                    break
+
 
         # очистка неактивных снарядов
         self.projectiles = [p for p in self.projectiles if p.is_active]

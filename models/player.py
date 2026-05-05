@@ -25,7 +25,7 @@ class Player(Renderable):
         # подтягиваем статы из конфига
         self.max_speed = config.PLAYER_MAX_SPEED
         self.acceleration = config.PLAYER_ACCELERATION
-        self.friction = config.PLAYER_FRICTION
+        self.friction = config.FRICTION
         self.dash_speed = config.PLAYER_DASH_SPEED
         self.dash_cooldown = config.PLAYER_DASH_COOLDOWN
         self._max_dash_cooldown = self.dash_cooldown
@@ -151,7 +151,7 @@ class Player(Renderable):
             self.vx = 0.0
             self.vy = 0.0
 
-        # обновляем позицию и обрабатываем коллизии
+        # обновляем позицию
         self.body.rect.x += self.vx * dt
         self.body.rect.y += self.vy * dt
 
