@@ -9,6 +9,9 @@ class InputHandler:
         self._dash_requested: bool = False
         self._shoot_requested = False
 
+        self.spawn = False
+        self.spawn_pos = None
+
     # системные ивенты
     def process_events(self, events) -> None:
         self._dash_requested = False
@@ -39,6 +42,10 @@ class InputHandler:
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not self._state.is_paused:
                 self._shoot_requested = True
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3 and not self._state.is_paused:
+                self.spawn = True
+                self.spawn_pos = event.pos
 
     def get_move_direction(self) -> tuple[float, float]:
         # возвращает сырой вектор ввода (-1, 0, 1) по осям X и Y

@@ -48,9 +48,7 @@ class ProjectileSystem:
                     p.is_active = False
                     self._on_enemy_impact((p.rect.centerx, p.rect.centery), enemy)
                     enemy.take_damage(p.damage)
-                    print('hit')
                     break
-
 
         # очистка неактивных снарядов
         self.projectiles = [p for p in self.projectiles if p.is_active]

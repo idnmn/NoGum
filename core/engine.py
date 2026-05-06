@@ -105,16 +105,16 @@ class GameEngine:
         self._room_manager.update_active_room(self._state.player)
 
         # начальный спавн (2 bookworm в стартовой комнате)
-        if self._room_manager.start_room:
-            center = self._room_manager.start_room.bounds.center
-            spawn_area = pygame.Rect(center[0] - 120, center[1] - 120, 240, 240)
-            initial_enemies = []
-
-            for _ in range(2):
-                x = random.uniform(spawn_area.x + 52, spawn_area.right - 52)
-                y = random.uniform(spawn_area.y + 52, spawn_area.bottom - 52)
-                initial_enemies.append(self._spawner.spawn_bookworm(x, y))
-            self._enemy_system.enemies.extend(initial_enemies)
+        # if self._room_manager.start_room:
+        #     center = self._room_manager.start_room.bounds.center
+        #     spawn_area = pygame.Rect(center[0] - 120, center[1] - 120, 500, 300)
+        #     initial_enemies = []
+        #
+        #     for _ in range(3):
+        #         x = random.uniform(spawn_area.x + 52, spawn_area.right - 52)
+        #         y = random.uniform(spawn_area.y + 52, spawn_area.bottom - 52)
+        #         initial_enemies.append(self._spawner.spawn_bookworm(x, y))
+        #     self._enemy_system.enemies.extend(initial_enemies)
 
 
     def run(self) -> None:
@@ -146,7 +146,8 @@ class GameEngine:
                     # Обновляем системы
                     self._projectile_system.update(dt, self._room_manager, self._enemy_system.enemies)
                     self._particle_system.update(dt)
-                    self._enemy_system.update(dt, self._state)
+                    self._enemy_system.update(dt, self._state, self._room_manager.active_room,
+                                              self._renderer.debug_surface)
 
                     # вычисляем координаты мыши для игрока
                     cam_off_x = self._camera.position.x - config.INTERNAL_WIDTH / 2
@@ -192,6 +193,11 @@ class GameEngine:
 
             self._renderer.render(self._state, self._room_manager, self._camera, self._projectile_system,
                                   self._particle_system, self._enemy_system)
+
+            if self._input.spawn:
+                cords = self._input.spawn_pos + self._room_manager.active_room.offset
+                self._enemy_system.enemies.append(self._spawner.spawn_bookworm(*cords))
+                self._input.spawn = False
 
         pygame.quit()
 

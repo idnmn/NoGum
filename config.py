@@ -60,6 +60,8 @@ UI_DASH_HIDE_DELAY: float = 1.0
 
 CAMERA_LERP_SPEED = 1.7 # Скорость движения камеры
 
+DRAW_PATH = False # debug отрисовщик для pathfinder'а
+
 # Mini-Map
 MINIMAP_WIDTH: int = 400
 MINIMAP_HEIGHT: int = 400

@@ -5,8 +5,11 @@ from pygame import Vector2
 
 import config
 from models.collidable import CollisionBody
+from models.room import Room
 from models.game_state import GameState
 from models.renderable import Renderable
+from services.pathfinder import Pathfinder
+
 
 class Enemy(Renderable):
     def __init__(self, x: float, y: float, size: int, enemy_type: str = "") -> None:
@@ -25,11 +28,15 @@ class Enemy(Renderable):
         self.is_alive = True
         self.impact_color = (255, 255, 255)
 
+        self.pathfinder = Pathfinder()
+        self._repath_cooldown = 0.0
+        self._repath_timer = 0.0
+
     @property
     def rect(self) -> pygame.Rect:
         return self.body.rect
 
-    def update(self, dt: float, state: GameState) -> None:
+    def update(self, dt: float, state: GameState, active_room: Room, surface: pygame.Surface) -> None:
         pass
 
     def can_attack(self) -> bool:
@@ -57,25 +64,59 @@ class BookWorm(Enemy):
         # определяем статы
         self.hp = 50
         self.max_hp = 50
-        self.max_speed = 400
+        self.max_speed = 600
         self.attack_damage = 5
         self.attack_range = 50
         self.attack_cooldown = 3.0
         self.aggr_range = 1000
         self.impact_color = (255, 50, 50)
 
-        self.acceleration = 1500
-        self.friction = config.FRICTION
+        self.acceleration = 5000
+        self.friction = config.FRICTION * 10
         self.vx = 0.0
         self.vy = 0.0
+        self.next_point = Vector2(self.rect.center)
+
+        self._repath_cooldown = 0.1
 
     def render(self, surface: pygame.Surface) -> None:
         # Заглушка: белый прямоугольник (потом заменим на спрайт)
         pygame.draw.rect(surface, (255, 255, 255), self.body.rect)
 
-    def update(self, dt: float, state: GameState) -> None:
-        dx = state.player.rect.centerx - self.body.rect.centerx
-        dy = state.player.rect.centery - self.body.rect.centery
+    def update(self, dt: float, state: GameState, active_room: Room, surface: pygame.Surface) -> None:
+        if self._repath_timer > 0:
+            self._repath_timer -= dt
+
+        if self._repath_timer <= 0:
+            self._repath_timer = self._repath_cooldown
+            self.pathfinder.search_path(Vector2(self.rect.center), Vector2(state.player.rect.center), active_room)
+
+            # debug рендер
+            for i, point in enumerate(self.pathfinder.path_points):
+                draw_point = point - active_room.offset
+                pygame.draw.circle(surface, (255, 210, 80), (draw_point.x, draw_point.y), 5)
+
+                if i + 1 < len(self.pathfinder.path_points):
+                    next_draw = self.pathfinder.path_points[i + 1] - active_room.offset
+                    pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
+                                     (next_draw.x, next_draw.y), 3)
+
+
+        # если ещё остались точки
+        if self.pathfinder.path_points:
+            # print('POINTS:', len(self.pathfinder.path_points))
+            # print('DIST:', Vector2(self.body.rect.center).distance_to(Vector2(self.next_point)))
+            distance = Vector2(self.body.rect.center).distance_to(Vector2(self.next_point))
+            if distance <= self.attack_range * 4 and len(self.pathfinder.path_points) > 1:
+                # print('SWITCH POINT')
+                self.next_point = Vector2(self.pathfinder.path_points.pop(0))
+        else:
+            # print('STAY')
+            self.next_point = Vector2(self.body.rect.center)
+
+
+        dx = self.next_point.x - self.body.rect.centerx
+        dy = self.next_point.y - self.body.rect.centery
         direction = Vector2(dx, dy)
 
         if direction.magnitude() < self.aggr_range and direction.magnitude() != 0:
@@ -100,7 +141,6 @@ class BookWorm(Enemy):
         # интегрируем ускорение в скорость
         self.vx += ax * dt
         self.vy += ay * dt
-        current_speed = math.hypot(self.vx, self.vy)
 
         # ограничиваем максимальную скорость
         current_speed = math.hypot(self.vx, self.vy)
@@ -117,5 +157,3 @@ class BookWorm(Enemy):
         # обновляем позицию
         self.body.rect.x += self.vx * dt
         self.body.rect.y += self.vy * dt
-
-
