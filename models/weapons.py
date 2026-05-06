@@ -141,6 +141,6 @@ class Pointer(Weapon):
         origin = pygame.Vector2(state.player.body.center)
         direction = state.player.mouse_world_pos - origin
 
-        angle = random.randint(-10, 10)
+        angle = random.randint(-3, 3)
 
         projectile_system.spawn(PointerProjectile, origin, direction.rotate(angle), state.weapon)

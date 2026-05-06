@@ -70,8 +70,8 @@ class Pathfinder():
                 path = []
                 current = lower_cell
                 while not (current.x == enemy_layout.x and current.y == enemy_layout.y):
-                    path.append(Vector2(current.x * config.TILE_SIZE,
-                                        current.y * config.TILE_SIZE) + offset)
+                    path.append(Vector2(current.x * config.TILE_SIZE + config.TILE_SIZE // 2,
+                                        current.y * config.TILE_SIZE + config.TILE_SIZE // 2) + offset)
                     prev_key = (current.prev_x, current.prev_y)
                     if prev_key in cells_dict:
                         current = cells_dict[prev_key]

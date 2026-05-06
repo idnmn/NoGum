@@ -1,3 +1,5 @@
+import random
+
 import pygame
 import math
 
@@ -71,13 +73,13 @@ class BookWorm(Enemy):
         self.aggr_range = 1000
         self.impact_color = (255, 50, 50)
 
-        self.acceleration = 5000
+        self.acceleration = 2500
         self.friction = config.FRICTION * 10
         self.vx = 0.0
         self.vy = 0.0
         self.next_point = Vector2(self.rect.center)
 
-        self._repath_cooldown = 0.1
+        self._repath_cooldown = 0.3
 
     def render(self, surface: pygame.Surface) -> None:
         # Заглушка: белый прямоугольник (потом заменим на спрайт)
@@ -90,11 +92,17 @@ class BookWorm(Enemy):
         if self._repath_timer <= 0:
             self._repath_timer = self._repath_cooldown
             self.pathfinder.search_path(Vector2(self.rect.center), Vector2(state.player.rect.center), active_room)
+            self.next_point = self.pathfinder.path_points[0]
 
             # debug рендер
             for i, point in enumerate(self.pathfinder.path_points):
                 draw_point = point - active_room.offset
                 pygame.draw.circle(surface, (255, 210, 80), (draw_point.x, draw_point.y), 5)
+
+                if i == 0:
+                    pygame.draw.circle(surface, (255, 210, 80), self.rect.center - active_room.offset, 5)
+                    pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
+                                     self.rect.center - active_room.offset, 3)
 
                 if i + 1 < len(self.pathfinder.path_points):
                     next_draw = self.pathfinder.path_points[i + 1] - active_room.offset
@@ -107,16 +115,17 @@ class BookWorm(Enemy):
             # print('POINTS:', len(self.pathfinder.path_points))
             # print('DIST:', Vector2(self.body.rect.center).distance_to(Vector2(self.next_point)))
             distance = Vector2(self.body.rect.center).distance_to(Vector2(self.next_point))
-            if distance <= self.attack_range * 4 and len(self.pathfinder.path_points) > 1:
+            if distance <= config.TILE_SIZE - 5 and len(self.pathfinder.path_points) > 1:
                 # print('SWITCH POINT')
                 self.next_point = Vector2(self.pathfinder.path_points.pop(0))
+                pygame.draw.circle(surface, (32, 255, 28), self.next_point - active_room.offset, 7)
         else:
             # print('STAY')
             self.next_point = Vector2(self.body.rect.center)
 
 
-        dx = self.next_point.x - self.body.rect.centerx
-        dy = self.next_point.y - self.body.rect.centery
+        dx = (self.next_point.x) - self.body.rect.centerx
+        dy = (self.next_point.y) - self.body.rect.centery
         direction = Vector2(dx, dy)
 
         if direction.magnitude() < self.aggr_range and direction.magnitude() != 0:
@@ -124,11 +133,11 @@ class BookWorm(Enemy):
             dx, dy = direction
         else:
             direction = Vector2(0)
+            dx, dy = direction
 
 
         # вычисляем ускорение из ввода
         if dx != 0.0 or dy != 0.0:
-            length = math.hypot(dx, dy)
             ax = dx * self.acceleration
             ay = dy * self.acceleration
         else:
