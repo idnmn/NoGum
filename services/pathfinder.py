@@ -9,7 +9,8 @@ class Pathfinder():
     def __init__(self) -> None:
         self.path_points = []
 
-    def search_path(self, enemy_pos: Vector2, player_pos: Vector2, room: Room) -> None:
+    def search_path(self, enemy_pos: Vector2, player_pos: Vector2, room: Room,
+                    search_index: int = 0, len_limit: int = 50) -> None:
         self.path_points = []
         layout = [list(line) for line in room.layout]
         offset = room.offset
@@ -45,7 +46,7 @@ class Pathfinder():
 
         # защита от бесконечного цикла
         iteration = 0
-        max_iter = len(layout) * len(layout[0]) * 4
+        max_iter = len_limit
 
         # строим маршрут до клетки игрока
         while cells_list and iteration < max_iter:
@@ -61,14 +62,21 @@ class Pathfinder():
             if not cells_list:
                 break
 
-            lower_cell = cells_list.pop(0)  # берём клетку с наименьшим
-            closed_set.add((lower_cell.x, lower_cell.y))  # помечаем как обработанную
+            # добавляем клетку с нужным индексом
+            if search_index < len(cells_list):
+                if search_index != -1:
+                    next_cell = cells_list.pop(search_index)
+                else:
+                    next_cell = cells_list.pop()
+            else:
+                next_cell = cells_list.pop(0)
+            closed_set.add((next_cell.x, next_cell.y))  # помечаем как обработанную
 
             # проверяем дошли ли до конечной
-            if lower_cell.x == player_layout.x and lower_cell.y == player_layout.y:
+            if next_cell.x == player_layout.x and next_cell.y == player_layout.y or iteration == len_limit:
                 # реконструкция пути от цели к старту через cells_dict
                 path = []
-                current = lower_cell
+                current = next_cell
                 while not (current.x == enemy_layout.x and current.y == enemy_layout.y):
                     path.append(Vector2(current.x * config.TILE_SIZE + config.TILE_SIZE // 2,
                                         current.y * config.TILE_SIZE + config.TILE_SIZE // 2) + offset)
@@ -80,9 +88,6 @@ class Pathfinder():
                 self.path_points = path[::-1]  # разворачиваем путь
                 return
 
-            # print(lower_cell)
-            # for line in layout: print(''.join(line))
-
             # соседи
             neighbors_cords = [
                 (-1, -1), (-1, 0), (-1, 1),
@@ -90,7 +95,7 @@ class Pathfinder():
                 (1, -1), (1, 0), (1, 1)
             ]
             for dx, dy in neighbors_cords:
-                nx, ny = lower_cell.x + dx, lower_cell.y + dy
+                nx, ny = next_cell.x + dx, next_cell.y + dy
 
                 # проверка границ комнаты
                 if not (0 <= nx < len(layout[0]) and 0 <= ny < len(layout)):
@@ -103,7 +108,7 @@ class Pathfinder():
                     continue
 
                 # проверка на дубликат с лучшим весом
-                new_g = lower_cell.weight + (14 if abs(dx) + abs(dy) == 2 else 10)
+                new_g = next_cell.weight + (14 if abs(dx) + abs(dy) == 2 else 10)
                 existing = cells_dict.get((nx, ny))
                 if existing and existing.weight <= new_g:
                     continue  # уже есть клетка с таким или лучшим g-score
@@ -111,17 +116,14 @@ class Pathfinder():
                 cell = Cell(
                     x=nx,
                     y=ny,
-                    prev_x=lower_cell.x,
-                    prev_y=lower_cell.y,
+                    prev_x=next_cell.x,
+                    prev_y=next_cell.y,
                     layout=layout,
-                    prev_weight=lower_cell.weight,
+                    prev_weight=next_cell.weight,
                     player_layout=player_layout
                 )
                 cells_list.append(cell)
                 cells_dict[(cell.x, cell.y)] = cell  # сохраняем для реконструкции маршрута
-
-        # если путь не найден или превышен лимит итераций
-        self.path_points = []
 
 
 class Cell():

@@ -56,27 +56,6 @@ class Enemy(Renderable):
         if self._state_timer > 0:
             self._state_timer -= dt
 
-        if self._repath_timer <= 0 and self.state == 'chase':
-            self._repath_timer = self._repath_cooldown
-            self.pathfinder.search_path(Vector2(self.rect.center), Vector2(state.player.rect.center), active_room)
-            if self.pathfinder.path_points:
-                self.next_point = self.pathfinder.path_points[0]
-
-            # debug рендер
-            for i, point in enumerate(self.pathfinder.path_points):
-                draw_point = point - active_room.offset
-                pygame.draw.circle(surface, (255, 210, 80), (draw_point.x, draw_point.y), 5)
-
-                if i == 0:
-                    pygame.draw.circle(surface, (255, 210, 80), self.rect.center - active_room.offset, 5)
-                    pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
-                                     self.rect.center - active_room.offset, 3)
-
-                if i + 1 < len(self.pathfinder.path_points):
-                    next_draw = self.pathfinder.path_points[i + 1] - active_room.offset
-                    pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
-                                     (next_draw.x, next_draw.y), 3)
-
     def take_damage(self, amount: float) -> None:
         self.hp -= amount
         if self.hp <= 0:
@@ -106,6 +85,12 @@ class BookWorm(Enemy):
         self.post_attack_cooldown = 0.2  # кд после рывка
         self.between_dash_cooldown = 2.0 # кд между рывками
         self.dash_duration = 0.2         # длительность рывка
+
+        self.acceleration = 2500
+        self.friction = config.FRICTION * 10
+        self.next_point = Vector2(self.rect.center)
+
+        self._repath_cooldown = 0.3
 
     def render(self, surface: pygame.Surface) -> None:
         # цветовая индикация состояния
@@ -140,6 +125,29 @@ class BookWorm(Enemy):
         if self.state == 'chase':  # поиск игрока
             dx = self.next_point.x - self.body.rect.centerx
             dy = self.next_point.y - self.body.rect.centery
+
+            # обновляем данные с pathfinder'а
+            if self._repath_timer <= 0:
+                self._repath_timer = self._repath_cooldown
+                self.pathfinder.search_path(Vector2(self.rect.center), Vector2(state.player.rect.center), active_room,
+                                            search_index=-1)
+                if self.pathfinder.path_points:
+                    self.next_point = self.pathfinder.path_points[0]
+
+                # debug рендер
+                for i, point in enumerate(self.pathfinder.path_points):
+                    draw_point = point - active_room.offset
+                    pygame.draw.circle(surface, (255, 210, 80), (draw_point.x, draw_point.y), 5)
+
+                    if i == 0:
+                        pygame.draw.circle(surface, (255, 210, 80), self.rect.center - active_room.offset, 5)
+                        pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
+                                         self.rect.center - active_room.offset, 3)
+
+                    if i + 1 < len(self.pathfinder.path_points):
+                        next_draw = self.pathfinder.path_points[i + 1] - active_room.offset
+                        pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
+                                         (next_draw.x, next_draw.y), 3)
 
             # если игрок в радиусе атаки начинаем заряжать рывок
             if dist_to_player < self.attack_range and self._state_timer <= 0:
