@@ -24,4 +24,5 @@ class EnemySystem:
 
         # очистка мертвяков
         for e in dead:
+            e.on_death(state)
             self.enemies.remove(e)

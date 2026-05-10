@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from models.player import Player
 from models.weapons import Weapon
 
+
+
 # Модель игры
 @dataclass
 class GameState:
@@ -14,3 +16,10 @@ class GameState:
     weapon: Weapon | None = None
     level_number: int = 0
     spawn_score: int = 5
+
+    # системы
+    particle_system = None
+    enemy_system = None
+    decals_system = None
+    projectile_system = None
+    assets = dict()

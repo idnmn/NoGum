@@ -21,9 +21,6 @@ class ParticleSystem:
     def __init__(self, max_particles: int = 200) -> None:
         self.particles: list[Particle] = []
 
-        # for _ in range(max_particles):
-        #     self._pool.append(Particle(0,0,0,0,0,0,(0,0,0),0))
-
     def spawn_wall_impact(self, pos: tuple[float, float], color: tuple[int, int, int] = (255, 200, 50)) -> None:
         for _ in range(config.WALL_IMPACT_PARTICLE_COUNT):
             angle = random.uniform(0, 6.2832)  # 2 * pi

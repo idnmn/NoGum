@@ -7,6 +7,7 @@ from pygame import Vector2
 
 import config
 from models.collidable import CollisionBody
+from models.decal import Decal
 from models.room import Room
 from models.game_state import GameState
 from models.renderable import Renderable
@@ -88,7 +89,7 @@ class BookWorm(Enemy):
         self.contact_damage = 25 * level * 0.2
         self.attack_range = 200
         self.aggr_range = 1000
-        self.impact_color = (255, 50, 50)
+        self.impact_color = (200, 0, 0)
 
         self.state: str = 'recovery'  # chase, charge, dash, recovery
         self._state_timer = 0.5
@@ -246,5 +247,16 @@ class BookWorm(Enemy):
         self.attack_hitbox.x = self.body.rect.x - 1
         self.attack_hitbox.y = self.body.rect.y - 1
 
-    def _attack(self):
-        pass
+    def on_death(self, state: GameState) -> None:
+        random_size = random.randint(-3, 5)
+        decal = Decal(
+            pos=Vector2(self.body.rect.center),
+            lifetime=-1,
+            size_x=self.body.rect.width + random_size,
+            size_y=self.body.rect.height + random_size,
+            angle= random.uniform(0, 360),
+            sprite=state.assets['hit_decal'],
+            max_alpha=150,
+        )
+
+        state.decals_system.decals.append(decal)

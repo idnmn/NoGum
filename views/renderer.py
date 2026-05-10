@@ -18,18 +18,18 @@ class Renderer:
         self.debug_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 
         # поверхность, на которой рисуется весь мир в абсолютных координатах
-        self.world_surface = pygame.Surface((world_bounds.width, world_bounds.height))
+        self.world_surface = pygame.Surface((world_bounds.width, world_bounds.height), pygame.SRCALPHA)
 
         # буфер для финального кадра перед масштабированием
         self._viewport_buffer = pygame.Surface((config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT))
 
-    def render(self, state: GameState, room_manager: RoomManager, camera: Camera,
-               projectile_system: ProjectileSystem, particle_system: ParticleSystem, enemy_system: EnemySystem) -> None:
+    def render(self, state: GameState, room_manager: RoomManager, camera: Camera) -> None:
         # очищаем экран
         self.world_surface.fill(config.BACKGROUND_COLOR)
 
         # очередь рендера
         render_queue = []
+        decals_queue = []
 
         # во время перехода камеры рисуем обе комнаты
         rooms_to_draw = []
@@ -42,6 +42,14 @@ class Renderer:
         for room in rooms_to_draw:
             self.world_surface.blit(room.floor_surface, (room.offset.x, room.offset.y))
 
+        # рендерим декали
+        for decal in state.decals_system.decals:
+            decals_queue.append(decal)
+        decals_queue.sort(key=lambda obj: obj.rect.bottom) # сортируем
+
+        for decal in decals_queue:
+            decal.render(self.world_surface)
+
         for room in rooms_to_draw:
             render_queue.extend(room.walls)
 
@@ -50,13 +58,13 @@ class Renderer:
             render_queue.append(state.player)
 
         # добавляем снаряды в очередь
-        render_queue += projectile_system.projectiles
+        render_queue += state.projectile_system.projectiles
 
         # добавляем частицы в очередь
-        render_queue += particle_system.particles
+        render_queue += state.particle_system.particles
 
         # добавляем врагов в очередь
-        render_queue += enemy_system.enemies
+        render_queue += state.enemy_system.enemies
 
         # сортируем очередь по y координате
         render_queue.sort(key=lambda obj: obj.rect.bottom)
