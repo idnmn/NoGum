@@ -13,8 +13,6 @@ class Player(Renderable):
             layer="dynamic",
             tags={"player"}
         )
-        self.vx = 0.0
-        self.vy = 0.0
         self.sprite = sprite
 
         # состояние рывка (таймеры)
@@ -132,31 +130,31 @@ class Player(Renderable):
             ax = ay = 0.0
             # применяем трение
             damping = math.exp(-self.friction * dt)
-            self.vx *= damping
-            self.vy *= damping
+            self.body.vx *= damping
+            self.body.vy *= damping
 
         # интегрируем ускорение в скорость
-        self.vx += ax * dt
-        self.vy += ay * dt
+        self.body.vx += ax * dt
+        self.body.vy += ay * dt
 
         # ограничиваем максимальную скорость
-        current_speed = math.hypot(self.vx, self.vy)
+        current_speed = self.body.velocity.magnitude()
         if current_speed > self.max_speed:
             scale = current_max_speed / current_speed
-            self.vx *= scale
-            self.vy *= scale
+            self.body.vx *= scale
+            self.body.vy *= scale
 
         # защита от дрейфа
         if current_speed < 2.0:
-            self.vx = 0.0
-            self.vy = 0.0
+            self.body.vx = 0.0
+            self.body.vy = 0.0
 
         # обновляем позицию
-        self.body.rect.x += self.vx * dt
-        self.body.rect.y += self.vy * dt
+        self.body.rect.x += self.body.vx * dt
+        self.body.rect.y += self.body.vy * dt
 
         # нормализуем vx к диапазону [-1, 1] и умножаем на макс. угол
-        tilt_ratio = self.vx / config.PLAYER_MAX_SPEED
+        tilt_ratio = self.body.vx / config.PLAYER_MAX_SPEED
         target_tilt = tilt_ratio * config.PLAYER_TILT_MAX_ANGLE
 
         # плавная интерполяция

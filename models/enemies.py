@@ -75,8 +75,6 @@ class BookWorm(Enemy):
 
         self.acceleration = 2500
         self.friction = config.FRICTION * 10
-        self.vx = 0.0
-        self.vy = 0.0
         self.next_point = Vector2(self.rect.center)
 
         self._repath_cooldown = 0.3
@@ -92,7 +90,8 @@ class BookWorm(Enemy):
         if self._repath_timer <= 0:
             self._repath_timer = self._repath_cooldown
             self.pathfinder.search_path(Vector2(self.rect.center), Vector2(state.player.rect.center), active_room)
-            self.next_point = self.pathfinder.path_points[0]
+            if self.pathfinder.path_points:
+                self.next_point = self.pathfinder.path_points[0]
 
             # debug рендер
             for i, point in enumerate(self.pathfinder.path_points):
@@ -144,25 +143,25 @@ class BookWorm(Enemy):
             ax = ay = 0.0
             # применяем трение
             damping = math.exp(-self.friction * dt)
-            self.vx *= damping
-            self.vy *= damping
+            self.body.vx *= damping
+            self.body.vy *= damping
 
         # интегрируем ускорение в скорость
-        self.vx += ax * dt
-        self.vy += ay * dt
+        self.body.vx += ax * dt
+        self.body.vy += ay * dt
 
         # ограничиваем максимальную скорость
-        current_speed = math.hypot(self.vx, self.vy)
+        current_speed = self.body.velocity.magnitude()
         if current_speed > self.max_speed:
             scale = self.max_speed / current_speed
-            self.vx *= scale
-            self.vy *= scale
+            self.body.vx *= scale
+            self.body.vy *= scale
 
         # защита от дрейфа
         if current_speed < 2.0:
-            self.vx = 0.0
-            self.vy = 0.0
+            self.body.vx = 0.0
+            self.body.vy = 0.0
 
         # обновляем позицию
-        self.body.rect.x += self.vx * dt
-        self.body.rect.y += self.vy * dt
+        self.body.rect.x += self.body.vx * dt
+        self.body.rect.y += self.body.vy * dt
