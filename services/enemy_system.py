@@ -22,19 +22,6 @@ class EnemySystem:
 
             enemy.update(dt, state, active_room, surface)
 
-            # self._try_attack(enemy, state.player)
-
-        # Очистка (DRY)
+        # очистка мертвяков
         for e in dead:
             self.enemies.remove(e)
-
-
-    def _try_attack(self, enemy: Enemy, player: Player) -> None:
-        dx = enemy.rect.centerx - player.rect.centerx
-        dy = enemy.rect.centery - player.rect.centery
-        dist = (dx*dx + dy*dy) ** 0.5
-
-        if dist < enemy.attack_range + config.PLAYER_SIZE / 2:
-            if enemy.can_attack():
-                player.hp = max(0, player.hp - enemy.attack_damage)
-                enemy.reset_attack_cooldown()

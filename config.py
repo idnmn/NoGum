@@ -26,6 +26,9 @@ PLAYER_DASH_SPEED: float = 2000.0  # Скорость во время рывка
 PLAYER_DASH_DURATION: float = 0.15  # Длительность
 PLAYER_DASH_COOLDOWN: float = 5.0  # Кд между рывками
 
+# баланс
+LEVEL_COEF = 1.02 # коэффициент увеличения стат мобов в зависимости от уровня
+
 # --- ЦВЕТА ---
 BACKGROUND_COLOR: tuple[int, int, int] = (30, 30, 30)
 
@@ -60,7 +63,7 @@ UI_DASH_HIDE_DELAY: float = 1.0
 
 CAMERA_LERP_SPEED = 1.7 # Скорость движения камеры
 
-DRAW_PATH = True # debug отрисовщик для pathfinder'а
+DRAW_PATH = False # debug отрисовщик для pathfinder'а
 
 # Mini-Map
 MINIMAP_WIDTH: int = 400
@@ -71,12 +74,12 @@ MINIMAP_PLAYER_COLOR: tuple[int, int, int] = (165, 175, 60)
 MINIMAP_BORDER_COLOR: tuple[int, int, int] = (40, 40, 40)
 
 MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
-                                            (150, 80, 50), # 1 seed
+                                            (150, 80, 50),  # 1 seed
                                             (145, 50, 100), # 2
                                             (70, 100, 100), # 3
-                                            (100, 90, 55), # 4
+                                            (100, 90, 55),  # 4
                                             (105, 55, 105), # 5
-                                            (50, 90, 60)  # 6
+                                            (50, 90, 60)    # 6
                                           ]
 MINIMAP_EXPLORED: bool = False # отладочная функция для открытия всей миникарты сразу
 
@@ -86,7 +89,7 @@ ASSETS_DIR: str = "assets"
 # --- ОРУЖИЕ И UI ---
 WEAPON_UI_KEY: int = pygame.K_i
 
-# 🎯 Эффекты попаданий
+# Эффекты попаданий
 WALL_IMPACT_PARTICLE_COUNT: int = 4
 ENEMY_IMPACT_PARTICLE_COUNT: int = 10
 IMPACT_PARTICLE_SPEED: float = 300.0

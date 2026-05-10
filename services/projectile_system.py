@@ -46,8 +46,8 @@ class ProjectileSystem:
             for enemy in enemies:
                 if p.rect.colliderect(enemy.body.rect):
                     p.is_active = False
-                    self._on_enemy_impact((p.rect.centerx, p.rect.centery), enemy)
-                    enemy.take_damage(p.damage)
+                    if enemy.take_damage(p.damage):
+                        self._on_enemy_impact((p.rect.centerx, p.rect.centery), enemy)
                     break
 
         # очистка неактивных снарядов

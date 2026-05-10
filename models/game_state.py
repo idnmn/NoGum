@@ -12,3 +12,5 @@ class GameState:
     is_paused: bool = False
     is_upgrade_ui_open: bool = False
     weapon: Weapon | None = None
+    level_number: int = 0
+    spawn_score: int = 5

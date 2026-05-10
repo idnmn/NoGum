@@ -21,12 +21,3 @@ class WeaponSystem:
             self._fire_cooldown_timer = 1.0 / weapon.fire_rate
             return True
         return False
-
-    # возвращает прогресс кд
-    def get_cooldown_ratio(self, weapon: Weapon) -> float:
-        if weapon.fire_rate <= 0:
-            return 1.0
-        max_cd = 1.0 / weapon.fire_rate
-        if self._fire_cooldown_timer <= 0:
-            return 1.0
-        return 1.0 - (self._fire_cooldown_timer / max_cd)

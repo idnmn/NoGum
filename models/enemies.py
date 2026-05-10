@@ -30,6 +30,7 @@ class Enemy(Renderable):
 
         self.type = enemy_type
         self.hp = 0.0
+        self.defence = 0.0
         self.max_speed = 0.0
         self.attack_damage = 0.0
         self.attack_range = 0.0
@@ -41,6 +42,9 @@ class Enemy(Renderable):
         self.pathfinder = Pathfinder()
         self._repath_cooldown = 0.0
         self._repath_timer = 0.0
+
+        self.damage_cooldown = 0.5
+        self._damage_timer = 0.0
 
     @property
     def rect(self) -> pygame.Rect:
@@ -56,41 +60,49 @@ class Enemy(Renderable):
         if self._state_timer > 0:
             self._state_timer -= dt
 
-    def take_damage(self, amount: float) -> None:
-        self.hp -= amount
+        if self._damage_timer > 0:
+            self._damage_timer -= dt
+
+    def take_damage(self, amount: float) -> bool:
+        damage = max(0, amount - self.defence)
+        self.hp -= damage
         if self.hp <= 0:
             self.is_alive = False
+
+        return damage
 
     def render(self, surface: pygame.Surface) -> None:
         pygame.draw.rect(surface, (255, 255, 255), self.body.rect)
 
 class BookWorm(Enemy):
-    def __init__(self, x: float, y: float, size: int, enemy_type: str = "bookworm") -> None:
+    def __init__(self, x: float, y: float, size: int, enemy_type: str = "bookworm", level: float = 1.0) -> None:
         super().__init__(x, y, size, enemy_type)
 
         # определяем статы
-        self.hp = 50
-        self.max_hp = 50
+        self.hp = 20 * level
+        self.max_hp = 20 * level
         self.max_speed = 600
+        self.defence = 0.0
         self.dash_speed = 2000
-        self.attack_damage = 10
-        self.contact_damage = 5
+        self.attack_damage = 20 * level * 0.5
+        self.contact_damage = 25 * level * 0.2
         self.attack_range = 200
         self.aggr_range = 1000
         self.impact_color = (255, 50, 50)
 
-        self.state: str = 'chase'  # chase, charge, dash, recover
+        self.state: str = 'recovery'  # chase, charge, dash, recovery
+        self._state_timer = 0.5
         self.dash_dir = Vector2(0)
-        self.pre_attack_cooldown = 0.5  # кд перед рывком
-        self.post_attack_cooldown = 0.2  # кд после рывка
-        self.between_dash_cooldown = 2.0 # кд между рывками
-        self.dash_duration = 0.2         # длительность рывка
+        self.pre_attack_cooldown = 0.5              # кд перед рывком
+        self.post_attack_cooldown = 0.2             # кд после рывка
+        self.between_dash_cooldown = 2.0 / level    # кд между рывками
+        self.dash_duration = 0.2                    # длительность рывка
 
         self.acceleration = 2500
         self.friction = config.FRICTION * 10
         self.next_point = Vector2(self.rect.center)
 
-        self._repath_cooldown = 0.3
+        self._repath_cooldown = 0.5
 
     def render(self, surface: pygame.Surface) -> None:
         # цветовая индикация состояния
@@ -130,7 +142,7 @@ class BookWorm(Enemy):
             if self._repath_timer <= 0:
                 self._repath_timer = self._repath_cooldown
                 self.pathfinder.search_path(Vector2(self.rect.center), Vector2(state.player.rect.center), active_room,
-                                            search_index=-1)
+                                            search_index=2)
                 if self.pathfinder.path_points:
                     self.next_point = self.pathfinder.path_points[0]
 
@@ -207,6 +219,10 @@ class BookWorm(Enemy):
         elif self.state == "dash":
             # сбрасываем рывок при контакте или по истечению таймера
             if self.attack_hitbox.colliderect(state.player.rect) or self._state_timer <= 0:
+                if self.attack_hitbox.colliderect(state.player.rect):
+                    state.player.take_damage(self.attack_damage)
+                    self._damage_timer = self.damage_cooldown
+
                 self.state = "recovery"
                 self._state_timer = self.post_attack_cooldown
                 self.body.vx = 0.0
@@ -217,10 +233,11 @@ class BookWorm(Enemy):
                 self.state = "chase"
                 self._state_timer = self.between_dash_cooldown
 
-        # наносим урон при столкновении
-        if self.attack_hitbox.colliderect(state.player.rect):
-            damage = self.contact_damage if self.state != 'dash' else self.attack_damage
-            state.player.take_damage(damage)
+        # контактный урон
+        if self.attack_hitbox.colliderect(state.player.rect) and self.state == "chase":
+            if self._damage_timer <= 0:
+                state.player.take_damage(self.contact_damage)
+                self._damage_timer = self.damage_cooldown
 
         # обновляем позицию
         self.body.rect.x += self.body.vx * dt

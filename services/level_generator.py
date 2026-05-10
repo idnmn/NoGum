@@ -111,13 +111,14 @@ class LevelGenerator:
             #  запоминаем стартовую комнату по исходным координатам
             if col == start_col and row == start_row:
                 room = Room("room layouts/L0", offset_x, offset_y, connections,
-                            wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite)
+                            wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite, waves_count=0)
                 room.is_explored = True
                 start_room_ref = room
             else:
                 layout_path = random.choice(self.layout_pool)
                 room = Room(layout_path, offset_x, offset_y, connections,
-                            wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite)
+                            wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite,
+                            waves_count=random.randint(1, 3))
             self.rooms.append(room)
 
         return self.rooms, start_room_ref

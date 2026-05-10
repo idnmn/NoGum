@@ -105,16 +105,18 @@ class GameEngine:
         self._room_manager.update_active_room(self._state.player)
 
         # начальный спавн (2 bookworm в стартовой комнате)
-        # if self._room_manager.start_room:
-        #     center = self._room_manager.start_room.bounds.center
-        #     spawn_area = pygame.Rect(center[0] - 120, center[1] - 120, 500, 300)
-        #     initial_enemies = []
-        #
-        #     for _ in range(3):
-        #         x = random.uniform(spawn_area.x + 52, spawn_area.right - 52)
-        #         y = random.uniform(spawn_area.y + 52, spawn_area.bottom - 52)
-        #         initial_enemies.append(self._spawner.spawn_bookworm(x, y))
-        #     self._enemy_system.enemies.extend(initial_enemies)
+        # if self._room_manager.active_room:
+        #     enemies = self._spawner.spawn_in_room(self._room_manager.active_room, self._state)
+        #     self._enemy_system.enemies.extend(enemies)
+            # center = self._room_manager.start_room.bounds.center
+            # spawn_area = pygame.Rect(center[0] - 120, center[1] - 120, 500, 300)
+            # initial_enemies = []
+            #
+            # for _ in range(3):
+            #     x = random.uniform(spawn_area.x + 52, spawn_area.right - 52)
+            #     y = random.uniform(spawn_area.y + 52, spawn_area.bottom - 52)
+            #     initial_enemies.append(self._spawner.spawn_bookworm(x, y))
+            # self._enemy_system.enemies.extend(initial_enemies)
 
 
     def run(self) -> None:
@@ -166,6 +168,13 @@ class GameEngine:
                     self._room_manager.prev_active_room.bounds.center,
                     self._room_manager.active_room.bounds.center
                 )
+            self._room_manager.active_room.update_room_state(not bool(self._enemy_system.enemies))
+
+            # респавним мобов при необходимости
+            if self._room_manager.active_room.waves_count != 0 and not self._enemy_system.enemies:
+                enemies = self._spawner.spawn_in_room(self._room_manager.active_room, self._state)
+                self._enemy_system.enemies.extend(enemies)
+                self._room_manager.active_room.waves_count -= 1
 
             # обновляем камеру
             self._camera.update(dt)
@@ -196,7 +205,7 @@ class GameEngine:
 
             if self._input.spawn:
                 cords = self._input.spawn_pos + self._room_manager.active_room.offset
-                self._enemy_system.enemies.append(self._spawner.spawn_bookworm(*cords))
+                self._enemy_system.enemies.append(self._spawner.spawn_bookworm(*cords, 1.05 ** self._state.level_number))
                 self._input.spawn = False
 
         pygame.quit()
