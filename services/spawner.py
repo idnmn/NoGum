@@ -6,7 +6,13 @@ from models.enemies import *
 
 class Spawner:
     def spawn_bookworm(self, x: float, y: float) -> Enemy:
-        return BookWorm(x, y, size=32, enemy_type='bookworm')
+        bookworm = BookWorm(
+            x=x,
+            y=y,
+            size=int(random.uniform(25, 40))
+        )
+
+        return bookworm
 
     # def spawn_in_area(self, area: pygame.Rect, count: int, enemy: Enemy) -> list[Enemy]:
     #     margin = 20

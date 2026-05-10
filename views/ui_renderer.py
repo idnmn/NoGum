@@ -148,7 +148,7 @@ class UIRenderer:
         pygame.draw.rect(self._screen, config.UI_HP_BG_COLOR, (x, y, w, h))
         pygame.draw.rect(self._screen, config.UI_HP_COLOR, (x, y, int(w * player.hp_ratio), h))
 
-        text_surf = self._font.render(f"{player.current_hp}/{player.max_hp}", True, config.UI_TEXT_COLOR)
+        text_surf = self._font.render(f"{player.hp}/{player.max_hp}", True, config.UI_TEXT_COLOR)
         self._screen.blit(text_surf, (x + 10, y + 2))
 
     # индикатор зарядки рывка

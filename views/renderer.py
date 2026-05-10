@@ -68,8 +68,6 @@ class Renderer:
         # рендерим inworld часть ui
         self._ui_renderer.render_in_world(state, self.world_surface)
 
-        # projectile_system.render(self.world_surface, (0, 0))
-
         # вычисляем координаты вьюпорта
         view_x = int(camera.position.x + camera.shake_offset.x - config.INTERNAL_WIDTH / 2)
         view_y = int(camera.position.y + camera.shake_offset.y - config.INTERNAL_HEIGHT / 2)
@@ -87,7 +85,8 @@ class Renderer:
         self._screen.blit(scaled_view, (0, 0))
 
         # дебаг отрисовка
-        self._screen.blit(self.debug_surface, (0, 0))
+        if config.DRAW_PATH:
+            self._screen.blit(self.debug_surface, (0, 0))
 
         # рендерим outworld часть ui
         self._ui_renderer.render_out_world(state)

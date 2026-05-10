@@ -28,8 +28,14 @@ class Player(Renderable):
         self.dash_cooldown = config.PLAYER_DASH_COOLDOWN
         self._max_dash_cooldown = self.dash_cooldown
         self.dash_duration = config.PLAYER_DASH_DURATION
-        self.current_hp = config.UI_HP_MAX
+        self.hp = config.UI_HP_MAX
         self.max_hp = config.UI_HP_MAX
+
+
+        self.immunity_duration = 0.5
+        self._immunity_timer = 0.0
+        self.in_immunity = False
+        self.is_alive = True
 
         self.visual_offset_y = -config.PLAYER_SIZE // 2
 
@@ -103,9 +109,17 @@ class Player(Renderable):
         # обновляем таймер для кд
         if self._dash_cooldown_timer > 0:
             self._dash_cooldown_timer -= dt
+
         # обновляем таймер для ui
         if self._dash_ui_timer > 0:
             self._dash_ui_timer -= dt
+
+        # обновляем таймер неуязвимости
+        if self._immunity_timer > 0:
+            self._immunity_timer -= dt
+        if self._immunity_timer <= 0:
+            self.in_immunity = False
+
 
         # делаем рывок (коли можем)
         if dash_requested and self._dash_cooldown_timer <= 0 and (dx != 0 or dy != 0):
@@ -164,9 +178,17 @@ class Player(Renderable):
         self.current_tilt = max(-config.PLAYER_TILT_MAX_ANGLE,
                                 min(config.PLAYER_TILT_MAX_ANGLE, self.current_tilt))
 
+    def take_damage(self, amount: float) -> None:
+        if not self.in_immunity:
+            self.in_immunity = True
+            self._immunity_timer = self.immunity_duration
+            self.hp -= amount
+            if self.hp <= 0:
+                self.is_alive = False
+
     @property
     def hp_ratio(self) -> float:
-        return max(0.0, min(1.0, self.current_hp / self.max_hp))
+        return max(0.0, min(1.0, self.hp / self.max_hp))
 
     @property
     def dash_cooldown_ratio(self) -> float:

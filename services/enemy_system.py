@@ -20,7 +20,6 @@ class EnemySystem:
                 dead.append(enemy)
                 continue
 
-            enemy.update_timers(dt)
             enemy.update(dt, state, active_room, surface)
 
             # self._try_attack(enemy, state.player)
@@ -37,5 +36,5 @@ class EnemySystem:
 
         if dist < enemy.attack_range + config.PLAYER_SIZE / 2:
             if enemy.can_attack():
-                player.current_hp = max(0, player.current_hp - enemy.attack_damage)
+                player.hp = max(0, player.hp - enemy.attack_damage)
                 enemy.reset_attack_cooldown()
