@@ -124,7 +124,7 @@ class UIRenderer:
 
     # отрисовщик out-world составляющкей
     def render_out_world(self, state: GameState) -> None:
-        self._draw_hp_bar(state.player)
+        self._draw_hp_bar(state)
 
         if self._state.is_minimap_visible:
             self._map_renderer.render()
@@ -140,16 +140,30 @@ class UIRenderer:
             self._draw_upgrade_panel(state.weapon)
 
     # полоска хп игрока
-    def _draw_hp_bar(self, player: Player) -> None:
+    def _draw_hp_bar(self, state: GameState) -> None:
         # фиксирован в левом верхнем углу
         x, y = 20, 20
-        w, h = config.UI_HP_BAR_WIDTH, config.UI_HP_BAR_HEIGHT
+        h, w = config.UI_HP_BAR_HEIGHT, config.UI_HP_BAR_WIDTH
 
-        pygame.draw.rect(self._screen, config.UI_HP_BG_COLOR, (x, y, w, h))
-        pygame.draw.rect(self._screen, config.UI_HP_COLOR, (x, y, int(w * player.hp_ratio), h))
+        # подложка
+        bar_back = pygame.transform.scale(state.assets['hp_bar_back'], (w, h))
+        # передник
+        bar_top = pygame.transform.scale(state.assets['hp_bar_top'], (w, h))
+        # заполнение
+        bar_fill = pygame.transform.scale(state.assets['hp_bar_fill'],
+                                          (int((307 / 558) * w * state.player.hp_ratio),
+                                           int((121 / 200) * h)))
+        fill_offset_x = int((225 / 558) * w)
+        fill_offset_y = int((53 / 200) * h)
 
-        text_surf = self._font.render(f"{player.hp}/{player.max_hp}", True, config.UI_TEXT_COLOR)
-        self._screen.blit(text_surf, (x + 10, y + 22))
+        self._screen.blit(bar_back, (x, y))
+        self._screen.blit(bar_fill, (x + fill_offset_x, y + fill_offset_y))
+        self._screen.blit(bar_top, (x, y))
+
+        text_surf = self._font.render(f"{state.player.hp}/{state.player.max_hp}",
+                                      True, config.UI_TEXT_COLOR)
+        self._screen.blit(text_surf, (x + fill_offset_x,
+                                      y + fill_offset_y + bar_fill.get_height() + 10))
 
     # индикатор зарядки рывка
     def _draw_dash_indicator(self, player: Player, world_surface: pygame.Surface) -> None:

@@ -253,6 +253,13 @@ class GameEngine:
         self._state.assets['bookworm_sprite'] = assets_manager.load_sprite("bookworm.png",
                                                                            (40, 30))
 
+        self._state.assets['hp_bar_back'] = assets_manager.load_sprite("hp_bar_back.png",
+                                                                       (140, 50))
+        self._state.assets['hp_bar_top'] = assets_manager.load_sprite("hp_bar_top.png",
+                                                                       (140, 50))
+        self._state.assets['hp_bar_fill'] = assets_manager.load_sprite("hp_bar_fill.png",
+                                                                       (1, 50))
+
     def _on_wall_impact(self, pos: tuple[float, float]) -> None:
         distance = Vector2((self._state.player.rect.centerx - pos[0],
                             self._state.player.rect.centery - pos[1])).magnitude()

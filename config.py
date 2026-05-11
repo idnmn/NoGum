@@ -6,7 +6,7 @@ INTERNAL_WIDTH: int = 1248
 INTERNAL_HEIGHT: int = 720
 
 # --- НАСТРОЙКИ ОКНА ---
-FPS: int = 144
+FPS: int = 500
 WINDOW_TITLE: str = "NoGum!"
 
 # Режим отображения:
@@ -49,7 +49,7 @@ MAX_ROOMS: int = 12  # Лимит комнат для завершения ге�
 # --- UI КОНСТАНТЫ ---
 UI_HP_MAX: int = 100
 UI_HP_BAR_WIDTH: int = 200
-UI_HP_BAR_HEIGHT: int = 24
+UI_HP_BAR_HEIGHT: int = 50
 UI_HP_COLOR: tuple[int, int, int] = (255, 255, 40)
 UI_HP_BG_COLOR: tuple[int, int, int] = (45, 45, 20)
 UI_TEXT_COLOR: tuple[int, int, int] = (255, 255, 255)

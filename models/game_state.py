@@ -15,7 +15,7 @@ class GameState:
     is_upgrade_ui_open: bool = False
     weapon: Weapon | None = None
     level_number: int = 0
-    spawn_score: int = 5
+    spawn_score: int = 3
 
     # системы
     particle_system = None
