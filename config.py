@@ -50,8 +50,8 @@ MAX_ROOMS: int = 12  # Лимит комнат для завершения ге�
 UI_HP_MAX: int = 100
 UI_HP_BAR_WIDTH: int = 200
 UI_HP_BAR_HEIGHT: int = 24
-UI_HP_COLOR: tuple[int, int, int] = (220, 50, 50)
-UI_HP_BG_COLOR: tuple[int, int, int] = (60, 20, 20)
+UI_HP_COLOR: tuple[int, int, int] = (255, 255, 40)
+UI_HP_BG_COLOR: tuple[int, int, int] = (45, 45, 20)
 UI_TEXT_COLOR: tuple[int, int, int] = (255, 255, 255)
 
 UI_DASH_BAR_WIDTH: int = 30
@@ -95,5 +95,5 @@ ENEMY_IMPACT_PARTICLE_COUNT: int = 10
 IMPACT_PARTICLE_SPEED: float = 300.0
 IMPACT_PARTICLE_LIFETIME: float = 0.3
 IMPACT_SHAKE_AMOUNT: float = 1.5
-IMPACT_SHAKE_DURATION: float = 0.12
+IMPACT_SHAKE_DURATION: float = 0.04
 IMPACT_HIT_PAUSE_FRAMES: int = 20

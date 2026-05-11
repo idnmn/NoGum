@@ -23,3 +23,4 @@ class GameState:
     decals_system = None
     projectile_system = None
     assets = dict()
+    camera = None

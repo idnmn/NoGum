@@ -1,19 +1,25 @@
 import math
 import pygame
+from pygame import Vector2
+
 import config
 from models.collidable import CollisionBody
 from models.renderable import Renderable
 from models.weapons import Weapon
+from models.decal import Decal
+from services.decal_system import DecalSystem
 
 
 class Player(Renderable):
-    def __init__(self, x: float, y: float, sprite: pygame.Surface) -> None:
+    def __init__(self, x: float, y: float, sprite: pygame.Surface, step_sprite: pygame.Surface) -> None:
         self.body = CollisionBody(
             rect=pygame.Rect(x, y, config.PLAYER_SIZE, config.PLAYER_SIZE),
             layer="dynamic",
             tags={"player"}
         )
+        self.source_sprite = sprite
         self.sprite = sprite
+        self.step_sprite = step_sprite
 
         # состояние рывка (таймеры)
         self._dash_timer: float = 0.0
@@ -36,10 +42,16 @@ class Player(Renderable):
         self.visual_offset_y = -config.PLAYER_SIZE // 2
 
         self.current_tilt = 0.0
+        self.step_offset = False
+        self.step_cooldown = 0.07
+        self._step_timer = 0.0
 
         self.weapon: Weapon | None = None
         self.mouse_world_pos = pygame.Vector2(x, y)
         self.facing_right = True
+
+        self._visual_damage_cooldown = 0.2
+        self._visual_damage_timer = -1.0
 
     def set_mouse_pos(self, pos: tuple[float, float]) -> None:
         self.mouse_world_pos.update(pos)
@@ -95,7 +107,37 @@ class Player(Renderable):
         wy = self.rect.centery - rotated.get_height() / 2 + self.weapon.offset_y
         surface.blit(rotated, (wx, wy))
 
-    def update(self, dx: float, dy: float, dt: float, dash_requested: bool) -> None:
+    # Отрисовка шагов
+    def _draw_step(self, decals_system: DecalSystem) -> None:
+        offset_x, offset_y = 0, 0
+        if self.body.vx:
+            if self.step_offset:
+                offset_y = 15
+            else:
+                offset_y = 0
+        if self.body.vy:
+            if self.step_offset:
+                offset_x = 15
+            else:
+                offset_x = 0
+        elif self.body.vx == 0 and self.body.vy == 0:
+            return
+        offset = Vector2(offset_x, offset_y) + Vector2(10, 10)
+        self.step_offset = not self.step_offset
+
+        step = Decal(
+            pos=Vector2(self.rect.x, self.rect.y) + offset,
+            lifetime=1.5,
+            size_x=12,
+            size_y=12,
+            sprite=self.step_sprite,
+            fade_time=0.5,
+            max_alpha=150
+        )
+
+        decals_system.decals.append(step)
+
+    def update(self, dx: float, dy: float, dt: float, dash_requested: bool, decals_system: DecalSystem) -> None:
         """
         dx, dy: Направление ввода
         dt: Delta time в секундах
@@ -109,6 +151,18 @@ class Player(Renderable):
         # обновляем таймер для ui
         if self._dash_ui_timer > 0:
             self._dash_ui_timer -= dt
+
+        # обновляем таймер шагов
+        if self._step_timer > 0:
+            self._step_timer -= dt
+
+        # обновляем таймер визуализации урона
+        if self._visual_damage_timer > 0:
+            self.sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGB_ADD)
+            self._visual_damage_timer -= dt
+
+        if self._visual_damage_timer <= 0:
+            self.sprite = self.source_sprite.copy()
 
         # делаем рывок (коли можем)
         if dash_requested and self._dash_cooldown_timer <= 0 and (dx != 0 or dy != 0):
@@ -156,6 +210,11 @@ class Player(Renderable):
         self.body.rect.x += self.body.vx * dt
         self.body.rect.y += self.body.vy * dt
 
+        # рисуем следы
+        if self._step_timer <= 0:
+            self._draw_step(decals_system)
+            self._step_timer = self.step_cooldown
+
         # нормализуем vx к диапазону [-1, 1] и умножаем на макс. угол
         tilt_ratio = self.body.vx / config.PLAYER_MAX_SPEED
         target_tilt = tilt_ratio * config.PLAYER_TILT_MAX_ANGLE
@@ -163,12 +222,14 @@ class Player(Renderable):
         # плавная интерполяция
         self.current_tilt += (target_tilt - self.current_tilt) * config.PLAYER_TILT_SMOOTHING * dt
 
-        # ограничиваем диапазон
+        # ограничиваем диапазон наклона
         self.current_tilt = max(-config.PLAYER_TILT_MAX_ANGLE,
                                 min(config.PLAYER_TILT_MAX_ANGLE, self.current_tilt))
 
     def take_damage(self, amount: float) -> None:
         self.hp -= int(amount)
+        self._visual_damage_timer = self._visual_damage_cooldown
+        self.sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)
         if self.hp <= 0:
             self.is_alive = False
 

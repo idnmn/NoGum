@@ -251,11 +251,12 @@ class BookWorm(Enemy):
         random_size = random.randint(-3, 5)
         decal = Decal(
             pos=Vector2(self.body.rect.center),
-            lifetime=-1,
+            lifetime=15,
             size_x=self.body.rect.width + random_size,
             size_y=self.body.rect.height + random_size,
             angle= random.uniform(0, 360),
             sprite=state.assets['hit_decal'],
+            fade_time=1,
             max_alpha=150,
         )
 

@@ -20,12 +20,16 @@ class Renderer:
         # поверхность, на которой рисуется весь мир в абсолютных координатах
         self.world_surface = pygame.Surface((world_bounds.width, world_bounds.height), pygame.SRCALPHA)
 
+        # поверхность для отрисовки теней
+        self.shadow_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+
         # буфер для финального кадра перед масштабированием
         self._viewport_buffer = pygame.Surface((config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT))
 
     def render(self, state: GameState, room_manager: RoomManager, camera: Camera) -> None:
         # очищаем экран
         self.world_surface.fill(config.BACKGROUND_COLOR)
+        self.shadow_surface.fill((0, 0, 0, 0))
 
         # очередь рендера
         render_queue = []
@@ -40,7 +44,7 @@ class Renderer:
 
         # отрисовываем полы вне очереди
         for room in rooms_to_draw:
-            self.world_surface.blit(room.floor_surface, (room.offset.x, room.offset.y))
+            self.world_surface.blit(room.floor_surface, (room.offset.x, room.offset.y - config.TILE_SIZE))
 
         # рендерим декали
         for decal in state.decals_system.decals:
@@ -50,6 +54,12 @@ class Renderer:
         for decal in decals_queue:
             decal.render(self.world_surface)
 
+        # рендерим тени
+        for shadow in state.decals_system.shadows:
+            shadow.render(self.shadow_surface, room_manager.active_room.offset)
+        self.world_surface.blit(self.shadow_surface, room_manager.active_room.offset)
+
+        # добавляем стены в очередь
         for room in rooms_to_draw:
             render_queue.extend(room.walls)
 
@@ -87,7 +97,6 @@ class Renderer:
 
         # масштабируем под размер экрана
         scaled_view = pygame.transform.scale(visible_chunk, self._screen.get_size())
-
 
         # выводим на экран
         self._screen.blit(scaled_view, (0, 0))

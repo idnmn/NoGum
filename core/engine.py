@@ -66,10 +66,10 @@ class GameEngine:
         self._state.decals_system = DecalSystem()
         self._spawner = Spawner()
 
-        self._camera = Camera()
-        self._camera.position = pygame.Vector2(spawn_center)
-        self._camera.curr_center = self._camera.position.copy()
-        self._camera.prev_center = self._camera.position.copy()
+        self._state.camera = Camera()
+        self._state.camera.position = pygame.Vector2(spawn_center)
+        self._state.camera.curr_center = self._state.camera.position.copy()
+        self._state.camera.prev_center = self._state.camera.position.copy()
 
         # определяем точку спавна
         if self._room_manager.start_room:
@@ -78,20 +78,21 @@ class GameEngine:
             self._state.player = Player(
                 x=spawn_center[0] - config.PLAYER_SIZE / 2,
                 y=spawn_center[1] - config.PLAYER_SIZE / 2,
-                sprite=self._state.assets['player_sprite']
+                sprite=self._state.assets['player_sprite'],
+                step_sprite=self._state.assets['player_step_sprite'],
             )
 
             # kамера тоже стартует с центра стартовой комнаты
-            self._camera.position = pygame.Vector2(spawn_center)
-            self._camera.curr_center = self._camera.position.copy()
-            self._camera.prev_center = self._camera.position.copy()
+            self._state.camera.position = pygame.Vector2(spawn_center) + Vector2(0, -20)
+            self._state.camera.curr_center = self._state.camera.position.copy() + Vector2(0, -20)
+            self._state.camera.prev_center = self._state.camera.position.copy() + Vector2(0, -20)
         else:
             # Fallback на случай ошибки генерации
             self._state.player = Player(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2,
                                         self._state.assets['player_sprite'])
-            self._camera.position = pygame.Vector2(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2)
-            self._camera.curr_center = self._camera.position.copy()
-            self._camera.prev_center = self._camera.position.copy()
+            self._state.camera.position = pygame.Vector2(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2 - 20)
+            self._state.camera.curr_center = self._state.camera.position.copy()
+            self._state.camera.prev_center = self._state.camera.position.copy()
 
         # рендереры
         self._map_renderer = MinimapRenderer(self._screen, self._state, self._room_manager)
@@ -146,7 +147,12 @@ class GameEngine:
                     direction = self._input.get_move_direction()  # Вектор направления игрока
 
                     #  обновляем игрока
-                    self._state.player.update(dx=direction[0], dy=direction[1], dt=dt, dash_requested=dash_input)
+                    self._state.player.update(dx=direction[0], dy=direction[1], dt=dt,
+                                              dash_requested=dash_input, decals_system=self._state.decals_system)
+
+                    # общий список сущностей
+                    entities = ([enemy.body for enemy in self._state.enemy_system.enemies] +
+                                [self._state.player.body])
 
                     # Обновляем системы
                     self._state.projectile_system.update(dt, self._room_manager, self._state.enemy_system.enemies)
@@ -154,58 +160,58 @@ class GameEngine:
                     self._state.enemy_system.update(dt, self._state, self._room_manager.active_room,
                                               self._renderer.debug_surface)
                     self._state.decals_system.update(dt)
+                    self._state.decals_system.update_shadows(entities)
 
                     # вычисляем координаты мыши для игрока
-                    cam_off_x = self._camera.position.x - config.INTERNAL_WIDTH / 2
-                    cam_off_y = self._camera.position.y - config.INTERNAL_HEIGHT / 2
+                    cam_off_x = self._state.camera.position.x - config.INTERNAL_WIDTH / 2
+                    cam_off_y = self._state.camera.position.y - config.INTERNAL_HEIGHT / 2
                     mouse_screen = pygame.mouse.get_pos()
                     world_mouse = (mouse_screen[0] + cam_off_x, mouse_screen[1] + cam_off_y)
                     self._state.player.set_mouse_pos(world_mouse)
 
+                    # обновляем активную комнату
+                    new_room = self._room_manager.update_active_room(self._state.player)
+                    if self._room_manager.active_room != new_room:
+                        self._room_manager.prev_active_room = self._room_manager.active_room
+                        self._room_manager.active_room = new_room
+                        self._state.camera.start_transition(
+                            self._room_manager.prev_active_room.bounds.center + Vector2(0, -20),
+                            self._room_manager.active_room.bounds.center + Vector2(0, -20)
+                        )
+                    self._room_manager.active_room.update_room_state(not bool(self._state.enemy_system.enemies),
+                                                                     self._state.camera)
 
-            # обновляем активную комнату
-            new_room = self._room_manager.update_active_room(self._state.player)
-            if self._room_manager.active_room != new_room:
-                self._room_manager.prev_active_room = self._room_manager.active_room
-                self._room_manager.active_room = new_room
-                self._camera.start_transition(
-                    self._room_manager.prev_active_room.bounds.center,
-                    self._room_manager.active_room.bounds.center
-                )
-            self._room_manager.active_room.update_room_state(not bool(self._state.enemy_system.enemies))
+                    # респавним мобов при необходимости
+                    if self._room_manager.active_room.waves_count != 0 and not self._state.enemy_system.enemies:
+                        enemies = self._spawner.spawn_in_room(self._room_manager.active_room, self._state)
+                        self._state.enemy_system.enemies.extend(enemies)
+                        self._room_manager.active_room.waves_count -= 1
 
-            # респавним мобов при необходимости
-            if self._room_manager.active_room.waves_count != 0 and not self._state.enemy_system.enemies:
-                enemies = self._spawner.spawn_in_room(self._room_manager.active_room, self._state)
-                self._state.enemy_system.enemies.extend(enemies)
-                self._room_manager.active_room.waves_count -= 1
+                    # обновляем камеру
+                    self._state.camera.update(dt)
 
-            # обновляем камеру
-            self._camera.update(dt)
-
-            # обновляем снаряды
-            self._state.projectile_system.update(dt, self._room_manager, self._state.enemy_system.enemies)
+                    # обновляем снаряды
+                    self._state.projectile_system.update(dt, self._room_manager, self._state.enemy_system.enemies)
 
 
-            # обрабатываем коллизию со стенами
-            if self._room_manager.active_room:
-                self._collision_system.resolve_obstacles(self._state.player.body, self._room_manager.active_room.walls)
+                    # обрабатываем коллизию со стенами
+                    if self._room_manager.active_room:
+                        self._collision_system.resolve_obstacles(self._state.player.body, self._room_manager.active_room.walls)
 
-                for enemy in self._state.enemy_system.enemies:
-                    self._collision_system.resolve_obstacles(enemy, self._room_manager.active_room.walls)
+                        for enemy in self._state.enemy_system.enemies:
+                            self._collision_system.resolve_obstacles(enemy, self._room_manager.active_room.walls)
 
-            # обрабатываем коллизию существ
-            entities = self._state.enemy_system.enemies + [self._state.player]
-            self._collision_system.resolve_movers(entities)
+                    # обрабатываем коллизию существ
+                    self._collision_system.resolve_movers(entities)
 
-            # обработка стрельбы
-            if self._state.weapon:
-                shot_fired = self._weapon_system.update(dt, self._state.weapon, self._input.is_shooting_requested())
-                if shot_fired:
-                    self._state.weapon.fire(self._state.projectile_system, self._state)
+                    # обработка стрельбы
+                    if self._state.weapon:
+                        shot_fired = self._weapon_system.update(dt, self._state.weapon, self._input.is_shooting_requested())
+                        if shot_fired:
+                            self._state.weapon.fire(self._state.projectile_system, self._state)
 
             # отрисовка
-            self._renderer.render(self._state, self._room_manager, self._camera)
+            self._renderer.render(self._state, self._room_manager, self._state.camera)
 
             if self._input.spawn:
                 cords = self._input.spawn_pos + self._room_manager.active_room.offset
@@ -233,6 +239,8 @@ class GameEngine:
 
         self._state.assets['hit_decal'] = assets_manager.load_sprite("splash.png",
                                                                      (75, 75))
+        self._state.assets['player_step_sprite'] = assets_manager.load_sprite("step.png",
+                                                                              (10, 10))
 
     def _on_wall_impact(self, pos: tuple[float, float]) -> None:
         distance = Vector2((self._state.player.rect.centerx - pos[0],
@@ -242,12 +250,12 @@ class GameEngine:
             ratio = 0
 
         self._state.particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
-        self._camera.shake(config.IMPACT_SHAKE_AMOUNT * ratio, config.IMPACT_SHAKE_DURATION)
+        self._state.camera.shake(config.IMPACT_SHAKE_AMOUNT * ratio, config.IMPACT_SHAKE_DURATION)
 
     def _on_enemy_impact(self, pos: tuple[float, float], enemy) -> None:
         self._state.particle_system.spawn_enemy_impact(pos, color=enemy.impact_color)
 
     def _on_player_impact(self, pos: tuple[float, float]) -> None:
-        self._particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
-        self._camera.shake(config.IMPACT_SHAKE_AMOUNT, config.IMPACT_SHAKE_DURATION)
+        self._state.particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
+        self._state.camera.shake(config.IMPACT_SHAKE_AMOUNT, config.IMPACT_SHAKE_DURATION)
         self._hit_pause_frames = config.IMPACT_HIT_PAUSE_FRAMES

@@ -149,7 +149,7 @@ class UIRenderer:
         pygame.draw.rect(self._screen, config.UI_HP_COLOR, (x, y, int(w * player.hp_ratio), h))
 
         text_surf = self._font.render(f"{player.hp}/{player.max_hp}", True, config.UI_TEXT_COLOR)
-        self._screen.blit(text_surf, (x + 10, y + 2))
+        self._screen.blit(text_surf, (x + 10, y + 22))
 
     # индикатор зарядки рывка
     def _draw_dash_indicator(self, player: Player, world_surface: pygame.Surface) -> None:
