@@ -176,20 +176,36 @@ class UIRenderer:
         width, height = self._screen.get_size()
 
         surf = self._font.render(weapon.name, True, (255, 255, 255))
-        x = width - surf.get_width() - 20
-        y = height - surf.get_height() - 20
+        surf_x = width - surf.get_width() - 20
+        surf_y = height - surf.get_height() - 20
 
         # подложка
-        hud_background = pygame.Surface((150, 80), pygame.SRCALPHA)
+        hud_background = pygame.Surface((150, 120), pygame.SRCALPHA)
         hud_background.fill((30, 30, 30, 200))
 
-        weapon_sprite = self._state.weapon.sprite
-        sprite_x = hud_background.get_rect().centerx - weapon_sprite.get_width() / 2 - 10
-        sprite_y = hud_background.get_rect().centery - weapon_sprite.get_height() / 2
+        # спрайт оружия
+        if not weapon.is_reloading:
+            weapon_sprite = self._state.weapon.sprite
+        else:
+            weapon_sprite = self._state.weapon.reload_sprite
+            weapon_sprite = pygame.transform.rotate(weapon_sprite, self._state.weapon.angle)
+        weapon_sprite_x = hud_background.get_rect().x + 20
+        weapon_sprite_y = hud_background.get_rect().y
 
-        self._screen.blit(hud_background, (width - 170, height - 100))
-        self._screen.blit(weapon_sprite, (width - 170 + sprite_x, height - 100 + sprite_y))
-        self._screen.blit(surf, (x, y))
+        # индикатор обоймы
+        indicator_sprite = pygame.transform.scale(self._state.assets["bullet_indicator"], (30, 30))
+        indicator_sprite_x = hud_background.get_rect().x + 5
+        indicator_sprite_y = hud_background.get_rect().y - 35
+        clip = self._font.render(f"{weapon.clip}/{weapon.clip_size}", True, (255, 255, 255))
+        clip_x = indicator_sprite.get_rect().right + 10
+        clip_y = indicator_sprite.get_rect().y - 35
+
+
+        self._screen.blit(hud_background, (width - 170, height - 140))
+        self._screen.blit(weapon_sprite, (width - 170 + weapon_sprite_x, height - 100 + weapon_sprite_y))
+        self._screen.blit(indicator_sprite, (width - 170 + indicator_sprite_x, height - 100 + indicator_sprite_y))
+        self._screen.blit(surf, (surf_x, surf_y))
+        self._screen.blit(clip, (width - 170 + clip_x, height - 100 + clip_y))
 
     # прицел
     def _draw_crosshair(self, sprite: pygame.Surface) -> None:
@@ -241,10 +257,19 @@ class UIRenderer:
             pygame.draw.rect(self._screen, (100, 100, 125), (knob_x - 9, slider["rect"].centery - 12, 19, 24))
             pygame.draw.rect(self._screen, (60, 60, 85), (knob_x - 7, slider["rect"].centery - 10, 15, 20))
 
-        stats_y = py + 380
+        # статы
+        stats_y = py + 340
         self._screen.blit(self._title_font.render("Stats:", True, (140, 140, 170)), (px + 20, stats_y))
         stats_y += 40
-        for label, val in [("Damage", f"{weapon.damage:.1f}"), ("Power", f"{weapon.power:.1f}")]:
+
+        texts = [
+            ("Damage", f"{weapon.damage:.1f}"),
+            ("Power", f"{weapon.power:.1f}"),
+            ("Clip size", f"{weapon.clip_size}"),
+            ("Reload time", f"{weapon.reload_cooldown:.1f}")
+        ]
+
+        for label, val in texts:
             self._screen.blit(self._small_font.render(f"{label}: {val}", True, (200, 200, 220)), (px + 20, stats_y))
             stats_y += 30
 

@@ -88,23 +88,41 @@ class Player(Renderable):
 
     # отрисовка оружия
     def _draw_weapon(self, surface: pygame.Surface) -> None:
-        dx = self.mouse_world_pos.x - self.rect.centerx
-        dy = self.mouse_world_pos.y - self.rect.centery
-        angle = math.degrees(math.atan2(dy, dx))
+        # обычное отображение
+        if not self.weapon.is_reloading:
+            dx = self.mouse_world_pos.x - self.rect.centerx
+            dy = self.mouse_world_pos.y - self.rect.centery
+            angle = math.degrees(math.atan2(dy, dx))
 
-        # зеркалирование
-        weapon_sprite = self.weapon.sprite
-        offset_x = self.weapon.offset_x
-        if not self.facing_right:
-            weapon_sprite = pygame.transform.flip(self.weapon.sprite, False, True)
-            offset_x = -offset_x
+            # зеркалирование
+            weapon_sprite = self.weapon.sprite
+            offset_x = self.weapon.offset_x
+            if not self.facing_right:
+                weapon_sprite = pygame.transform.flip(self.weapon.sprite, False, True)
+                offset_x = -offset_x
 
-        # вращаем спрайт оружия
-        rotated = pygame.transform.rotate(weapon_sprite, -angle)
+            # вращаем спрайт оружия
+            rotated = pygame.transform.rotate(weapon_sprite, -angle)
+
+
+        # анимация перезарядки
+        else:
+            self.weapon.angle += 20
+
+            # зеркалирование
+            weapon_sprite = self.weapon.reload_sprite
+            offset_x = self.weapon.offset_x
+            if not self.facing_right:
+                weapon_sprite = pygame.transform.flip(self.weapon.sprite, False, True)
+                offset_x = -offset_x
+
+            # вращаем спрайт оружия
+            rotated = pygame.transform.rotate(weapon_sprite, -self.weapon.angle)
 
         # позиционируем оружие
         wx = self.rect.centerx - rotated.get_width() / 2 + offset_x
         wy = self.rect.centery - rotated.get_height() / 2 + self.weapon.offset_y
+
         surface.blit(rotated, (wx, wy))
 
     # Отрисовка шагов

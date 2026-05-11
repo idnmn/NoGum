@@ -8,16 +8,23 @@ from models.projectile import *
 class Weapon:
     name: str = ''
     sprite: pygame.Surface | None = None
+    reload_sprite: pygame.Surface | None = None
     crosshair: pygame.Surface | None = None
     # Сдвиги для рендера
     offset_x: float = 0
     offset_y: float = 0
-    # modules: list[Module] = field(default_factory=list)  # ← Зарезервировано для будущего
+    angle: float = 0
+
+    is_reloading: bool = False
+    reload_timer = 0.0
+    reload_cooldown = 0.5
 
 class Pointer(Weapon):
-    def __init__(self, sprite: pygame.Surface | None = None, crosshair: pygame.Surface | None = None) -> None:
+    def __init__(self, sprite: pygame.Surface, reload_sprite: pygame.Surface,
+                 crosshair: pygame.Surface) -> None:
         super().__init__()
         self.sprite = sprite
+        self.reload_sprite = reload_sprite
         self.crosshair = crosshair
         self.name = 'Pointer'
         self.offset_x = 15
@@ -44,8 +51,11 @@ class Pointer(Weapon):
         self._speed_coef = 300.0
 
         self.power = 50
-        self._damag_coef = 1.0
+        self._damage_coef = 1.0
         self._calculate_max()
+
+        self.clip_size = 5
+        self.clip = 5
 
     def _calculate_max(self) -> None:
         self.max_bullet_speed = round(self.power / (self.min_bullet_size * self.min_fire_rate), 0)
@@ -135,7 +145,7 @@ class Pointer(Weapon):
 
     @property
     def damage(self) -> float:
-        return self.bullet_speed * self.bullet_size * self._damag_coef
+        return self.bullet_speed * self.bullet_size * self._damage_coef
 
     def fire(self, projectile_system, state) -> None:
         origin = pygame.Vector2(state.player.body.center)

@@ -102,6 +102,7 @@ class GameEngine:
 
         # инициализируем стартовое оружие
         self._state.weapon = Pointer(sprite=self._state.assets['pointer_sprite'],
+                                     reload_sprite=self._state.assets['pointer_reload'],
                                      crosshair=self._state.assets['pointer_crosshair'])
         if self._state.player:
             self._state.player.weapon = self._state.weapon
@@ -204,9 +205,11 @@ class GameEngine:
                     # обрабатываем коллизию существ
                     self._collision_system.resolve_movers(entities)
 
-                    # обработка стрельбы
+                    # обработка стрельбы и перезарядки
                     if self._state.weapon:
-                        shot_fired = self._weapon_system.update(dt, self._state.weapon, self._input.is_shooting_requested())
+                        shot_fired = self._weapon_system.update(dt, self._state.weapon,
+                                                                self._input.is_shooting_requested(),
+                                                                self._input.is_reload_requested())
                         if shot_fired:
                             self._state.weapon.fire(self._state.projectile_system, self._state)
 
@@ -234,8 +237,12 @@ class GameEngine:
 
         self._state.assets['pointer_sprite'] = assets_manager.load_sprite("pointer.png",
                                                                           (90, 60))
+        self._state.assets['pointer_reload'] = assets_manager.load_sprite("pointer_reload.png",
+                                                                          (90, 60))
         self._state.assets['pointer_crosshair'] = assets_manager.load_sprite("pointer_crosshair.png",
                                                                              (20, 20))
+        self._state.assets['bullet_indicator'] = assets_manager.load_sprite("bullet_indicator.png",
+                                                                            (40, 40))
 
         self._state.assets['hit_decal'] = assets_manager.load_sprite("splash.png",
                                                                      (75, 75))

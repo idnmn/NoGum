@@ -8,6 +8,7 @@ class InputHandler:
         self._state = state
         self._dash_requested: bool = False
         self._shoot_requested = False
+        self._reload_requested = False
 
         self.spawn = False
         self.spawn_pos = None
@@ -16,6 +17,7 @@ class InputHandler:
     def process_events(self, events) -> None:
         self._dash_requested = False
         self._shoot_requested = False
+        self._reload_requested = False
 
         for event in events:
             if event.type == pygame.QUIT:
@@ -35,6 +37,11 @@ class InputHandler:
                 elif event.key == config.WEAPON_UI_KEY: # меню оружия
                     self._state.is_upgrade_ui_open = True
                     self._state.is_paused = True
+
+                elif event.key == pygame.K_r and not self._state.is_paused:
+                    self._reload_requested = True
+
+
             # отжатия
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_TAB:  # миникарта
@@ -59,5 +66,8 @@ class InputHandler:
     def is_dash_requested(self) -> bool: # проверяем отработку рывка
         return self._dash_requested
 
-    def is_shooting_requested(self) -> bool:  # ← Новый метод
+    def is_shooting_requested(self) -> bool:  # проверка выстрела
         return self._shoot_requested
+
+    def is_reload_requested(self) -> bool:  # проверка перезарядки
+        return self._reload_requested
