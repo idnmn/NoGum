@@ -61,7 +61,7 @@ UI_DASH_BG_COLOR: tuple[int, int, int] = (50, 100, 70)
 UI_DASH_OFFSET_Y: float = 20.0
 UI_DASH_HIDE_DELAY: float = 1.0
 
-CAMERA_LERP_SPEED = 1.7 # Скорость движения камеры
+CAMERA_LERP_SPEED = 2.7 # Скорость движения камеры
 
 DRAW_PATH = False # debug отрисовщик для pathfinder'а
 

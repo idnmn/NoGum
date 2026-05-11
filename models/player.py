@@ -17,7 +17,7 @@ class Player(Renderable):
             layer="dynamic",
             tags={"player"}
         )
-        self.source_sprite = sprite
+        self._source_sprite = sprite
         self.sprite = sprite
         self.step_sprite = step_sprite
 
@@ -162,7 +162,7 @@ class Player(Renderable):
             self._visual_damage_timer -= dt
 
         if self._visual_damage_timer <= 0:
-            self.sprite = self.source_sprite.copy()
+            self.sprite = self._source_sprite.copy()
 
         # делаем рывок (коли можем)
         if dash_requested and self._dash_cooldown_timer <= 0 and (dx != 0 or dy != 0):

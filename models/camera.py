@@ -25,8 +25,8 @@ class Camera:
                 self.is_transitioning = False
                 self.position = self.curr_center.copy()
             else:
-                # ease-out cubic
-                t = 1.0 - (1.0 - self.progress) ** 3
+                # ease-in cubic
+                t = self.progress ** 2
                 self.position = self.prev_center.lerp(self.curr_center, t)
 
         if self.shake_timer > 0:

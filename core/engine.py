@@ -64,7 +64,7 @@ class GameEngine:
         self._state.particle_system = ParticleSystem()
         self._state.enemy_system = EnemySystem()
         self._state.decals_system = DecalSystem()
-        self._spawner = Spawner()
+        self._spawner = Spawner(self._state)
 
         self._state.camera = Camera()
         self._state.camera.position = pygame.Vector2(spawn_center)
@@ -215,7 +215,7 @@ class GameEngine:
 
             if self._input.spawn:
                 cords = self._input.spawn_pos + self._room_manager.active_room.offset
-                self._state.enemy_system.enemies.append(self._spawner.spawn_bookworm(*cords, 1.05 ** self._state.level_number))
+                self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number))
                 self._input.spawn = False
 
         pygame.quit()
@@ -241,6 +241,10 @@ class GameEngine:
                                                                      (75, 75))
         self._state.assets['player_step_sprite'] = assets_manager.load_sprite("step.png",
                                                                               (10, 10))
+        self._state.assets['bookworm_step_sprite'] = assets_manager.load_sprite("bookworm_step.png",
+                                                                              (10, 10))
+        self._state.assets['bookworm_sprite'] = assets_manager.load_sprite("bookworm.png",
+                                                                           (40, 30))
 
     def _on_wall_impact(self, pos: tuple[float, float]) -> None:
         distance = Vector2((self._state.player.rect.centerx - pos[0],
