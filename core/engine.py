@@ -14,6 +14,7 @@ from services.collision_system import CollisionSystem
 from services.decal_system import DecalSystem
 from services.enemy_system import EnemySystem
 from services.spawner import Spawner
+from services.terminal_system import TerminalSystem
 from services.weapon_system import WeaponSystem
 from services.projectile_system import ProjectileSystem
 from services.particle_system import ParticleSystem
@@ -49,7 +50,9 @@ class GameEngine:
 
         # инициализируем уровень ДО игрока чтобы взять координаты спавна
         self._room_manager = RoomManager(wall_sprite=self._state.assets['wall_sprite'],
-                                         floor_sprite=self._state.assets['floor_sprite'])
+                                         floor_sprite=self._state.assets['floor_sprite'],
+                                         terminal_sprites=[self._state.assets['terminal_sprite_active'],
+                                                           self._state.assets['terminal_sprite_inactive']])
         spawn_center = self._room_manager.active_room.bounds.center
 
         # инструменты и системы
@@ -64,6 +67,7 @@ class GameEngine:
         self._state.particle_system = ParticleSystem()
         self._state.enemy_system = EnemySystem()
         self._state.decals_system = DecalSystem()
+        self._state._terminal_system = TerminalSystem()
         self._spawner = Spawner(self._state)
 
         self._state.camera = Camera()
@@ -139,6 +143,7 @@ class GameEngine:
             else:
                 self._input.process_events(events)
 
+            # не на паузе
             if not self._state.is_paused:
                 # hit-pause логика
                 if self._hit_pause_frames > 0:
@@ -154,6 +159,9 @@ class GameEngine:
                     # общий список сущностей
                     entities = ([enemy.body for enemy in self._state.enemy_system.enemies] +
                                 [self._state.player.body])
+                    if self._room_manager.active_room.terminal:
+                        entities.append(self._room_manager.active_room.terminal.body)
+                        self._room_manager.update_terminals(self._state, dt)
 
                     # Обновляем системы
                     self._state.projectile_system.update(dt, self._room_manager, self._state.enemy_system.enemies)
@@ -195,12 +203,19 @@ class GameEngine:
                     self._state.projectile_system.update(dt, self._room_manager, self._state.enemy_system.enemies)
 
 
-                    # обрабатываем коллизию со стенами
+                    # обрабатываем коллизию со стенами и терминалами
                     if self._room_manager.active_room:
-                        self._collision_system.resolve_obstacles(self._state.player.body, self._room_manager.active_room.walls)
+                        self._collision_system.resolve_obstacles(self._state.player.body,
+                                                                 self._room_manager.active_room.walls)
+                        if self._room_manager.active_room.terminal:
+                            self._collision_system.resolve_obstacles(self._state.player.body,
+                                                                    [self._room_manager.active_room.terminal.body])
 
                         for enemy in self._state.enemy_system.enemies:
                             self._collision_system.resolve_obstacles(enemy, self._room_manager.active_room.walls)
+                            if self._room_manager.active_room.terminal:
+                                self._collision_system.resolve_obstacles(enemy,
+                                                                        [self._room_manager.active_room.terminal.body])
 
                     # обрабатываем коллизию существ
                     self._collision_system.resolve_movers(entities)
@@ -212,6 +227,20 @@ class GameEngine:
                                                                 self._input.is_reload_requested())
                         if shot_fired:
                             self._state.weapon.fire(self._state.projectile_system, self._state)
+
+                    # проверяем взаимодействие с объектами
+                    if self._input.is_interactive_requested():
+                        # взаимодействие с терминалом
+                        if self._room_manager.active_room.terminal:
+                            terminal = self._room_manager.active_room.terminal
+                            if terminal.is_near_player and terminal.is_active :
+                                self._state.is_paused = True
+                                self._state.is_terminal_ui_open = True
+            # на паузе
+            else:
+                if self._state.is_terminal_ui_open:
+                    self._state._terminal_system.update(dt, self._state)
+
 
             # отрисовка
             self._renderer.render(self._state, self._room_manager, self._state.camera)
@@ -259,6 +288,13 @@ class GameEngine:
                                                                        (140, 50))
         self._state.assets['hp_bar_fill'] = assets_manager.load_sprite("hp_bar_fill.png",
                                                                        (1, 50))
+
+        self._state.assets['terminal_sprite_active'] = assets_manager.load_sprite("terminal_active.png",
+                                                                                 (config.TILE_SIZE,
+                                                                                 int(config.TILE_SIZE * 1.33)))
+        self._state.assets['terminal_sprite_inactive'] = assets_manager.load_sprite("terminal_inactive.png",
+                                                                                  (config.TILE_SIZE,
+                                                                                   int(config.TILE_SIZE * 1.33)))
 
     def _on_wall_impact(self, pos: tuple[float, float]) -> None:
         distance = Vector2((self._state.player.rect.centerx - pos[0],

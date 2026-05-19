@@ -3,15 +3,21 @@ import os
 import pygame
 
 import config
+from models.game_state import GameState
 from models.room import Room
 from models.player import Player
 from services.level_generator import LevelGenerator
 
 # класс некого "оркестратора комнат", для удобной работы с несколькими комнатами
 class RoomManager:
-    def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface) -> None:
-        self._generator = LevelGenerator(wall_sprite=wall_sprite, floor_sprite=floor_sprite)
+    def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface,
+                 terminal_sprites: list[pygame.Surface]) -> None:
+        self._generator = LevelGenerator(wall_sprite=wall_sprite,
+                                         floor_sprite=floor_sprite,
+                                         terminal_sprites=terminal_sprites)
         self.rooms, self.start_room = self._generator.generate(0, 0)
+        self.terminals = [room.terminal for room in self.rooms if room.terminal]
+        self._terminal_active_sprite = terminal_sprites[0]
 
         self.is_new_explored = False
         self.active_room: Room | None = self.start_room
@@ -19,9 +25,31 @@ class RoomManager:
         self.world_bounds: pygame.Rect | None = None
         self._count_world_bounds()
 
+        self.max_depth = max([room.depth for room in self.rooms])
+
         # перекрытие 1 тайл: шаг сетки = (ширина_комнаты - 1) * размер_тайла
         self._spacing_x = (config.ROOM_COLS - 1) * config.TILE_SIZE
         self._spacing_y = (config.ROOM_ROWS - 1) * config.TILE_SIZE
+
+    def update_terminals(self, state: GameState,  dt):
+        # проверяем наличие игрока у терминала в активной комнате
+        terminal = self.active_room.terminal
+
+        if terminal.is_active:
+            if terminal.interactive_hitbox.rect.colliderect(state.player.rect) and not terminal.is_near_player:
+                terminal.is_near_player = True
+
+                terminal.sprite_active.fill((0, 30, 0, 0), None, pygame.BLEND_RGB_ADD)
+
+            elif not terminal.interactive_hitbox.rect.colliderect(state.player.rect) and terminal.is_near_player:
+                terminal.is_near_player = False
+
+                terminal.sprite_active = self._terminal_active_sprite.copy()
+
+
+        # изменяем спрайт терминала если игрок рядом
+
+
 
     # активная - та комната, в которой находится игрок (в угоду оптимизации)
     def update_active_room(self, player: Player) -> Room | None:
@@ -35,6 +63,9 @@ class RoomManager:
                 if not room.is_explored:
                     room.is_explored = True
                     self.is_new_explored = True
+                # для отрисовки тени терминала
+                if room.terminal:
+                    room.terminal.body.have_shadow = False
                 return room
 
         if self.active_room is None:

@@ -9,6 +9,7 @@ class InputHandler:
         self._dash_requested: bool = False
         self._shoot_requested = False
         self._reload_requested = False
+        self._interactive_requested = False
 
         self.spawn = False
         self.spawn_pos = None
@@ -18,6 +19,7 @@ class InputHandler:
         self._dash_requested = False
         self._shoot_requested = False
         self._reload_requested = False
+        self._interactive_requested = False
 
         for event in events:
             if event.type == pygame.QUIT:
@@ -40,6 +42,9 @@ class InputHandler:
 
                 elif event.key == pygame.K_r and not self._state.is_paused:
                     self._reload_requested = True
+
+                elif event.key == pygame.K_e and not self._state.is_paused:
+                    self._interactive_requested = True
 
 
             # отжатия
@@ -71,3 +76,6 @@ class InputHandler:
 
     def is_reload_requested(self) -> bool:  # проверка перезарядки
         return self._reload_requested
+
+    def is_interactive_requested(self) -> bool: # проверка нажатия кнопки E для взаимодействия
+        return self._interactive_requested

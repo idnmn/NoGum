@@ -59,9 +59,11 @@ class Renderer:
             shadow.render(self.shadow_surface, room_manager.active_room.offset)
         self.world_surface.blit(self.shadow_surface, room_manager.active_room.offset)
 
-        # добавляем стены в очередь
+        # добавляем стены и терминалы в очередь
         for room in rooms_to_draw:
             render_queue.extend(room.walls)
+            if room.terminal:
+                render_queue.append(room.terminal)
 
         # добавляем игрока в очередь
         if state.player:

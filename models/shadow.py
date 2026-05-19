@@ -22,6 +22,6 @@ class Shadow(Renderable):
         self.x = self.owner.rect.x
         self.y = int(self.owner.rect.y + self.owner.rect.height / 1.2)
 
-    def render(self, surface: pygame.Surface, offset: Vector2) -> None:
-        x, y = Vector2(self.x, self.y) - offset
+    def render(self, surface: pygame.Surface, room_offset: Vector2) -> None:
+        x, y = Vector2(self.x, self.y) - room_offset + Vector2(0, self.owner.shadow_offset)
         pygame.draw.ellipse(surface, (0, 0, 0, 100), (x, y, self.size_x, self.size_y / 2))

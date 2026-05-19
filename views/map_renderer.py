@@ -94,6 +94,15 @@ class MinimapRenderer:
                     mh = wall.body.rect.height * self._scale
                     pygame.draw.rect(self._static_cache, self._walls_color, (mx, my, mw, mh))
 
+                if room.terminal:
+                    terminal = room.terminal
+
+                    mx = self._offset[0] + (terminal.body.rect.x - self._world_bounds.x) * self._scale
+                    my = self._offset[1] + (terminal.body.rect.y - self._world_bounds.y) * self._scale
+                    mw = terminal.body.rect.width * self._scale
+                    mh = terminal.body.rect.height * self._scale
+                    pygame.draw.rect(self._static_cache, config.TERMINAL_MAP_COLOR, (mx, my, mw * 2, mh * 2))
+
 
     # отрисовка игрока
     def _draw_player(self, player: Player) -> None:

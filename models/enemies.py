@@ -98,6 +98,7 @@ class BookWorm(Enemy):
         super().__init__(x, y, size_x, size_y, enemy_type)
         self._source_sprite = pygame.transform.scale(sprite, (size_x, size_y)).convert_alpha()
         self.sprite = self._source_sprite
+        self.body.shadow_offset = -5
 
         # определяем статы
         self.hp = 20 * level
@@ -300,6 +301,7 @@ class BookWormMommy(Enemy):
         super().__init__(x, y, size_x, size_y, enemy_type)
         self._source_sprite = pygame.transform.scale(sprite, (size_x, size_y)).convert_alpha()
         self.sprite = self._source_sprite
+        self.body.shadow_offset = -10
 
         # определяем статы
         self.hp = 50 * level

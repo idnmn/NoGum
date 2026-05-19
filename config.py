@@ -40,11 +40,13 @@ ROOM_COLS = 26
 ROOM_ROWS = 15
 ROOM_SYMBOL_WALL = "*"
 ROOM_SYMBOL_EMPTY = "0"
+ROOM_SYMBOL_TERMINAL = "T"
 TILE_SIZE: int = 48
-LAYOUTS_DIR: str = "room layouts"
+LAYOUTS_DIR: str = "room_layouts"
+TERMINAL_CHANCE: int = 50 # шанс спавна терминала в комнате с максимальной глубиной
 
 # Генерация
-MAX_ROOMS: int = 12  # Лимит комнат для завершения генерации
+MAX_ROOMS: int = 17  # Лимит комнат для завершения генерации
 
 # --- UI КОНСТАНТЫ ---
 UI_HP_MAX: int = 100
@@ -72,6 +74,7 @@ MINIMAP_BG_COLOR: tuple[int, int, int, int] = (30, 30, 30, 200)
 MINIMAP_ROOM_BG_COLOR: tuple[int, int, int] = (30, 30, 30)  # Пол комнат
 MINIMAP_PLAYER_COLOR: tuple[int, int, int] = (165, 175, 60)
 MINIMAP_BORDER_COLOR: tuple[int, int, int] = (40, 40, 40)
+TERMINAL_MAP_COLOR: tuple[int, int, int] = (80, 220, 170)
 
 MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
                                             (150, 80, 50),  # 1 seed
@@ -81,7 +84,7 @@ MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
                                             (105, 55, 105), # 5
                                             (50, 90, 60)    # 6
                                           ]
-MINIMAP_EXPLORED: bool = False # отладочная функция для открытия всей миникарты сразу
+MINIMAP_EXPLORED: bool = True # отладочная функция для открытия всей миникарты сразу
 
 # Спрайты
 ASSETS_DIR: str = "assets"

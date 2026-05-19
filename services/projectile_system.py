@@ -41,6 +41,11 @@ class ProjectileSystem:
                         p.is_active = False
                         self._on_wall_impact((p.rect.centerx, p.rect.centery))
                         break
+                terminal = room_manager.active_room.terminal
+                if terminal and p.rect.colliderect(terminal.body.rect):
+                    p.is_active = False
+                    self._on_wall_impact((p.rect.centerx, p.rect.centery))
+                    break
 
             # коллизия с врагами
             for enemy in enemies:
@@ -48,7 +53,6 @@ class ProjectileSystem:
                     p.is_active = False
                     if enemy.take_damage(p.damage):
                         self._on_enemy_impact((p.rect.centerx, p.rect.centery), enemy)
-                    break
 
         # очистка неактивных снарядов
         self.projectiles = [p for p in self.projectiles if p.is_active]

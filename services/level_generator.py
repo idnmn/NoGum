@@ -8,7 +8,7 @@ from models.room import Room
 
 class LevelGenerator:
     def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface,
-                 layout_pool: list[str] | None = None) -> None:
+                 terminal_sprites: list[pygame.Surface], layout_pool: list[str] | None = None) -> None:
         if layout_pool:
             # если список передан вручную используем его
             self.layout_pool = layout_pool
@@ -38,20 +38,24 @@ class LevelGenerator:
 
         self.wall_sprite = wall_sprite
         self.floor_sprite = floor_sprite
+        self.terminal_sprites = terminal_sprites
 
     def generate(self, start_col: int, start_row: int) -> (list[Room], Room):
         self.rooms.clear()
         self.occupied.clear()
 
         # строим карту при помощи BFS (поиск в ширину, храни господь дискретную математику)
-        grid_layout: dict[tuple[int, int], set[str]] = {}
-        grid_layout[(start_col, start_row)] = set()
+        grid_layout: dict[tuple[int, int], list[set[str] | int]] = {}
+        grid_layout[(start_col, start_row)] = [set(), 0]
         self.occupied.add((start_col, start_row))
 
-        frontier = deque([(start_col, start_row)])
+        frontier = deque([(start_col, start_row, 1)])
 
         while frontier and len(grid_layout) < config.MAX_ROOMS:
-            col, row = frontier.popleft()
+            # for k, v in grid_layout.items():
+            #     print(k, v)
+            # print()
+            col, row, depth = frontier.popleft()
 
             # находим свободных соседей
             valid_neighbors = []
@@ -86,11 +90,13 @@ class LevelGenerator:
                 else:
                     d_old, d_new = 'top', 'bottom'
 
-                grid_layout.setdefault((col, row), set()).add(d_old)
-                grid_layout.setdefault((nc, nr), set()).add(d_new)
+                grid_layout.setdefault((col, row), [set(), 0])[0].add(d_old)
+                grid_layout.setdefault((nc, nr), [set(), 0])[0].add(d_new)
+                grid_layout.setdefault((nc, nr), [set(), 0])[1] = depth + 1
 
                 self.occupied.add((nc, nr))
-                frontier.append((nc, nr))
+                frontier.append((nc, nr, depth + 1))
+
 
         # сдвигаем всю карту в положительную четверть
         cols = [c for c, r in grid_layout.keys()]
@@ -103,22 +109,75 @@ class LevelGenerator:
 
         start_room_ref: Room | None = None
 
+        max_depth = max([content[-1] for content in grid_layout.values()])
+
         # создание объектов
-        for (col, row), connections in grid_layout.items():
+        for (col, row), content in grid_layout.items():
+            connections = content[0]
+            depth = content[1]
+
             offset_x = col * self.spacing_x + shift_x
             offset_y = row * self.spacing_y + shift_y
 
             #  запоминаем стартовую комнату по исходным координатам
             if col == start_col and row == start_row:
-                room = Room("room layouts/L0", offset_x, offset_y, connections,
-                            wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite, waves_count=0)
+                room = Room("room_layouts/L0.txt", offset_x, offset_y, depth, connections,
+                            wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite,
+                            terminal_sprites=self.terminal_sprites, waves_count=0)
                 room.is_explored = True
                 start_room_ref = room
+
+                new_layout = self._generate_terminal(room.layout)
+                room.load_layout(new_layout)
+                room.terminal.is_active = True
             else:
                 layout_path = random.choice(self.layout_pool)
-                room = Room(layout_path, offset_x, offset_y, connections,
+                room = Room(layout_path, offset_x, offset_y, depth, connections,
                             wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite,
-                            waves_count=random.randint(1, 3))
+                            terminal_sprites=self.terminal_sprites, waves_count=random.randint(1, 3))
+
+                # с n-м шансом генерируем терминал
+                if random.randint(0, 100) <= config.TERMINAL_CHANCE * min(1, (room.depth / max_depth) ** 2):
+                    new_layout = self._generate_terminal(room.layout)
+                    room.load_layout(new_layout)
+
             self.rooms.append(room)
 
         return self.rooms, start_room_ref
+
+    def _generate_terminal(self, layout) -> list[str]:
+        spaces = []
+        new_layout = []
+
+        # ищем потенциальные места спавна
+        for y in range(len(layout) - 3):
+            for x in range(2, len(layout[0]) - 2):
+                if layout[y][x] == '0' and layout[y+1][x] == '0':
+                    neighbors_cords = [
+                        (-1, -1), (0, -1), (1, -1),
+                        (-1, 0), (1, 1), (0, 1), (-1, 1)
+                    ]
+                    walls_count = 0
+
+                    for dx, dy in neighbors_cords:
+                        if layout[y+dy][x+dx] == '*':
+                            walls_count += 1
+
+                    if walls_count <= 4:
+                        spaces.append((x, y))
+        # выбираем случайную точку из возможных
+        if spaces:
+            space = random.choice(spaces)
+            line = list(layout[space[1]])
+            line[space[0]] = 'T'
+            layout[space[1]] = ''.join(line)
+        # заполняем новый лайаут
+        for line in layout:
+            new_layout.append(line)
+        return new_layout
+
+
+
+
+
+
