@@ -23,10 +23,13 @@ class Terminal(Renderable):
         )
 
         self.sprite_active = sprite_active.copy().convert_alpha()
+        self.near_player_sprite = sprite_active.copy()
+        self.near_player_sprite.fill((0, 30, 0, 0), None, pygame.BLEND_RGB_ADD)
         self.sprite_inactive = sprite_inactive.copy().convert_alpha()
         self.visual_offset_y = -(sprite_active.get_height() - size)
 
         self.is_active = False
+        self.is_selected = False
         self.is_near_player = False
 
     @property
@@ -37,8 +40,22 @@ class Terminal(Renderable):
         draw_x = self.rect.x
         draw_y = self.rect.y + self.visual_offset_y
 
+        # меняем спрайт если роядом игрок
+        if self.is_active:
+            if self.is_near_player:
+                near_player_sprite = self.sprite_active.copy()
+                near_player_sprite.fill((0, 30, 0, 0), None, pygame.BLEND_RGB_ADD)
+
+
+            elif not self.is_near_player:
+                self.sprite_active = self.sprite_active.copy()
+
         # отрисовываем спрайт
         if self.is_active:
-            surface.blit(self.sprite_active, (draw_x, draw_y))
+            if self.is_near_player:
+                sprite = self.near_player_sprite
+            else:
+                sprite = self.sprite_active
         else:
-            surface.blit(self.sprite_inactive, (draw_x, draw_y))
+            sprite = self.sprite_inactive
+        surface.blit(sprite, (draw_x, draw_y))

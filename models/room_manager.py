@@ -17,7 +17,6 @@ class RoomManager:
                                          terminal_sprites=terminal_sprites)
         self.rooms, self.start_room = self._generator.generate(0, 0)
         self.terminals = [room.terminal for room in self.rooms if room.terminal]
-        self._terminal_active_sprite = terminal_sprites[0]
 
         self.is_new_explored = False
         self.active_room: Room | None = self.start_room
@@ -35,21 +34,13 @@ class RoomManager:
         # проверяем наличие игрока у терминала в активной комнате
         terminal = self.active_room.terminal
 
+        # меняем состояние терминала если роядом игрок
         if terminal.is_active:
             if terminal.interactive_hitbox.rect.colliderect(state.player.rect) and not terminal.is_near_player:
                 terminal.is_near_player = True
 
-                terminal.sprite_active.fill((0, 30, 0, 0), None, pygame.BLEND_RGB_ADD)
-
             elif not terminal.interactive_hitbox.rect.colliderect(state.player.rect) and terminal.is_near_player:
                 terminal.is_near_player = False
-
-                terminal.sprite_active = self._terminal_active_sprite.copy()
-
-
-        # изменяем спрайт терминала если игрок рядом
-
-
 
     # активная - та комната, в которой находится игрок (в угоду оптимизации)
     def update_active_room(self, player: Player) -> Room | None:

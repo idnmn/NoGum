@@ -30,7 +30,7 @@ PLAYER_DASH_COOLDOWN: float = 5.0  # Кд между рывками
 LEVEL_COEF = 1.02 # коэффициент увеличения стат мобов в зависимости от уровня
 
 # --- ЦВЕТА ---
-BACKGROUND_COLOR: tuple[int, int, int] = (30, 30, 30)
+BACKGROUND_COLOR: tuple[int, int, int] = (10, 10, 10)
 
 # --- РАЗМЕРЫ (в пикселях ВНУТРЕННЕГО разрешения) ---
 PLAYER_SIZE: int = 40
@@ -75,6 +75,8 @@ MINIMAP_ROOM_BG_COLOR: tuple[int, int, int] = (30, 30, 30)  # Пол комна�
 MINIMAP_PLAYER_COLOR: tuple[int, int, int] = (165, 175, 60)
 MINIMAP_BORDER_COLOR: tuple[int, int, int] = (40, 40, 40)
 TERMINAL_MAP_COLOR: tuple[int, int, int] = (80, 220, 170)
+TERMINAL_ACTIVE_COLOR: tuple[int, int, int] = (220, 255, 25)
+TERMINAL_INACTIVE_COLOR: tuple[int, int, int] = (25, 60, 50)
 
 MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
                                             (150, 80, 50),  # 1 seed
@@ -85,6 +87,10 @@ MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
                                             (50, 90, 60)    # 6
                                           ]
 MINIMAP_EXPLORED: bool = True # отладочная функция для открытия всей миникарты сразу
+
+# Интерфейс терминалов
+TERMINAL_HUD_WIDTH: int = 1000
+TERMINAL_HUD_HEIGHT: int = 600
 
 # Спрайты
 ASSETS_DIR: str = "assets"

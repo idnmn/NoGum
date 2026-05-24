@@ -30,7 +30,7 @@ class MinimapRenderer:
 
         self._player = state.player
         self._room_manager = room_manager
-        self.set_world_bounds(self._room_manager.world_bounds)
+        self._set_world_bounds(self._room_manager.world_bounds)
         self._walls_color = config.MINIMAP_WALL_COLOR_LIST[state.level_seed - 1]
 
     # сброс кэша
@@ -38,7 +38,7 @@ class MinimapRenderer:
         self._static_cache = None
 
     # вычисляет масштаб и смещение для центрирования уровня на карте
-    def set_world_bounds(self, bounds: pygame.Rect) -> None:
+    def _set_world_bounds(self, bounds: pygame.Rect) -> None:
         self._world_bounds = bounds
         if bounds.width > 0 and bounds.height > 0:
             margin = 12
@@ -74,6 +74,7 @@ class MinimapRenderer:
 
         # выводим на экран
         self._screen.blit(self._layer, self._map_rect)
+        pygame.display.flip()
 
     # отрисовка полов и стен. Выполняется редко, кэшируется
     def _draw_static(self, room_manager: RoomManager) -> None:

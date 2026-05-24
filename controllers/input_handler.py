@@ -78,4 +78,7 @@ class InputHandler:
         return self._reload_requested
 
     def is_interactive_requested(self) -> bool: # проверка нажатия кнопки E для взаимодействия
-        return self._interactive_requested
+        if self._interactive_requested:
+            self._interactive_requested = False
+            return True
+        return False

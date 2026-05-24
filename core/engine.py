@@ -63,11 +63,11 @@ class GameEngine:
 
 
         self._state.projectile_system = ProjectileSystem(on_wall_impact=self._on_wall_impact,
-                                                   on_enemy_impact=self._on_enemy_impact)
+                                                         on_enemy_impact=self._on_enemy_impact)
         self._state.particle_system = ParticleSystem()
         self._state.enemy_system = EnemySystem()
         self._state.decals_system = DecalSystem()
-        self._state._terminal_system = TerminalSystem()
+        self._state.terminal_system = TerminalSystem(self._screen, self._room_manager, self._state)
         self._spawner = Spawner(self._state)
 
         self._state.camera = Camera()
@@ -138,8 +138,11 @@ class GameEngine:
 
             events = pygame.event.get()
 
-            if self._state.is_paused:
+            # перераспределяем хэндлеры
+            if self._state.is_upgrade_ui_open:
                 self._ui_renderer.handle_input(events, self._state.weapon)
+            elif self._state.is_terminal_ui_open:
+                self._state.terminal_system.handle_input(events)
             else:
                 self._input.process_events(events)
 
@@ -202,7 +205,6 @@ class GameEngine:
                     # обновляем снаряды
                     self._state.projectile_system.update(dt, self._room_manager, self._state.enemy_system.enemies)
 
-
                     # обрабатываем коллизию со стенами и терминалами
                     if self._room_manager.active_room:
                         self._collision_system.resolve_obstacles(self._state.player.body,
@@ -231,7 +233,7 @@ class GameEngine:
                     # проверяем взаимодействие с объектами
                     if self._input.is_interactive_requested():
                         # взаимодействие с терминалом
-                        if self._room_manager.active_room.terminal:
+                        if self._room_manager.active_room.terminal and not self._state.is_terminal_ui_open:
                             terminal = self._room_manager.active_room.terminal
                             if terminal.is_near_player and terminal.is_active :
                                 self._state.is_paused = True
@@ -239,11 +241,21 @@ class GameEngine:
             # на паузе
             else:
                 if self._state.is_terminal_ui_open:
-                    self._state._terminal_system.update(dt, self._state)
+                    self._state.terminal_system.update(dt)
 
+            # отрисовка (раскидываем рендереры)
+            # при post_tp вызываем оба рендерера
+            if self._state.is_terminal_ui_open and self._state.terminal_system.post_teleport_flag:
+                self._renderer.render(self._state, self._room_manager, self._state.camera, False)
+                self._state.terminal_system.render()
 
-            # отрисовка
-            self._renderer.render(self._state, self._room_manager, self._state.camera)
+            # вне post_tp рендерим только интерфейс терминалов
+            elif self._state.is_terminal_ui_open and not self._state.terminal_system.post_teleport_flag:
+                self._state.terminal_system.render()
+
+            # стандартный рендерер
+            elif not self._state.is_terminal_ui_open:
+                self._renderer.render(self._state, self._room_manager, self._state.camera)
 
             if self._input.spawn:
                 cords = self._input.spawn_pos + self._room_manager.active_room.offset

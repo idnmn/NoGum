@@ -1,8 +1,5 @@
 import pygame
 import config
-from services.enemy_system import EnemySystem
-from services.particle_system import ParticleSystem
-from services.projectile_system import ProjectileSystem
 from models.game_state import GameState
 from models.room_manager import RoomManager
 from models.camera import Camera
@@ -26,7 +23,7 @@ class Renderer:
         # буфер для финального кадра перед масштабированием
         self._viewport_buffer = pygame.Surface((config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT))
 
-    def render(self, state: GameState, room_manager: RoomManager, camera: Camera) -> None:
+    def render(self, state: GameState, room_manager: RoomManager, camera: Camera, flip_flag: bool = True) -> None:
         # очищаем экран
         self.world_surface.fill(config.BACKGROUND_COLOR)
         self.shadow_surface.fill((0, 0, 0, 0))
@@ -111,5 +108,6 @@ class Renderer:
         self._ui_renderer.render_out_world(state)
 
         # сменяем кадр
-        pygame.display.flip()
+        if flip_flag:
+            pygame.display.flip()
 
