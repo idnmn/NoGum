@@ -190,7 +190,7 @@ class TerminalSystem:
 
     # Отрисовываем терминалы
     def _draw_layer(self):
-        for terminal in self.terminals:
+        for terminal in [terminal for terminal in self.terminals if terminal.is_active]:
             if terminal.is_near_player or terminal.is_selected:  # терминал рядом с игроком
                 scale = 0.8
 

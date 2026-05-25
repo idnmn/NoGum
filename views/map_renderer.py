@@ -28,7 +28,11 @@ class MinimapRenderer:
         self._offset: tuple[float, float] = (0.0, 0.0)
         self._world_bounds: pygame.Rect = pygame.Rect(0, 0, 1, 1)
 
+        self.initialize_room_data(room_manager, state)
+
         self._player = state.player
+
+    def initialize_room_data(self, room_manager: RoomManager, state: GameState) -> None:
         self._room_manager = room_manager
         self._set_world_bounds(self._room_manager.world_bounds)
         self._walls_color = config.MINIMAP_WALL_COLOR_LIST[state.level_seed - 1]
@@ -74,7 +78,7 @@ class MinimapRenderer:
 
         # выводим на экран
         self._screen.blit(self._layer, self._map_rect)
-        pygame.display.flip()
+        # pygame.display.flip()
 
     # отрисовка полов и стен. Выполняется редко, кэшируется
     def _draw_static(self, room_manager: RoomManager) -> None:

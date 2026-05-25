@@ -52,12 +52,12 @@ class Pointer(Weapon):
         self.max_bullet_speed = 0.0
         self._speed_coef = 300.0
 
-        self.power = 200
+        self.power = 1000
         self._damage_coef = 1.0
         self._calculate_max()
 
-        self.clip_size = 5
-        self.clip = 5
+        self.clip_size = 50
+        self.clip = 50
 
     def _calculate_max(self) -> None:
         self.max_bullet_speed = round(self.power / (self.min_bullet_size * self.min_fire_rate), 0)

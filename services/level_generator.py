@@ -4,6 +4,7 @@ import os
 import config
 from collections import deque
 from models.room import Room
+from models.exit import Exit
 
 
 class LevelGenerator:
@@ -52,9 +53,6 @@ class LevelGenerator:
         frontier = deque([(start_col, start_row, 1)])
 
         while frontier and len(grid_layout) < config.MAX_ROOMS:
-            # for k, v in grid_layout.items():
-            #     print(k, v)
-            # print()
             col, row, depth = frontier.popleft()
 
             # находим свободных соседей
@@ -128,20 +126,32 @@ class LevelGenerator:
                 start_room_ref = room
 
                 new_layout = self._generate_terminal(room.layout)
-                room.load_layout(new_layout)
+                room.load_layout_from_matrix(new_layout)
                 room.terminal.is_active = True
             else:
                 layout_path = random.choice(self.layout_pool)
                 room = Room(layout_path, offset_x, offset_y, depth, connections,
                             wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite,
-                            terminal_sprites=self.terminal_sprites, waves_count=random.randint(1, 3))
+                            terminal_sprites=self.terminal_sprites, waves_count=random.randint(config.MIN_WAVES,
+                                                                                               config.MAX_WAVES))
 
                 # с n-м шансом генерируем терминал
                 if random.randint(0, 100) <= config.TERMINAL_CHANCE * min(1, (room.depth / max_depth) ** 2):
                     new_layout = self._generate_terminal(room.layout)
-                    room.load_layout(new_layout)
+                    room.load_layout_from_matrix(new_layout)
 
             self.rooms.append(room)
+
+        # генерируем выход в одной из комнат с максимальной глубиной
+        max_depth_rooms = [room for room in self.rooms if room.depth == max_depth]
+        exit_room = random.choice(max_depth_rooms)
+        exit_room.load_layout_from_txt("room_layouts/L0.txt")
+        exit_room.waves_count = 0
+        exit_room.terminal = None
+        exit_room.exit = Exit(exit_room.offset.x + config.TILE_SIZE * 11.5,
+                              exit_room.offset.y + config.TILE_SIZE * 5.5,
+                              config.EXIT_SIZE)
+        exit_room.is_explored = True
 
         return self.rooms, start_room_ref
 

@@ -56,6 +56,11 @@ class Renderer:
             shadow.render(self.shadow_surface, room_manager.active_room.offset)
         self.world_surface.blit(self.shadow_surface, room_manager.active_room.offset)
 
+        # рендерим выход (при наличии)
+        for room in rooms_to_draw:
+            if room.exit:
+                room.exit.render(self.world_surface)
+
         # добавляем стены и терминалы в очередь
         for room in rooms_to_draw:
             render_queue.extend(room.walls)

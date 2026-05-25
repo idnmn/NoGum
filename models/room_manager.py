@@ -6,6 +6,7 @@ import config
 from models.game_state import GameState
 from models.room import Room
 from models.player import Player
+from models.terminal import Terminal
 from services.level_generator import LevelGenerator
 
 # класс некого "оркестратора комнат", для удобной работы с несколькими комнатами
@@ -15,32 +16,58 @@ class RoomManager:
         self._generator = LevelGenerator(wall_sprite=wall_sprite,
                                          floor_sprite=floor_sprite,
                                          terminal_sprites=terminal_sprites)
-        self.rooms, self.start_room = self._generator.generate(0, 0)
-        self.terminals = [room.terminal for room in self.rooms if room.terminal]
+
+        self.rooms: list[Room]
+        self.active_room: Room
+        self.terminals: list[Terminal]
 
         self.is_new_explored = False
-        self.active_room: Room | None = self.start_room
-        self.prev_active_room: Room | None = self.active_room
-        self.world_bounds: pygame.Rect | None = None
-        self._count_world_bounds()
+        self.active_room: Room | None
+        self.prev_active_room: Room | None
+        self.world_bounds: pygame.Rect | None
 
-        self.max_depth = max([room.depth for room in self.rooms])
+        self.max_depth: int
+
+        self.initialize_level()
 
         # перекрытие 1 тайл: шаг сетки = (ширина_комнаты - 1) * размер_тайла
         self._spacing_x = (config.ROOM_COLS - 1) * config.TILE_SIZE
         self._spacing_y = (config.ROOM_ROWS - 1) * config.TILE_SIZE
 
-    def update_terminals(self, state: GameState,  dt):
-        # проверяем наличие игрока у терминала в активной комнате
+    def initialize_level(self):
+        self.rooms, self.start_room = self._generator.generate(0, 0)
+        self.terminals = [room.terminal for room in self.rooms if room.terminal]
+
+        self.is_new_explored = False
+        self.active_room = self.start_room
+        self.prev_active_room = self.active_room
+        self._count_world_bounds()
+
+        self.max_depth = max([room.depth for room in self.rooms])
+
+    def switch_room_sprites(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface):
+        self._generator.wall_sprite = wall_sprite
+        self._generator.floor_sprite = floor_sprite
+
+    def update_interactives(self, state: GameState, dt):
         terminal = self.active_room.terminal
+        exit = self.active_room.exit
 
         # меняем состояние терминала если роядом игрок
-        if terminal.is_active:
-            if terminal.interactive_hitbox.rect.colliderect(state.player.rect) and not terminal.is_near_player:
-                terminal.is_near_player = True
+        if terminal:
+            if terminal.is_active:
+                if terminal.interactive_hitbox.rect.colliderect(state.player.rect) and not terminal.is_near_player:
+                    terminal.is_near_player = True
 
-            elif not terminal.interactive_hitbox.rect.colliderect(state.player.rect) and terminal.is_near_player:
-                terminal.is_near_player = False
+                elif not terminal.interactive_hitbox.rect.colliderect(state.player.rect) and terminal.is_near_player:
+                    terminal.is_near_player = False
+
+        # аналогично для выхода
+        if exit:
+            if exit.interactive_hitbox.rect.colliderect(state.player.rect):
+                exit.is_near_player = True
+            else:
+                exit.is_near_player = False
 
     # активная - та комната, в которой находится игрок (в угоду оптимизации)
     def update_active_room(self, player: Player) -> Room | None:
@@ -79,9 +106,3 @@ class RoomManager:
             int(max_right - min_x), int(max_bottom - min_y)
         )
 
-    # регенерация мира
-    def regenerate(self) -> None:
-        self.rooms = self._generator.generate(0, 0)
-        self.active_room = self.rooms[0] if self.rooms else None
-        self.prev_active_room = self.active_room
-        self.world_bounds = self._count_world_bounds()
