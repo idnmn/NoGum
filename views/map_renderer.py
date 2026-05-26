@@ -93,21 +93,36 @@ class MinimapRenderer:
 
                 # стены (каждый тайл рисуется отдельно)
                 for wall in room.walls:
-                    mx = self._offset[0] + (wall.body.rect.x - self._world_bounds.x) * self._scale
-                    my = self._offset[1] + (wall.body.rect.y - self._world_bounds.y) * self._scale
-                    mw = wall.body.rect.width * self._scale
-                    mh = wall.body.rect.height * self._scale
-                    pygame.draw.rect(self._static_cache, self._walls_color, (mx, my, mw, mh))
+                    self._draw_object(wall.body.rect, self._walls_color)
 
                 if room.terminal:
                     terminal = room.terminal
+                    if terminal.is_active:
+                        color = config.TERMINAL_ACTIVE_COLOR
+                    else:
+                        color = config.TERMINAL_INACTIVE_COLOR
 
-                    mx = self._offset[0] + (terminal.body.rect.x - self._world_bounds.x) * self._scale
-                    my = self._offset[1] + (terminal.body.rect.y - self._world_bounds.y) * self._scale
-                    mw = terminal.body.rect.width * self._scale
-                    mh = terminal.body.rect.height * self._scale
-                    pygame.draw.rect(self._static_cache, config.TERMINAL_MAP_COLOR, (mx, my, mw * 2, mh * 2))
+                    self._draw_object(terminal.body.rect, color, 2.0)
 
+                if room.exit:
+                    exit = room.exit
+
+                    self._draw_object(exit.body.rect, config.EXIT_COLOR)
+
+    def _draw_object(self, obj_rect: pygame.Rect, color: tuple[int, int, int], size_coef: float = 1.0) -> None:
+        mw = obj_rect.width * self._scale * size_coef
+        mh = obj_rect.height * self._scale * size_coef
+
+        if size_coef != 1:
+            size_offset_x = mw / 2
+            size_offset_y = mh / 2
+        else:
+            size_offset_x = 0
+            size_offset_y = 0
+
+        mx = self._offset[0] + (obj_rect.x - self._world_bounds.x) * self._scale - size_offset_x
+        my = self._offset[1] + (obj_rect.y - self._world_bounds.y) * self._scale - size_offset_y
+        pygame.draw.rect(self._static_cache, color, (mx, my, mw, mh))
 
     # отрисовка игрока
     def _draw_player(self, player: Player) -> None:

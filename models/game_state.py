@@ -1,26 +1,29 @@
 from dataclasses import dataclass
-from models.player import Player
-from models.weapons import Weapon
 
 
 
 # Модель игры
 @dataclass
 class GameState:
-    is_running: bool = True
-    player: Player | None = None
-    is_minimap_visible: bool = False
+    # игровые данные
     level_seed: int = 1
-    is_paused: bool = False
-    weapon: Weapon | None = None
     level_number: int = 0
     spawn_score: int = 3
 
     # флаги состояний
+    is_running: bool = True
+
+    is_minimap_visible: bool = False
     is_upgrade_ui_open: bool = False
     is_terminal_ui_open: bool = False
+    is_paused: bool = False
 
-    # системы
+    is_transition: bool = False # переход между этажами
+    is_post_transition: bool = False
+
+    # системы и объедки
+    player = None
+    weapon = None
     particle_system = None
     enemy_system = None
     decals_system = None

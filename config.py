@@ -26,11 +26,39 @@ PLAYER_DASH_SPEED: float = 2000.0  # Скорость во время рывка
 PLAYER_DASH_DURATION: float = 0.15  # Длительность
 PLAYER_DASH_COOLDOWN: float = 5.0  # Кд между рывками
 
+# переход между этажами
+TRANSITION_TIME: float = 1.0
+
 # баланс
 LEVEL_COEF = 1.02 # коэффициент увеличения стат мобов в зависимости от уровня
 
 # --- ЦВЕТА ---
 BACKGROUND_COLOR: tuple[int, int, int] = (10, 10, 10)
+
+UI_DASH_COLOR: tuple[int, int, int] = (115, 245, 155)
+UI_DASH_BG_COLOR: tuple[int, int, int] = (50, 100, 70)
+
+UI_HP_COLOR: tuple[int, int, int] = (255, 255, 40)
+UI_HP_BG_COLOR: tuple[int, int, int] = (45, 45, 20)
+UI_TEXT_COLOR: tuple[int, int, int] = (255, 255, 255)
+
+MINIMAP_BG_COLOR: tuple[int, int, int, int] = (30, 30, 30, 200)
+MINIMAP_ROOM_BG_COLOR: tuple[int, int, int] = (30, 30, 30)  # Пол комнат
+MINIMAP_PLAYER_COLOR: tuple[int, int, int] = (165, 175, 60)
+MINIMAP_BORDER_COLOR: tuple[int, int, int] = (40, 40, 40)
+TERMINAL_MAP_COLOR: tuple[int, int, int] = (80, 220, 170)
+TERMINAL_ACTIVE_COLOR: tuple[int, int, int] = (220, 255, 25)
+TERMINAL_INACTIVE_COLOR: tuple[int, int, int] = (40, 110, 80)
+EXIT_COLOR: tuple[int, int, int] = (255, 120, 100)
+
+MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
+                                            (150, 80, 50),  # 1 seed
+                                            (145, 50, 100), # 2
+                                            (70, 100, 100), # 3
+                                            (100, 90, 55),  # 4
+                                            (105, 55, 105), # 5
+                                            (50, 90, 60)    # 6
+                                          ]
 
 # --- РАЗМЕРЫ (в пикселях ВНУТРЕННЕГО разрешения) ---
 PLAYER_SIZE: int = 40
@@ -58,14 +86,9 @@ MIN_WAVES: int = 0
 UI_HP_MAX: int = 100
 UI_HP_BAR_WIDTH: int = 200
 UI_HP_BAR_HEIGHT: int = 50
-UI_HP_COLOR: tuple[int, int, int] = (255, 255, 40)
-UI_HP_BG_COLOR: tuple[int, int, int] = (45, 45, 20)
-UI_TEXT_COLOR: tuple[int, int, int] = (255, 255, 255)
 
 UI_DASH_BAR_WIDTH: int = 30
 UI_DASH_BAR_HEIGHT: int = 4
-UI_DASH_COLOR: tuple[int, int, int] = (115, 245, 155)
-UI_DASH_BG_COLOR: tuple[int, int, int] = (50, 100, 70)
 UI_DASH_OFFSET_Y: float = 20.0
 UI_DASH_HIDE_DELAY: float = 1.0
 
@@ -76,22 +99,6 @@ DRAW_PATH = False # debug отрисовщик для pathfinder'а
 # Mini-Map
 MINIMAP_WIDTH: int = 400
 MINIMAP_HEIGHT: int = 400
-MINIMAP_BG_COLOR: tuple[int, int, int, int] = (30, 30, 30, 200)
-MINIMAP_ROOM_BG_COLOR: tuple[int, int, int] = (30, 30, 30)  # Пол комнат
-MINIMAP_PLAYER_COLOR: tuple[int, int, int] = (165, 175, 60)
-MINIMAP_BORDER_COLOR: tuple[int, int, int] = (40, 40, 40)
-TERMINAL_MAP_COLOR: tuple[int, int, int] = (80, 220, 170)
-TERMINAL_ACTIVE_COLOR: tuple[int, int, int] = (220, 255, 25)
-TERMINAL_INACTIVE_COLOR: tuple[int, int, int] = (25, 60, 50)
-
-MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
-                                            (150, 80, 50),  # 1 seed
-                                            (145, 50, 100), # 2
-                                            (70, 100, 100), # 3
-                                            (100, 90, 55),  # 4
-                                            (105, 55, 105), # 5
-                                            (50, 90, 60)    # 6
-                                          ]
 MINIMAP_EXPLORED: bool = True # отладочная функция для открытия всей миникарты сразу
 
 # Интерфейс терминалов

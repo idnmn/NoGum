@@ -37,6 +37,8 @@ class GameEngine:
             display_flags = 0
             screen_size = (config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT)
 
+        self._transition_timer = 0.0
+
         self._screen = pygame.display.set_mode(screen_size, display_flags)
         pygame.display.set_caption(config.WINDOW_TITLE)
 
@@ -250,43 +252,10 @@ class GameEngine:
 
                         # взаимодействие с выходом
                         if self._room_manager.active_room.exit and self._room_manager.active_room.exit.is_near_player:
-                            # перезагружаем спрайты
-                            self._load_sprites(self._assets_manager)
-                            self._room_manager.switch_room_sprites(self._state.assets['wall_sprite'],
-                                                                   self._state.assets['floor_sprite'])
+                            self._state.is_transition = True
+                            self._state.is_paused = True
 
-                            # перерегенерируем уровень
-                            self._room_manager.initialize_level()
-
-                            # пересчитываем границы мира
-                            world_bounds = self._room_manager.world_bounds
-                            self._renderer._world_bounds = world_bounds
-                            self._renderer.world_surface = pygame.Surface((world_bounds.width, world_bounds.height),
-                                                                pygame.SRCALPHA)
-
-                            # переносим игрока на новый спавн
-                            spawn_center = self._room_manager.start_room.bounds.center
-                            self._state.player.body.rect.x, self._state.player.body.rect.y = spawn_center
-                            self._room_manager.update_active_room(self._state.player)
-
-                            # переносим камеру
-                            self._state.camera.position = pygame.Vector2(spawn_center) + Vector2(0, -20)
-                            self._state.camera.curr_center = self._state.camera.position.copy() + Vector2(0, -20)
-                            self._state.camera.prev_center = self._state.camera.position.copy() + Vector2(0, -20)
-
-                            # обновляем кэш миникарты
-                            self._map_renderer.initialize_room_data(self._room_manager, self._state)
-                            self._map_renderer.invalidate_cache()
-
-                            # обновляем данные terminal system
-                            self._state.terminal_system.room_manager = self._room_manager
-                            self._state.terminal_system.terminals = self._room_manager.terminals
-                            self._state.terminal_system._state = self._state
-                            self._state.terminal_system._walls_color =\
-                                config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1]
-
-                            # добавляем +1 к номеру уровня (этажа)
-                            self._state.level_number += 1
+                            self._transition_timer = config.TRANSITION_TIME
 
             # на паузе
             else:
@@ -314,6 +283,45 @@ class GameEngine:
                 self._input.spawn = False
 
         pygame.quit()
+
+    def _goto_new_level(self):
+        # перезагружаем спрайты
+        self._load_sprites(self._assets_manager)
+        self._room_manager.switch_room_sprites(self._state.assets['wall_sprite'],
+                                               self._state.assets['floor_sprite'])
+
+        # перерегенерируем уровень
+        self._room_manager.initialize_level()
+
+        # пересчитываем границы мира
+        world_bounds = self._room_manager.world_bounds
+        self._renderer._world_bounds = world_bounds
+        self._renderer.world_surface = pygame.Surface((world_bounds.width, world_bounds.height),
+                                                      pygame.SRCALPHA)
+
+        # переносим игрока на новый спавн
+        spawn_center = self._room_manager.start_room.bounds.center
+        self._state.player.body.rect.x, self._state.player.body.rect.y = spawn_center
+        self._room_manager.update_active_room(self._state.player)
+
+        # переносим камеру
+        self._state.camera.position = pygame.Vector2(spawn_center) + Vector2(0, -20)
+        self._state.camera.curr_center = self._state.camera.position.copy() + Vector2(0, -20)
+        self._state.camera.prev_center = self._state.camera.position.copy() + Vector2(0, -20)
+
+        # обновляем кэш миникарты
+        self._map_renderer.initialize_room_data(self._room_manager, self._state)
+        self._map_renderer.invalidate_cache()
+
+        # обновляем данные terminal system
+        self._state.terminal_system.room_manager = self._room_manager
+        self._state.terminal_system.terminals = self._room_manager.terminals
+        self._state.terminal_system._state = self._state
+        self._state.terminal_system._walls_color = \
+            config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1]
+
+        # добавляем +1 к номеру уровня (этажа)
+        self._state.level_number += 1
 
     def _load_sprites(self, assets_manager: AssetManager) -> None:
         # Уровень

@@ -80,12 +80,9 @@ class UIRenderer:
 
             # нажатия
             elif event.type == pygame.KEYDOWN:
-                if event.key == config.WEAPON_UI_KEY:  # выход из меню
+                if event.key == config.WEAPON_UI_KEY or event.key == pygame.K_ESCAPE:  # выход из меню
                     self._state.is_upgrade_ui_open = False
                     self._state.is_paused = False
-
-                elif event.key == pygame.K_ESCAPE and not self._state.is_upgrade_ui_open:
-                    self._state.is_paused = not self._state.is_paused
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 for cfg in configs:
