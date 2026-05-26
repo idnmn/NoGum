@@ -4,6 +4,7 @@ from pygame import Vector2
 import config
 from random import randint
 from core.asset_manager import AssetManager
+from models import room_manager
 from models.game_state import GameState
 from controllers.input_handler import InputHandler
 from models.player import Player
@@ -276,6 +277,13 @@ class GameEngine:
                             # обновляем кэш миникарты
                             self._map_renderer.initialize_room_data(self._room_manager, self._state)
                             self._map_renderer.invalidate_cache()
+
+                            # обновляем данные terminal system
+                            self._state.terminal_system.room_manager = self._room_manager
+                            self._state.terminal_system.terminals = self._room_manager.terminals
+                            self._state.terminal_system._state = self._state
+                            self._state.terminal_system._walls_color =\
+                                config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1]
 
                             # добавляем +1 к номеру уровня (этажа)
                             self._state.level_number += 1

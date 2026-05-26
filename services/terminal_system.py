@@ -105,7 +105,7 @@ class TerminalSystem:
 
                 # выделяем терминал, на который навелись мышью
                 mouse_pos = pygame.mouse.get_pos()
-                for terminal in self.terminals:
+                for terminal in [terminal for terminal in self.terminals if terminal.is_active]:
                     mw = terminal.body.rect.width
                     mh = terminal.body.rect.height
                     mx = (self._offset[0] + (terminal.body.rect.x - self._world_bounds.x) * self._scale - mw / 2
@@ -126,7 +126,7 @@ class TerminalSystem:
                             self._is_teleporting = True
                             self._dark_timer = self._max_dark_time
 
-                        if terminal.is_near_player:
+                        if terminal.is_near_player and not terminal.is_selected:
                             terminal.is_near_player = False
 
     def render(self) -> None:

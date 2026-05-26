@@ -44,6 +44,7 @@ class LevelGenerator:
     def generate(self, start_col: int, start_row: int) -> (list[Room], Room):
         self.rooms.clear()
         self.occupied.clear()
+        rooms_count = random.randint(config.MIN_ROOMS, config.MAX_ROOMS)
 
         # строим карту при помощи BFS (поиск в ширину, храни господь дискретную математику)
         grid_layout: dict[tuple[int, int], list[set[str] | int]] = {}
@@ -52,7 +53,7 @@ class LevelGenerator:
 
         frontier = deque([(start_col, start_row, 1)])
 
-        while frontier and len(grid_layout) < config.MAX_ROOMS:
+        while frontier and len(grid_layout) < rooms_count:
             col, row, depth = frontier.popleft()
 
             # находим свободных соседей
@@ -69,7 +70,7 @@ class LevelGenerator:
             available = len(valid_neighbors)
 
             # корректируем количество выходов под оставшийся лимит
-            remaining = config.MAX_ROOMS - len(grid_layout)
+            remaining = rooms_count - len(grid_layout)
             max_exits = min(4 if is_start else available, remaining)
             num_exits = random.randint(1, max_exits)
 
@@ -151,7 +152,7 @@ class LevelGenerator:
         exit_room.exit = Exit(exit_room.offset.x + config.TILE_SIZE * 11.5,
                               exit_room.offset.y + config.TILE_SIZE * 5.5,
                               config.EXIT_SIZE)
-        exit_room.is_explored = True
+        # exit_room.is_explored = True
 
         return self.rooms, start_room_ref
 

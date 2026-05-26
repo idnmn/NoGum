@@ -47,7 +47,10 @@ LAYOUTS_DIR: str = "room_layouts"
 TERMINAL_CHANCE: int = 50 # шанс спавна терминала в комнате с максимальной глубиной
 
 # Генерация
-MAX_ROOMS: int = 1  # Лимит комнат для завершения генерации
+# лимиты количества комнат
+MAX_ROOMS: int = 17
+MIN_ROOMS: int = 13
+# лимиты волн врагов в комнатах
 MAX_WAVES: int = 0
 MIN_WAVES: int = 0
 
@@ -89,7 +92,7 @@ MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
                                             (105, 55, 105), # 5
                                             (50, 90, 60)    # 6
                                           ]
-MINIMAP_EXPLORED: bool = False # отладочная функция для открытия всей миникарты сразу
+MINIMAP_EXPLORED: bool = True # отладочная функция для открытия всей миникарты сразу
 
 # Интерфейс терминалов
 TERMINAL_HUD_WIDTH: int = 1000
