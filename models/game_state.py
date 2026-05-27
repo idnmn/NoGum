@@ -21,9 +21,12 @@ class GameState:
     is_transition: bool = False # переход между этажами
     is_post_transition: bool = False
 
+    hit_pause_frames: int = 0
+
     # системы и объедки
     player = None
     weapon = None
+    room_manager = None
     particle_system = None
     enemy_system = None
     decals_system = None
@@ -31,3 +34,4 @@ class GameState:
     terminal_system = None
     assets = dict()
     camera = None
+    stattracker = None

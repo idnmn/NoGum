@@ -4,7 +4,6 @@ from pygame import Vector2
 import config
 from random import randint
 from core.asset_manager import AssetManager
-from models import room_manager
 from models.game_state import GameState
 from controllers.input_handler import InputHandler
 from models.player import Player
@@ -15,6 +14,7 @@ from services.collision_system import CollisionSystem
 from services.decal_system import DecalSystem
 from services.enemy_system import EnemySystem
 from services.spawner import Spawner
+from services.stat_tracker import StatTracker
 from services.terminal_system import TerminalSystem
 from services.weapon_system import WeaponSystem
 from services.projectile_system import ProjectileSystem
@@ -42,8 +42,6 @@ class GameEngine:
         self._screen = pygame.display.set_mode(screen_size, display_flags)
         pygame.display.set_caption(config.WINDOW_TITLE)
 
-        self._hit_pause_frames = 0
-
         # инициализируем игру
         self._state = GameState()
 
@@ -52,11 +50,12 @@ class GameEngine:
         self._load_sprites(self._assets_manager)
 
         # инициализируем уровень ДО игрока чтобы взять координаты спавна
-        self._room_manager = RoomManager(wall_sprite=self._state.assets['wall_sprite'],
+        self._state.room_manager = RoomManager(wall_sprite=self._state.assets['wall_sprite'],
                                          floor_sprite=self._state.assets['floor_sprite'],
                                          terminal_sprites=[self._state.assets['terminal_sprite_active'],
-                                                           self._state.assets['terminal_sprite_inactive']])
-        spawn_center = self._room_manager.active_room.bounds.center
+                                                           self._state.assets['terminal_sprite_inactive']],
+                                         state=self._state)
+        spawn_center = self._state.room_manager.active_room.bounds.center
 
         # инструменты и системы
         self._clock = pygame.time.Clock()
@@ -70,8 +69,10 @@ class GameEngine:
         self._state.particle_system = ParticleSystem()
         self._state.enemy_system = EnemySystem()
         self._state.decals_system = DecalSystem()
-        self._state.terminal_system = TerminalSystem(self._screen, self._room_manager, self._state)
+        self._state.terminal_system = TerminalSystem(self._screen, self._state)
         self._spawner = Spawner(self._state)
+
+        self._state.stattracker = StatTracker()
 
         self._state.camera = Camera()
         self._state.camera.position = pygame.Vector2(spawn_center)
@@ -79,14 +80,15 @@ class GameEngine:
         self._state.camera.prev_center = self._state.camera.position.copy()
 
         # определяем точку спавна
-        if self._room_manager.start_room:
-            spawn_center = self._room_manager.start_room.bounds.center
+        if self._state.room_manager.start_room:
+            spawn_center = self._state.room_manager.start_room.bounds.center
 
             self._state.player = Player(
                 x=spawn_center[0] - config.PLAYER_SIZE / 2,
                 y=spawn_center[1] - config.PLAYER_SIZE / 2,
                 sprite=self._state.assets['player_sprite'],
                 step_sprite=self._state.assets['player_step_sprite'],
+                state=self._state
             )
 
             # kамера тоже стартует с центра стартовой комнаты
@@ -102,10 +104,10 @@ class GameEngine:
             self._state.camera.prev_center = self._state.camera.position.copy()
 
         # рендереры
-        self._map_renderer = MinimapRenderer(self._screen, self._state, self._room_manager)
+        self._map_renderer = MinimapRenderer(self._screen, self._state, self._state.room_manager)
         self._ui_renderer = UIRenderer(self._screen, self._state)
         self._ui_renderer._map_renderer = self._map_renderer
-        self._renderer = Renderer(self._screen, self._room_manager.world_bounds, self._ui_renderer)
+        self._renderer = Renderer(self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
 
         # инициализируем стартовое оружие
         self._state.weapon = Pointer(sprite=self._state.assets['pointer_sprite'],
@@ -114,7 +116,7 @@ class GameEngine:
         if self._state.player:
             self._state.player.weapon = self._state.weapon
 
-        self._room_manager.update_active_room(self._state.player)
+        self._state.room_manager.update_active_room(self._state.player)
 
         # начальный спавн (2 bookworm в стартовой комнате)
         # if self._room_manager.active_room:
@@ -136,6 +138,29 @@ class GameEngine:
             # Delta time в секундах
             dt = self._clock.tick(config.FPS) / 1000.0
 
+            # Переход между уровнями
+            if self._state.is_transition:
+                self._transition_timer -= dt
+                # затемнение и осветление экрана
+                if not self._state.is_post_transition:
+                    ratio = min(255, int(255 * (1 - (self._transition_timer / (config.TRANSITION_TIME)) ** 3)))
+                else:
+                    ratio = min(255, int(255 * ((self._transition_timer / (config.TRANSITION_TIME)) ** 3)))
+
+                self._renderer.fx_surface.fill((0, 0, 0))
+                self._renderer.fx_surface.set_alpha(ratio)
+
+                if self._transition_timer < 0 and not self._state.is_post_transition:
+                    self._goto_new_level()
+                    self._state.is_post_transition = True
+                    self._transition_timer = config.TRANSITION_TIME
+
+                if self._transition_timer < 0 and self._state.is_post_transition:
+                    self._state.is_paused = False
+                    self._state.is_transition = False
+                    self._state.is_post_transition = False
+
+
             is_ui_active = self._state.is_paused or self._state.is_minimap_visible
             pygame.mouse.set_visible(is_ui_active)
 
@@ -152,29 +177,28 @@ class GameEngine:
             # не на паузе
             if not self._state.is_paused:
                 # hit-pause логика
-                if self._hit_pause_frames > 0:
-                    self._hit_pause_frames -= 1
+                if self._state.hit_pause_frames > 0:
+                    self._state.hit_pause_frames -= 1
                 else:
                     dash_input = self._input.is_dash_requested()  # Отработка рывка
                     direction = self._input.get_move_direction()  # Вектор направления игрока
 
                     #  обновляем игрока
-                    self._state.player.update(dx=direction[0], dy=direction[1], dt=dt,
-                                              dash_requested=dash_input, decals_system=self._state.decals_system)
+                    self._state.player.update(dx=direction[0], dy=direction[1], dt=dt, dash_requested=dash_input)
 
                     # общий список сущностей
                     entities = ([enemy.body for enemy in self._state.enemy_system.enemies] +
                                 [self._state.player.body])
-                    if self._room_manager.active_room.terminal:
-                        entities.append(self._room_manager.active_room.terminal.body)
+                    if self._state.room_manager.active_room.terminal:
+                        entities.append(self._state.room_manager.active_room.terminal.body)
 
                     # обновляем интерактивные объекты в комнате
-                    self._room_manager.update_interactives(self._state, dt)
+                    self._state.room_manager.update_interactives(self._state, dt)
 
                     # Обновляем системы
-                    self._state.projectile_system.update(dt, self._room_manager, self._state.enemy_system.enemies)
+                    self._state.projectile_system.update(dt, self._state.room_manager, self._state.enemy_system.enemies)
                     self._state.particle_system.update(dt)
-                    self._state.enemy_system.update(dt, self._state, self._room_manager.active_room,
+                    self._state.enemy_system.update(dt, self._state, self._state.room_manager.active_room,
                                               self._renderer.debug_surface)
                     self._state.decals_system.update(dt)
                     self._state.decals_system.update_shadows(entities)
@@ -187,45 +211,45 @@ class GameEngine:
                     self._state.player.set_mouse_pos(world_mouse)
 
                     # обновляем активную комнату
-                    new_room = self._room_manager.update_active_room(self._state.player)
-                    if self._room_manager.active_room != new_room:
-                        self._room_manager.prev_active_room = self._room_manager.active_room
-                        self._room_manager.active_room = new_room
+                    new_room = self._state.room_manager.update_active_room(self._state.player)
+                    if self._state.room_manager.active_room != new_room:
+                        self._state.room_manager.prev_active_room = self._state.room_manager.active_room
+                        self._state.room_manager.active_room = new_room
                         self._state.camera.start_transition(
-                            self._room_manager.prev_active_room.bounds.center + Vector2(0, -20),
-                            self._room_manager.active_room.bounds.center + Vector2(0, -20)
+                            self._state.room_manager.prev_active_room.bounds.center + Vector2(0, -20),
+                            self._state.room_manager.active_room.bounds.center + Vector2(0, -20)
                         )
-                    self._room_manager.active_room.update_room_state(not bool(self._state.enemy_system.enemies),
+                    self._state.room_manager.active_room.update_room_state(not bool(self._state.enemy_system.enemies),
                                                                      self._state.camera)
 
                     # респавним мобов при необходимости
-                    if self._room_manager.active_room.waves_count != 0 and not self._state.enemy_system.enemies:
-                        enemies = self._spawner.spawn_in_room(self._room_manager.active_room, self._state)
+                    if self._state.room_manager.active_room.waves_count != 0 and not self._state.enemy_system.enemies:
+                        enemies = self._spawner.spawn_in_room(self._state.room_manager.active_room, self._state)
                         self._state.enemy_system.enemies.extend(enemies)
-                        self._room_manager.active_room.waves_count -= 1
+                        self._state.room_manager.active_room.waves_count -= 1
 
                     # обновляем камеру
                     self._state.camera.update(dt)
 
                     # обновляем снаряды
-                    self._state.projectile_system.update(dt, self._room_manager, self._state.enemy_system.enemies)
+                    self._state.projectile_system.update(dt, self._state.room_manager, self._state.enemy_system.enemies)
 
                     # обрабатываем коллизию со стенами и терминалами
-                    if self._room_manager.active_room:
+                    if self._state.room_manager.active_room:
                         self._collision_system.resolve_obstacles(self._state.player.body,
-                                                                 self._room_manager.active_room.walls)
-                        if self._room_manager.active_room.terminal:
+                                                                 self._state.room_manager.active_room.walls)
+                        if self._state.room_manager.active_room.terminal:
                             self._collision_system.resolve_obstacles(self._state.player.body,
-                                                                    [self._room_manager.active_room.terminal.body])
-                        if self._room_manager.active_room.exit:
+                                                                    [self._state.room_manager.active_room.terminal.body])
+                        if self._state.room_manager.active_room.exit:
                             self._collision_system.resolve_obstacles(self._state.player.body,
-                                                                    [self._room_manager.active_room.exit.body])
+                                                                    [self._state.room_manager.active_room.exit.body])
 
                         for enemy in self._state.enemy_system.enemies:
-                            self._collision_system.resolve_obstacles(enemy, self._room_manager.active_room.walls)
-                            if self._room_manager.active_room.terminal:
+                            self._collision_system.resolve_obstacles(enemy, self._state.room_manager.active_room.walls)
+                            if self._state.room_manager.active_room.terminal:
                                 self._collision_system.resolve_obstacles(enemy,
-                                                                        [self._room_manager.active_room.terminal.body])
+                                                                        [self._state.room_manager.active_room.terminal.body])
 
                     # обрабатываем коллизию существ
                     self._collision_system.resolve_movers(entities)
@@ -242,8 +266,8 @@ class GameEngine:
                     if self._input.is_interactive_requested():
 
                         # взаимодействие с терминалом
-                        if self._room_manager.active_room.terminal and not self._state.is_terminal_ui_open:
-                            terminal = self._room_manager.active_room.terminal
+                        if self._state.room_manager.active_room.terminal and not self._state.is_terminal_ui_open:
+                            terminal = self._state.room_manager.active_room.terminal
                             if terminal.is_near_player and terminal.is_active :
                                 self._state.is_paused = True
                                 self._state.is_terminal_ui_open = True
@@ -251,7 +275,7 @@ class GameEngine:
                                 self._state.is_minimap_visible = False
 
                         # взаимодействие с выходом
-                        if self._room_manager.active_room.exit and self._room_manager.active_room.exit.is_near_player:
+                        if self._state.room_manager.active_room.exit and self._state.room_manager.active_room.exit.is_near_player:
                             self._state.is_transition = True
                             self._state.is_paused = True
 
@@ -265,7 +289,7 @@ class GameEngine:
             # отрисовка (раскидываем рендереры)
             # при post_tp вызываем оба рендерера
             if self._state.is_terminal_ui_open and self._state.terminal_system.post_teleport_flag:
-                self._renderer.render(self._state, self._room_manager, self._state.camera, False)
+                self._renderer.render(self._state, self._state.room_manager, self._state.camera, False)
                 self._state.terminal_system.render()
 
             # вне post_tp рендерим только интерфейс терминалов
@@ -274,12 +298,14 @@ class GameEngine:
 
             # стандартный рендерер
             elif not self._state.is_terminal_ui_open:
-                self._renderer.render(self._state, self._room_manager, self._state.camera)
+                self._renderer.render(self._state, self._state.room_manager, self._state.camera)
 
             if self._input.spawn:
-                cords = self._input.spawn_pos + self._room_manager.active_room.offset
-                # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number))
-                self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number))
+                cords = self._input.spawn_pos + self._state.room_manager.active_room.offset
+                # # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number))
+                self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
+
+                print(self._state.stattracker)
                 self._input.spawn = False
 
         pygame.quit()
@@ -287,22 +313,22 @@ class GameEngine:
     def _goto_new_level(self):
         # перезагружаем спрайты
         self._load_sprites(self._assets_manager)
-        self._room_manager.switch_room_sprites(self._state.assets['wall_sprite'],
+        self._state.room_manager.switch_room_sprites(self._state.assets['wall_sprite'],
                                                self._state.assets['floor_sprite'])
 
         # перерегенерируем уровень
-        self._room_manager.initialize_level()
+        self._state.room_manager.initialize_level()
 
         # пересчитываем границы мира
-        world_bounds = self._room_manager.world_bounds
+        world_bounds = self._state.room_manager.world_bounds
         self._renderer._world_bounds = world_bounds
-        self._renderer.world_surface = pygame.Surface((world_bounds.width, world_bounds.height),
-                                                      pygame.SRCALPHA)
+        self._renderer.world_surface = pygame.transform.scale(self._renderer.world_surface,
+                                                              (world_bounds.width, world_bounds.height))
 
         # переносим игрока на новый спавн
-        spawn_center = self._room_manager.start_room.bounds.center
+        spawn_center = self._state.room_manager.start_room.bounds.center
         self._state.player.body.rect.x, self._state.player.body.rect.y = spawn_center
-        self._room_manager.update_active_room(self._state.player)
+        self._state.room_manager.update_active_room(self._state.player)
 
         # переносим камеру
         self._state.camera.position = pygame.Vector2(spawn_center) + Vector2(0, -20)
@@ -310,18 +336,20 @@ class GameEngine:
         self._state.camera.prev_center = self._state.camera.position.copy() + Vector2(0, -20)
 
         # обновляем кэш миникарты
-        self._map_renderer.initialize_room_data(self._room_manager, self._state)
+        self._map_renderer.initialize_room_data(self._state.room_manager, self._state)
         self._map_renderer.invalidate_cache()
 
         # обновляем данные terminal system
-        self._state.terminal_system.room_manager = self._room_manager
-        self._state.terminal_system.terminals = self._room_manager.terminals
+        self._state.terminal_system.room_manager = self._state.room_manager
+        self._state.terminal_system.set_world_bounds(world_bounds)
+        self._state.terminal_system.terminals = self._state.room_manager.terminals
         self._state.terminal_system._state = self._state
         self._state.terminal_system._walls_color = \
             config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1]
 
         # добавляем +1 к номеру уровня (этажа)
         self._state.level_number += 1
+        self._state.stattracker.levels_completed += 1
 
     def _load_sprites(self, assets_manager: AssetManager) -> None:
         # Уровень

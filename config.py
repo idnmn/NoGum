@@ -27,7 +27,7 @@ PLAYER_DASH_DURATION: float = 0.15  # Длительность
 PLAYER_DASH_COOLDOWN: float = 5.0  # Кд между рывками
 
 # переход между этажами
-TRANSITION_TIME: float = 1.0
+TRANSITION_TIME: float = 0.5
 
 # баланс
 LEVEL_COEF = 1.02 # коэффициент увеличения стат мобов в зависимости от уровня

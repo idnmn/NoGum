@@ -13,6 +13,7 @@ class Renderer:
         self._world_bounds = world_bounds
         self._ui_renderer = ui_renderer
         self.debug_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        self.fx_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 
         # поверхность, на которой рисуется весь мир в абсолютных координатах
         self.world_surface = pygame.Surface((world_bounds.width, world_bounds.height), pygame.SRCALPHA)
@@ -111,6 +112,9 @@ class Renderer:
 
         # рендерим outworld часть ui
         self._ui_renderer.render_out_world(state)
+
+        # рендерим fx слой
+        self._screen.blit(self.fx_surface, (0, 0))
 
         # сменяем кадр
         if flip_flag:

@@ -20,7 +20,7 @@ class EnemySystem:
                 dead.append(enemy)
                 continue
 
-            enemy.update(dt, state, active_room, surface)
+            enemy.update(dt, surface)
 
         # очистка мертвяков
         for e in dead:

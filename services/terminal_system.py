@@ -2,16 +2,15 @@ import pygame
 import config
 from pygame import Vector2
 from models.game_state import GameState
-from models.room_manager import RoomManager
 from models.terminal import Terminal
 
 
 # система терминалов
 class TerminalSystem:
-    def __init__(self, screen: pygame.Surface, room_manager: RoomManager, state: GameState) -> None:
-        self._room_manager = room_manager
+    def __init__(self, screen: pygame.Surface, state: GameState) -> None:
         self._state = state
-        self.terminals: list[Terminal] = room_manager.terminals
+        self._room_manager = state.room_manager
+        self.terminals: list[Terminal] = self._room_manager.terminals
 
         # позиция по центру
         self._hud_rect = pygame.Rect(
@@ -38,12 +37,12 @@ class TerminalSystem:
         self._is_teleporting = False
         self.post_teleport_flag = False
         self._dark_timer = 0.0
-        self._max_dark_time = 1
+        self._max_dark_time = config.TRANSITION_TIME
 
-        self._set_world_bounds(self._room_manager.world_bounds)
+        self.set_world_bounds(self._room_manager.world_bounds)
 
     # вычисляет масштаб и смещение для центрирования уровня на карте
-    def _set_world_bounds(self, bounds: pygame.Rect) -> None:
+    def set_world_bounds(self, bounds: pygame.Rect) -> None:
         self._world_bounds = bounds
         if bounds.width > 0 and bounds.height > 0:
             margin = 12
@@ -125,6 +124,7 @@ class TerminalSystem:
                         if terminal.is_selected and not terminal.is_near_player:
                             self._is_teleporting = True
                             self._dark_timer = self._max_dark_time
+                            self._state.stattracker.terminal_teleportations += 1
 
                         if terminal.is_near_player and not terminal.is_selected:
                             terminal.is_near_player = False
@@ -170,9 +170,9 @@ class TerminalSystem:
         pygame.display.flip()
 
     # отрисовка полов и стен. Выполняется редко, кэшируется
-    def _draw_static(self, room_manager: RoomManager) -> None:
+    def _draw_static(self) -> None:
         # Фоны комнат
-        for room in room_manager.rooms:
+        for room in self._room_manager.rooms:
             if room.is_explored or config.MINIMAP_EXPLORED:
                 rx = self._offset[0] + (room.offset.x - self._world_bounds.x) * self._scale
                 ry = self._offset[1] + (room.offset.y - self._world_bounds.y) * self._scale
@@ -187,6 +187,15 @@ class TerminalSystem:
                     mw = wall.body.rect.width * self._scale
                     mh = wall.body.rect.height * self._scale
                     pygame.draw.rect(self._static_cache, self._walls_color, (mx, my, mw, mh))
+
+                if room.exit:
+                    exit = room.exit
+
+                    mx = self._offset[0] + (exit.body.rect.x - self._world_bounds.x) * self._scale
+                    my = self._offset[1] + (exit.body.rect.y - self._world_bounds.y) * self._scale
+                    mw = exit.body.rect.width * self._scale
+                    mh = exit.body.rect.height * self._scale
+                    pygame.draw.rect(self._static_cache, config.EXIT_COLOR, (mx, my, mw, mh))
 
     # Отрисовываем терминалы
     def _draw_layer(self):

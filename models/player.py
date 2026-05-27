@@ -4,6 +4,7 @@ from pygame import Vector2
 
 import config
 from models.collidable import CollisionBody
+from models.game_state import GameState
 from models.renderable import Renderable
 from models.weapons import Weapon
 from models.decal import Decal
@@ -11,12 +12,15 @@ from services.decal_system import DecalSystem
 
 
 class Player(Renderable):
-    def __init__(self, x: float, y: float, sprite: pygame.Surface, step_sprite: pygame.Surface) -> None:
+    def __init__(self, x: float, y: float, sprite: pygame.Surface, step_sprite: pygame.Surface,
+                 state: GameState) -> None:
         self.body = CollisionBody(
             rect=pygame.Rect(x, y, config.PLAYER_SIZE, config.PLAYER_SIZE),
             layer="dynamic",
             tags={"player"}
         )
+        self._state = state
+
         self._source_sprite = sprite
         self.sprite = sprite
         self.step_sprite = step_sprite
@@ -117,7 +121,7 @@ class Player(Renderable):
 
         decals_system.decals.append(step)
 
-    def update(self, dx: float, dy: float, dt: float, dash_requested: bool, decals_system: DecalSystem) -> None:
+    def update(self, dx: float, dy: float, dt: float, dash_requested: bool) -> None:
         """
         dx, dy: Направление ввода
         dt: Delta time в секундах
@@ -192,7 +196,7 @@ class Player(Renderable):
 
         # рисуем следы
         if self._step_timer <= 0:
-            self._draw_step(decals_system)
+            self._draw_step(self._state.decals_system)
             self._step_timer = self.step_cooldown
 
         # нормализуем vx к диапазону [-1, 1] и умножаем на макс. угол
@@ -208,6 +212,9 @@ class Player(Renderable):
 
     def take_damage(self, amount: float) -> None:
         self.hp -= int(amount)
+
+        self._state.camera.shake(3, 0.15)
+
         self._visual_damage_timer = self._visual_damage_cooldown
         self.sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)
         if self.hp <= 0:

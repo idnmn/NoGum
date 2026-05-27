@@ -8,7 +8,7 @@ class Spawner:
     def __init__(self, state: GameState):
         self._state = state
 
-    def _spawn_bookworm(self, x: float, y: float, level) -> BookWorm:
+    def _spawn_bookworm(self, x: float, y: float, level: float, state: GameState) -> BookWorm:
         size = int(random.uniform(30, 50))
         bookworm = BookWorm(
             x=x,
@@ -16,11 +16,12 @@ class Spawner:
             size_x=size,
             size_y=int(size*0.75),
             level=level,
-            sprite=self._state.assets['bookworm_sprite']
+            sprite=self._state.assets['bookworm_sprite'],
+            state=state
         )
         return bookworm
 
-    def _spawn_bookworm_mommy(self, x: float, y: float, level) -> BookWormMommy:
+    def _spawn_bookworm_mommy(self, x: float, y: float, level: float, state: GameState) -> BookWormMommy:
         size = int(random.uniform(70, 90))
         mommy = BookWormMommy(
             x=x,
@@ -28,7 +29,8 @@ class Spawner:
             size_x=size,
             size_y=int(size * 0.75),
             level=level,
-            sprite=self._state.assets['bookworm_sprite']
+            sprite=self._state.assets['bookworm_sprite'],
+            state=state
         )
         return mommy
 
@@ -61,11 +63,11 @@ class Spawner:
             x, y = Vector2(spaces.pop(random.randint(0, len(spaces) - 1))) * config.TILE_SIZE + offset
 
             if enemy_score == 1:
-                enemies.append(random.choice(score_1_enemy)(x, y, config.LEVEL_COEF ** state.level_number))
+                enemies.append(random.choice(score_1_enemy)(x, y, config.LEVEL_COEF ** state.level_number, state))
             elif enemy_score == 2:
-                enemies.append(random.choice(score_2_enemy)(x, y, config.LEVEL_COEF ** state.level_number))
+                enemies.append(random.choice(score_2_enemy)(x, y, config.LEVEL_COEF ** state.level_number, state))
             else:
-                enemies.append(random.choice(score_3_enemy)(x, y, config.LEVEL_COEF ** state.level_number))
+                enemies.append(random.choice(score_3_enemy)(x, y, config.LEVEL_COEF ** state.level_number, state))
         return enemies
 
     def _random_partition(self, limit: int) -> list[int]:

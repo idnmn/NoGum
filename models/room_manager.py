@@ -12,10 +12,11 @@ from services.level_generator import LevelGenerator
 # класс некого "оркестратора комнат", для удобной работы с несколькими комнатами
 class RoomManager:
     def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface,
-                 terminal_sprites: list[pygame.Surface]) -> None:
+                 terminal_sprites: list[pygame.Surface], state: GameState) -> None:
         self._generator = LevelGenerator(wall_sprite=wall_sprite,
                                          floor_sprite=floor_sprite,
                                          terminal_sprites=terminal_sprites)
+        self._state = state
 
         self.rooms: list[Room]
         self.active_room: Room
@@ -81,6 +82,7 @@ class RoomManager:
                 if not room.is_explored:
                     room.is_explored = True
                     self.is_new_explored = True
+                    self._state.stattracker.rooms_explored += 1
                 # для отрисовки тени терминала
                 if room.terminal:
                     room.terminal.body.have_shadow = False

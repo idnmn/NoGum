@@ -10,17 +10,18 @@ from models.decal import Decal
 from models.room import Room
 from models.game_state import GameState
 from models.renderable import Renderable
-from services.decal_system import DecalSystem
 from services.pathfinder import Pathfinder
 
 
 class Enemy(Renderable):
-    def __init__(self, x: float, y: float, size_x: int, size_y: int, enemy_type: str = "") -> None:
+    def __init__(self, x: float, y: float, size_x: int, size_y: int,
+                 state: GameState, enemy_type: str = "") -> None:
         self.body = CollisionBody(
             rect=pygame.Rect(x - size_x / 2, y - size_y / 2, size_x, size_y),
             layer="dynamic",
             tags={"enemy", enemy_type}
         )
+        self._state = state
 
         self.attack_hitbox = pygame.Rect(
                 self.body.rect.x - 1,
@@ -94,8 +95,8 @@ class Enemy(Renderable):
 
 class BookWorm(Enemy):
     def __init__(self, x: float, y: float, size_x: int, size_y: int, sprite: pygame.Surface,
-                 enemy_type: str = "bookworm", level: float = 1.0) -> None:
-        super().__init__(x, y, size_x, size_y, enemy_type)
+                 state: GameState, enemy_type: str = "bookworm", level: float = 1.0) -> None:
+        super().__init__(x, y, size_x, size_y, state, enemy_type)
         self._source_sprite = pygame.transform.scale(sprite, (size_x, size_y)).convert_alpha()
         self.sprite = self._source_sprite
         self.body.shadow_offset = -5
@@ -150,9 +151,10 @@ class BookWorm(Enemy):
 
         surface.blit(self.sprite, (self.rect.x, self.rect.y))
 
-    def update(self, dt: float, state: GameState, active_room: Room, surface: pygame.Surface) -> None:
+    def update(self, dt: float, surface: pygame.Surface) -> None:
         # обновляем таймеры
-        self.update_timers(dt, surface, active_room, state)
+        active_room = self._state.room_manager.active_room
+        self.update_timers(dt, surface, active_room, self._state)
 
         # если ещё остались точки
         if self.pathfinder.path_points:
@@ -164,8 +166,8 @@ class BookWorm(Enemy):
             self.next_point = Vector2(self.body.rect.center)
 
         # Вектор и дистанция до игрока
-        dist_to_player = Vector2(self.rect.center).distance_to(state.player.rect.center)
-        dir_to_player = (pygame.Vector2(state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
+        dist_to_player = Vector2(self.rect.center).distance_to(self._state.player.rect.center)
+        dir_to_player = (pygame.Vector2(self._state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
 
         # Обрабатываем логику по состояниям
         if self.state == 'chase':  # поиск игрока
@@ -175,7 +177,7 @@ class BookWorm(Enemy):
             # обновляем данные с pathfinder'а
             if self._repath_timer <= 0:
                 self._repath_timer = self._repath_cooldown
-                self.pathfinder.search_path(Vector2(self.rect.center), Vector2(state.player.rect.center), active_room,
+                self.pathfinder.search_path(Vector2(self.rect.center), Vector2(self._state.player.rect.center), active_room,
                                             search_index=2)
                 if self.pathfinder.path_points:
                     self.next_point = self.pathfinder.path_points[0]
@@ -252,9 +254,9 @@ class BookWorm(Enemy):
 
         elif self.state == "dash":
             # сбрасываем рывок при контакте или по истечению таймера
-            if self.attack_hitbox.colliderect(state.player.rect) or self._state_timer <= 0:
-                if self.attack_hitbox.colliderect(state.player.rect):
-                    state.player.take_damage(self.attack_damage)
+            if self.attack_hitbox.colliderect(self._state.player.rect) or self._state_timer <= 0:
+                if self.attack_hitbox.colliderect(self._state.player.rect):
+                    self._state.player.take_damage(self.attack_damage)
                     self._damage_timer = self.damage_cooldown
 
                 self.state = "recovery"
@@ -268,9 +270,9 @@ class BookWorm(Enemy):
                 self._state_timer = self.between_dash_cooldown
 
         # контактный урон
-        if self.attack_hitbox.colliderect(state.player.rect) and self.state == "chase":
+        if self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase":
             if self._damage_timer <= 0:
-                state.player.take_damage(self.contact_damage)
+                self._state.player.take_damage(self.contact_damage)
                 self._damage_timer = self.damage_cooldown
 
         # обновляем позицию
@@ -297,8 +299,8 @@ class BookWorm(Enemy):
 
 class BookWormMommy(Enemy):
     def __init__(self, x: float, y: float, size_x: int, size_y: int, sprite: pygame.Surface,
-                 enemy_type: str = "bookworm", level: float = 1.0) -> None:
-        super().__init__(x, y, size_x, size_y, enemy_type)
+                 state: GameState, enemy_type: str = "bookworm", level: float = 1.0) -> None:
+        super().__init__(x, y, size_x, size_y, state, enemy_type)
         self._source_sprite = pygame.transform.scale(sprite, (size_x, size_y)).convert_alpha()
         self.sprite = self._source_sprite
         self.body.shadow_offset = -10
@@ -369,9 +371,10 @@ class BookWormMommy(Enemy):
 
         surface.blit(sprite, (self.rect.x + offset_x, self.rect.y + offset_y))
 
-    def update(self, dt: float, state: GameState, active_room: Room, surface: pygame.Surface) -> None:
+    def update(self, dt: float, surface: pygame.Surface) -> None:
         # обновляем таймеры
-        self.update_timers(dt, surface, active_room, state)
+        active_room = self._state.room_manager.active_room
+        self.update_timers(dt, surface, active_room, self._state)
 
         # если ещё остались точки
         if self.pathfinder.path_points:
@@ -383,8 +386,8 @@ class BookWormMommy(Enemy):
             self.next_point = Vector2(self.body.rect.center)
 
         # Вектор и дистанция до игрока
-        dist_to_player = Vector2(self.rect.center).distance_to(state.player.rect.center)
-        dir_to_player = (pygame.Vector2(state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
+        dist_to_player = Vector2(self.rect.center).distance_to(self._state.player.rect.center)
+        dir_to_player = (pygame.Vector2(self._state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
 
         # Обрабатываем логику по состояниям
         if self.state == 'chase':  # поиск игрока
@@ -394,7 +397,7 @@ class BookWormMommy(Enemy):
             # обновляем данные с pathfinder'а
             if self._repath_timer <= 0:
                 self._repath_timer = self._repath_cooldown
-                self.pathfinder.search_path(Vector2(self.rect.center), Vector2(state.player.rect.center), active_room,
+                self.pathfinder.search_path(Vector2(self.rect.center), Vector2(self._state.player.rect.center), active_room,
                                             search_index=0)
                 if self.pathfinder.path_points:
                     self.next_point = self.pathfinder.path_points[0]
@@ -496,7 +499,7 @@ class BookWormMommy(Enemy):
 
 
         # контактный урон
-        if self.attack_hitbox.colliderect(state.player.rect) and self.state == "chase":
+        if self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase":
             if self._damage_timer <= 0:
                 state.player.take_damage(self.contact_damage)
                 self._damage_timer = self.damage_cooldown
