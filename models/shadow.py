@@ -2,10 +2,9 @@ import pygame
 from pygame import Vector2
 
 from models.collidable import CollisionBody
-from models.renderable import Renderable
 
 
-class Shadow(Renderable):
+class Shadow():
     def __init__(self, owner: CollisionBody) -> None:
         self.x = owner.rect.x
         self.y = int(owner.rect.y + owner.rect.height / 1.2)

@@ -5,15 +5,13 @@ from pygame import Vector2
 import config
 from models.collidable import CollisionBody
 from models.game_state import GameState
-from models.renderable import Renderable
 from models.weapons import Weapon
 from models.decal import Decal
 from services.decal_system import DecalSystem
 
 
-class Player(Renderable):
-    def __init__(self, x: float, y: float, sprite: pygame.Surface, step_sprite: pygame.Surface,
-                 state: GameState) -> None:
+class Player():
+    def __init__(self, x: float, y: float, state: GameState) -> None:
         self.body = CollisionBody(
             rect=pygame.Rect(x, y, config.PLAYER_SIZE, config.PLAYER_SIZE),
             layer="dynamic",
@@ -21,9 +19,9 @@ class Player(Renderable):
         )
         self._state = state
 
-        self._source_sprite = sprite
-        self.sprite = sprite
-        self.step_sprite = step_sprite
+        self._source_sprite = state.assets['player_sprite']
+        self.sprite = self._source_sprite.copy()
+        self.step_sprite = state.assets['player_step_sprite']
 
         # состояние рывка (таймеры)
         self._dash_timer: float = 0.0
@@ -92,7 +90,7 @@ class Player(Renderable):
             self.weapon.render(surface, self.mouse_world_pos, Vector2(self.rect.center))
 
     # Отрисовка шагов
-    def _draw_step(self, decals_system: DecalSystem) -> None:
+    def _draw_step(self) -> None:
         offset_x, offset_y = 0, 0
         if self.body.vx:
             if self.step_offset:
@@ -119,7 +117,7 @@ class Player(Renderable):
             max_alpha=150
         )
 
-        decals_system.decals.append(step)
+        self._state.decals_system.decals.append(step)
 
     def update(self, dx: float, dy: float, dt: float, dash_requested: bool) -> None:
         """
@@ -196,7 +194,7 @@ class Player(Renderable):
 
         # рисуем следы
         if self._step_timer <= 0:
-            self._draw_step(self._state.decals_system)
+            self._draw_step()
             self._step_timer = self.step_cooldown
 
         # нормализуем vx к диапазону [-1, 1] и умножаем на макс. угол
@@ -213,7 +211,7 @@ class Player(Renderable):
     def take_damage(self, amount: float) -> None:
         self.hp -= int(amount)
 
-        self._state.camera.shake(3, 0.15)
+        self._state.camera.shake(5, 0.15)
 
         self._visual_damage_timer = self._visual_damage_cooldown
         self.sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)

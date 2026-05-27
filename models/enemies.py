@@ -9,11 +9,10 @@ from models.collidable import CollisionBody
 from models.decal import Decal
 from models.room import Room
 from models.game_state import GameState
-from models.renderable import Renderable
 from services.pathfinder import Pathfinder
 
 
-class Enemy(Renderable):
+class Enemy():
     def __init__(self, x: float, y: float, size_x: int, size_y: int,
                  state: GameState, enemy_type: str = "") -> None:
         self.body = CollisionBody(
@@ -56,14 +55,10 @@ class Enemy(Renderable):
 
         self._facing_right = True
 
-    @property
-    def rect(self) -> pygame.Rect:
-        return self.body.rect
-
-    def update(self, dt: float, state: GameState, active_room: Room, surface: pygame.Surface) -> None:
+    def update(self, dt: float, surface: pygame.Surface) -> None:
         pass
 
-    def update_timers(self, dt: float, surface: pygame.surface, active_room: Room, state: GameState) -> None:
+    def update_timers(self, dt: float) -> None:
         if self._repath_timer > 0:
             self._repath_timer -= dt
 
@@ -92,6 +87,10 @@ class Enemy(Renderable):
 
     def render(self, surface: pygame.Surface) -> None:
         pygame.draw.rect(surface, (255, 255, 255), self.body.rect)
+
+    @property
+    def rect(self) -> pygame.Rect:
+        return self.body.rect
 
 class BookWorm(Enemy):
     def __init__(self, x: float, y: float, size_x: int, size_y: int, sprite: pygame.Surface,
@@ -123,7 +122,7 @@ class BookWorm(Enemy):
 
         self.acceleration = 2500
         self.friction = config.FRICTION * 10
-        self.next_point = Vector2(self.rect.center)
+        self.next_point = Vector2(self.body.center)
 
         self._repath_cooldown = 0.5
 
@@ -154,7 +153,7 @@ class BookWorm(Enemy):
     def update(self, dt: float, surface: pygame.Surface) -> None:
         # обновляем таймеры
         active_room = self._state.room_manager.active_room
-        self.update_timers(dt, surface, active_room, self._state)
+        self.update_timers(dt)
 
         # если ещё остались точки
         if self.pathfinder.path_points:
@@ -282,7 +281,7 @@ class BookWorm(Enemy):
         self.attack_hitbox.x = self.body.rect.x - 1
         self.attack_hitbox.y = self.body.rect.y - 1
 
-    def on_death(self, state: GameState) -> None:
+    def on_death(self) -> None:
         random_size = random.randint(-3, 5)
         decal = Decal(
             pos=Vector2(self.body.rect.center),
@@ -290,12 +289,12 @@ class BookWorm(Enemy):
             size_x=self.body.rect.width + random_size,
             size_y=self.body.rect.width + random_size,
             angle= random.uniform(0, 360),
-            sprite=state.assets['hit_decal'],
+            sprite=self._state.assets['hit_decal'],
             fade_time=1,
             max_alpha=150,
         )
 
-        state.decals_system.decals.append(decal)
+        self._state.decals_system.decals.append(decal)
 
 class BookWormMommy(Enemy):
     def __init__(self, x: float, y: float, size_x: int, size_y: int, sprite: pygame.Surface,
@@ -374,7 +373,7 @@ class BookWormMommy(Enemy):
     def update(self, dt: float, surface: pygame.Surface) -> None:
         # обновляем таймеры
         active_room = self._state.room_manager.active_room
-        self.update_timers(dt, surface, active_room, self._state)
+        self.update_timers(dt)
 
         # если ещё остались точки
         if self.pathfinder.path_points:
@@ -474,9 +473,9 @@ class BookWormMommy(Enemy):
 
         elif self.state == "dash": # рывок
             # сбрасываем рывок при контакте или по истечению таймера
-            if self.attack_hitbox.colliderect(state.player.rect) or self._state_timer <= 0:
-                if self.attack_hitbox.colliderect(state.player.rect):
-                    state.player.take_damage(self.attack_damage)
+            if self.attack_hitbox.colliderect(self._state.player.rect) or self._state_timer <= 0:
+                if self.attack_hitbox.colliderect(self._state.player.rect):
+                    self._state.player.take_damage(self.attack_damage)
                     self._damage_timer = self.damage_cooldown
 
                 self.state = "recovery"
@@ -494,14 +493,15 @@ class BookWormMommy(Enemy):
             self.body.vx = 0.0
             self.body.vy = 0.0
 
+            self._state.camera.shake(self._shake_amount * 10, 0.1)
+
             if self._state_timer <= 0:
                 self.is_alive = False
-
 
         # контактный урон
         if self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase":
             if self._damage_timer <= 0:
-                state.player.take_damage(self.contact_damage)
+                self._state.player.take_damage(self.contact_damage)
                 self._damage_timer = self.damage_cooldown
 
         # обновляем позицию
@@ -524,7 +524,7 @@ class BookWormMommy(Enemy):
 
         return damage
 
-    def on_death(self, state: GameState) -> None:
+    def on_death(self) -> None:
         # спавним декали
         for _ in range(random.randint(7, 10)):
             random_size = random.randint(-3, 5)
@@ -539,26 +539,33 @@ class BookWormMommy(Enemy):
                 size_x=self.body.rect.width + random_size,
                 size_y=self.body.rect.width + random_size,
                 angle= random.uniform(0, 360),
-                sprite=state.assets['hit_decal'],
+                sprite=self._state.assets['hit_decal'],
                 fade_time=1,
                 max_alpha=150,
             )
 
-            state.decals_system.decals.append(decal)
+            self._state.decals_system.decals.append(decal)
 
         for _ in range(random.randint(3, 7)):
             size = int(random.uniform(15, 25))
 
             rand_x = random.uniform(-self.rect.width, self.rect.width)
             rand_y = random.uniform(-self.rect.width, self.rect.width)
+            sprite = self._state.assets['bookworm_sprite'].copy()
+            sprite.convert_alpha()
+            sprite.fill((150, 30, 30), None, pygame.BLEND_RGB_ADD)
 
             bookworm = BookWorm(
                 x=self.rect.centerx + rand_x,
                 y=self.rect.centery + rand_y,
                 size_x=size,
                 size_y=int(size * 0.75),
-                level=config.LEVEL_COEF ** state.level_number * 0.2,
-                sprite=state.assets['bookworm_sprite']
+                level=config.LEVEL_COEF ** self._state.level_number * 0.2,
+                sprite=sprite,
+                state=self._state
             )
 
-            state.enemy_system.enemies.append(bookworm)
+            self._state.enemy_system.enemies.append(bookworm)
+
+        # трясём камеру
+        self._state.camera.shake(10, 0.15)

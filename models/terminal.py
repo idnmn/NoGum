@@ -2,11 +2,9 @@ import pygame
 from pygame import Vector2
 
 from models.collidable import CollisionBody
-from models.renderable import Renderable
-
 
 # местные телепорты
-class Terminal(Renderable):
+class Terminal():
     def __init__(self, x: float, y: float, size: int,
                  sprite_active: pygame.Surface, sprite_inactive: pygame.Surface) -> None:
         self.body = CollisionBody(

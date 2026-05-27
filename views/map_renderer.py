@@ -6,7 +6,8 @@ from models.player import Player
 
 
 class MinimapRenderer:
-    def __init__(self, screen: pygame.Surface, state: GameState, room_manager: RoomManager) -> None:
+    def __init__(self, screen: pygame.Surface, state: GameState) -> None:
+        self._state = state
         self._screen = screen
         self._surface = pygame.Surface((config.MINIMAP_WIDTH, config.MINIMAP_HEIGHT), pygame.SRCALPHA)
 
@@ -28,7 +29,7 @@ class MinimapRenderer:
         self._offset: tuple[float, float] = (0.0, 0.0)
         self._world_bounds: pygame.Rect = pygame.Rect(0, 0, 1, 1)
 
-        self.initialize_room_data(room_manager, state)
+        self.initialize_room_data(state.room_manager, state)
 
         self._player = state.player
 
@@ -60,7 +61,7 @@ class MinimapRenderer:
         if self._room_manager.is_new_explored or self._static_cache is None:
             self._static_cache = pygame.Surface(self._map_rect.size, pygame.SRCALPHA)
             self._static_cache.fill((0, 0, 0, 0))
-            self._draw_static(self._room_manager)
+            self._draw_static()
             self._room_manager.is_new_explored = False
 
         # очищаем динамический слой
@@ -74,16 +75,16 @@ class MinimapRenderer:
         self._layer.blit(self._static_cache, (0, 0))
 
         # рисуем динамические элементы (игрок и PoI)
-        self._draw_player(self._player)
+        self._draw_player()
 
         # выводим на экран
         self._screen.blit(self._layer, self._map_rect)
         # pygame.display.flip()
 
     # отрисовка полов и стен. Выполняется редко, кэшируется
-    def _draw_static(self, room_manager: RoomManager) -> None:
+    def _draw_static(self) -> None:
         # Фоны комнат
-        for room in room_manager.rooms:
+        for room in self._room_manager.rooms:
             if room.is_explored or config.MINIMAP_EXPLORED:
                 rx = self._offset[0] + (room.offset.x - self._world_bounds.x) * self._scale
                 ry = self._offset[1] + (room.offset.y - self._world_bounds.y) * self._scale
@@ -125,9 +126,9 @@ class MinimapRenderer:
         pygame.draw.rect(self._static_cache, color, (mx, my, mw, mh))
 
     # отрисовка игрока
-    def _draw_player(self, player: Player) -> None:
-        px = self._offset[0] + (player.body.center[0] - self._world_bounds.x) * self._scale
-        py = self._offset[1] + (player.body.center[1] - self._world_bounds.y) * self._scale
+    def _draw_player(self) -> None:
+        px = self._offset[0] + (self._state.player.body.center[0] - self._world_bounds.x) * self._scale
+        py = self._offset[1] + (self._state.player.body.center[1] - self._world_bounds.y) * self._scale
 
         # размер маркера адаптируется под масштаб карты
         radius = max(3, int(self._scale * 8))

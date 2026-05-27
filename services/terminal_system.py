@@ -136,7 +136,7 @@ class TerminalSystem:
         # рендерим статичную часть
         self._static_cache = pygame.Surface(self._hud_rect.size, pygame.SRCALPHA)
         self._static_cache.fill((0, 0, 0, 0))
-        self._draw_static(self._room_manager)
+        self._draw_static()
 
         # очищаем динамический слой
         self._layer.fill((0, 0, 0, 0))
@@ -172,7 +172,7 @@ class TerminalSystem:
     # отрисовка полов и стен. Выполняется редко, кэшируется
     def _draw_static(self) -> None:
         # Фоны комнат
-        for room in self._room_manager.rooms:
+        for room in self._state.room_manager.rooms:
             if room.is_explored or config.MINIMAP_EXPLORED:
                 rx = self._offset[0] + (room.offset.x - self._world_bounds.x) * self._scale
                 ry = self._offset[1] + (room.offset.y - self._world_bounds.y) * self._scale

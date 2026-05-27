@@ -29,11 +29,12 @@ class UIRenderer:
         }
 
     # данные для слайдеров
-    def _get_slider_configs(self, weapon: Weapon) -> list[dict]:
+    def _get_slider_configs(self) -> list[dict]:
         """
         единый источник правды для ползунков
         возвращает список объектов с полными данными для отрисовки и логики
         """
+        weapon = self._state.weapon
         layout = self._get_panel_layout()
         if type(weapon) == Pointer:
             return [
@@ -68,7 +69,8 @@ class UIRenderer:
             return []
 
     # внутренний обработчик действий пользователя внутри интерфейса
-    def handle_input(self, events: list, weapon: Weapon | None) -> None:
+    def handle_input(self, events: list) -> None:
+        weapon = self._state.weapon
         if not weapon:
             return
 
@@ -116,17 +118,19 @@ class UIRenderer:
         current_cfg["setter"](new_val)
 
     # отрисовщик in-world составляющей
-    def render_in_world(self, state: GameState, world_surface: pygame.Surface) -> None:
-        self._draw_dash_indicator(state.player, world_surface)
+    def render_in_world(self, world_surface: pygame.Surface) -> None:
+        self._draw_dash_indicator(world_surface)
 
     # отрисовщик out-world составляющкей
-    def render_out_world(self, state: GameState) -> None:
-        self._draw_hp_bar(state)
+    def render_out_world(self) -> None:
+        state = self._state
+
+        self._draw_hp_bar()
 
         if self._state.is_minimap_visible:
             self._map_renderer.render()
 
-        self._draw_weapon_hud(state.weapon)
+        self._draw_weapon_hud()
 
         # прицел виден только когда игра активна и нет открытых оверлеев
         if not state.is_paused and not state.is_minimap_visible:
@@ -134,10 +138,12 @@ class UIRenderer:
                 self._draw_crosshair(state.weapon.crosshair)
 
         if state.is_upgrade_ui_open:
-            self._draw_upgrade_panel(state.weapon)
+            self._draw_upgrade_panel()
 
     # полоска хп игрока
-    def _draw_hp_bar(self, state: GameState) -> None:
+    def _draw_hp_bar(self) -> None:
+        state = self._state
+
         # фиксирован в левом верхнем углу
         x, y = 20, 20
         h, w = config.UI_HP_BAR_HEIGHT, config.UI_HP_BAR_WIDTH
@@ -163,7 +169,9 @@ class UIRenderer:
                                       y + fill_offset_y + bar_fill.get_height() + 10))
 
     # индикатор зарядки рывка
-    def _draw_dash_indicator(self, player: Player, world_surface: pygame.Surface) -> None:
+    def _draw_dash_indicator(self, world_surface: pygame.Surface) -> None:
+        player = self._state.player
+
         if not player.is_dash_ui_visible:
             return
 
@@ -180,7 +188,9 @@ class UIRenderer:
                          (bar_x, bar_y, fill_w, config.UI_DASH_BAR_HEIGHT))
 
     # худ для оружия
-    def _draw_weapon_hud(self, weapon: Weapon | None) -> None:
+    def _draw_weapon_hud(self,) -> None:
+        weapon = self._state.weapon
+
         if not weapon or not weapon.name:
             return
 
@@ -226,7 +236,9 @@ class UIRenderer:
         self._screen.blit(sprite, (pos[0] - ox, pos[1] - oy))
 
     # панель настройки оружия
-    def _draw_upgrade_panel(self, weapon: Weapon | None) -> None:
+    def _draw_upgrade_panel(self) -> None:
+        weapon = self._state.weapon
+
         layout = self._get_panel_layout()
         px, py, pw, ph = layout["px"], layout["py"], layout["panel_w"], layout["panel_h"]
 

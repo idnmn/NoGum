@@ -8,7 +8,9 @@ from views.ui_renderer import UIRenderer
 
 # рендерер
 class Renderer:
-    def __init__(self, screen: pygame.Surface, world_bounds: pygame.Rect, ui_renderer: UIRenderer) -> None:
+    def __init__(self, state: GameState, screen: pygame.Surface,
+                 world_bounds: pygame.Rect, ui_renderer: UIRenderer) -> None:
+        self._state = state
         self._screen = screen
         self._world_bounds = world_bounds
         self._ui_renderer = ui_renderer
@@ -24,7 +26,10 @@ class Renderer:
         # буфер для финального кадра перед масштабированием
         self._viewport_buffer = pygame.Surface((config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT))
 
-    def render(self, state: GameState, room_manager: RoomManager, camera: Camera, flip_flag: bool = True) -> None:
+    def render(self, flip_flag: bool = True) -> None:
+        camera = self._state.camera
+        room_manager = self._state.room_manager
+
         # очищаем экран
         self.world_surface.fill(config.BACKGROUND_COLOR)
         self.shadow_surface.fill((0, 0, 0, 0))
@@ -45,7 +50,7 @@ class Renderer:
             self.world_surface.blit(room.floor_surface, (room.offset.x, room.offset.y - config.TILE_SIZE))
 
         # рендерим декали
-        for decal in state.decals_system.decals:
+        for decal in self._state.decals_system.decals:
             decals_queue.append(decal)
         decals_queue.sort(key=lambda obj: obj.rect.bottom) # сортируем
 
@@ -53,7 +58,7 @@ class Renderer:
             decal.render(self.world_surface)
 
         # рендерим тени
-        for shadow in state.decals_system.shadows:
+        for shadow in self._state.decals_system.shadows:
             shadow.render(self.shadow_surface, room_manager.active_room.offset)
         self.world_surface.blit(self.shadow_surface, room_manager.active_room.offset)
 
@@ -69,17 +74,17 @@ class Renderer:
                 render_queue.append(room.terminal)
 
         # добавляем игрока в очередь
-        if state.player:
-            render_queue.append(state.player)
+        if self._state.player:
+            render_queue.append(self._state.player)
 
         # добавляем снаряды в очередь
-        render_queue += state.projectile_system.projectiles
+        render_queue += self._state.projectile_system.projectiles
 
         # добавляем частицы в очередь
-        render_queue += state.particle_system.particles
+        render_queue += self._state.particle_system.particles
 
         # добавляем врагов в очередь
-        render_queue += state.enemy_system.enemies
+        render_queue += self._state.enemy_system.enemies
 
         # сортируем очередь по y координате
         render_queue.sort(key=lambda obj: obj.rect.bottom)
@@ -89,7 +94,7 @@ class Renderer:
             obj.render(self.world_surface)
 
         # рендерим inworld часть ui
-        self._ui_renderer.render_in_world(state, self.world_surface)
+        self._ui_renderer.render_in_world(self.world_surface)
 
         # вычисляем координаты вьюпорта
         view_x = int(camera.position.x + camera.shake_offset.x - config.INTERNAL_WIDTH / 2)
@@ -111,7 +116,7 @@ class Renderer:
             self._screen.blit(self.debug_surface, (0, 0))
 
         # рендерим outworld часть ui
-        self._ui_renderer.render_out_world(state)
+        self._ui_renderer.render_out_world()
 
         # рендерим fx слой
         self._screen.blit(self.fx_surface, (0, 0))

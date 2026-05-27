@@ -1,20 +1,23 @@
 import pygame
 from typing import Callable, List
 from models.enemies import Enemy
+from models.game_state import GameState
 from models.projectile import Projectile
-from models.weapons import Weapon
-from models.room_manager import RoomManager
+
 
 class ProjectileSystem:
     def __init__(self, on_wall_impact: Callable[[tuple[float, float]], None],
-                 on_enemy_impact: Callable[[tuple[float, float]], None]) -> None:
+                 on_enemy_impact: Callable[[tuple[float, float]], None], state: GameState) -> None:
+        self._state = state
         self.projectiles: list[Projectile] = []
         self._on_wall_impact = on_wall_impact
         self._on_enemy_impact = on_enemy_impact
 
-    def spawn(self, projectile, origin: pygame.Vector2, direction: pygame.Vector2, weapon: Weapon) -> None:
+    def spawn(self, projectile, origin: pygame.Vector2, direction: pygame.Vector2) -> None:
         if direction.length() == 0:
             direction = pygame.Vector2(1, 0)
+
+        weapon = self._state.weapon
 
         size = weapon.get_size()
         speed = weapon.get_speed()
@@ -24,7 +27,7 @@ class ProjectileSystem:
         self.projectiles.append(projectile(x=origin.x, y=origin.y, size=size,
                                            velocity=vel, damage=weapon.damage, lifetime=10.0))
 
-    def update(self, dt: float, room_manager: RoomManager, enemies: List[Enemy]) -> None:
+    def update(self, dt: float, enemies: List[Enemy]) -> None:
         for p in self.projectiles:
             p.rect.x += p.velocity.x * dt
             p.rect.y += p.velocity.y * dt
@@ -35,13 +38,14 @@ class ProjectileSystem:
                 continue
 
             # коллизия со стенами только активной комнаты
-            if room_manager.active_room:
-                for wall in room_manager.active_room.walls:
+            active_room = self._state.room_manager.active_room
+            if active_room:
+                for wall in active_room.walls:
                     if p.rect.colliderect(wall.body.rect):
                         p.is_active = False
                         self._on_wall_impact((p.rect.centerx, p.rect.centery))
                         break
-                terminal = room_manager.active_room.terminal
+                terminal = active_room.terminal
                 if terminal and p.rect.colliderect(terminal.body.rect):
                     p.is_active = False
                     self._on_wall_impact((p.rect.centerx, p.rect.centery))

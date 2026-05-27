@@ -18,7 +18,7 @@ class Particle:
         pygame.draw.circle(surface, color, (int(self.x), int(self.y)), int(self.size), )
 
 class ParticleSystem:
-    def __init__(self, max_particles: int = 200) -> None:
+    def __init__(self) -> None:
         self.particles: list[Particle] = []
 
     def spawn_wall_impact(self, pos: tuple[float, float], color: tuple[int, int, int] = (255, 200, 50)) -> None:

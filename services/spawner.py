@@ -1,6 +1,3 @@
-import random
-import pygame
-import config
 from models.enemies import *
 
 

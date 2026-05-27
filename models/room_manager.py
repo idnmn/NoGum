@@ -11,16 +11,15 @@ from services.level_generator import LevelGenerator
 
 # класс некого "оркестратора комнат", для удобной работы с несколькими комнатами
 class RoomManager:
-    def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface,
-                 terminal_sprites: list[pygame.Surface], state: GameState) -> None:
+    def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface, state: GameState) -> None:
         self._generator = LevelGenerator(wall_sprite=wall_sprite,
                                          floor_sprite=floor_sprite,
-                                         terminal_sprites=terminal_sprites)
+                                         state=state)
         self._state = state
 
-        self.rooms: list[Room]
-        self.active_room: Room
-        self.terminals: list[Terminal]
+        self.rooms: list[Room] = []
+        self.active_room: Room | None = None
+        self.terminals: list[Terminal] = []
 
         self.is_new_explored = False
         self.active_room: Room | None
@@ -36,6 +35,8 @@ class RoomManager:
         self._spacing_y = (config.ROOM_ROWS - 1) * config.TILE_SIZE
 
     def initialize_level(self):
+        self.rooms.clear()
+        self.terminals.clear()
         self.rooms, self.start_room = self._generator.generate(0, 0)
         self.terminals = [room.terminal for room in self.rooms if room.terminal]
 

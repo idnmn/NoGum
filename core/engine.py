@@ -52,8 +52,6 @@ class GameEngine:
         # инициализируем уровень ДО игрока чтобы взять координаты спавна
         self._state.room_manager = RoomManager(wall_sprite=self._state.assets['wall_sprite'],
                                          floor_sprite=self._state.assets['floor_sprite'],
-                                         terminal_sprites=[self._state.assets['terminal_sprite_active'],
-                                                           self._state.assets['terminal_sprite_inactive']],
                                          state=self._state)
         spawn_center = self._state.room_manager.active_room.bounds.center
 
@@ -65,7 +63,8 @@ class GameEngine:
 
 
         self._state.projectile_system = ProjectileSystem(on_wall_impact=self._on_wall_impact,
-                                                         on_enemy_impact=self._on_enemy_impact)
+                                                         on_enemy_impact=self._on_enemy_impact,
+                                                         state=self._state)
         self._state.particle_system = ParticleSystem()
         self._state.enemy_system = EnemySystem()
         self._state.decals_system = DecalSystem()
@@ -86,8 +85,6 @@ class GameEngine:
             self._state.player = Player(
                 x=spawn_center[0] - config.PLAYER_SIZE / 2,
                 y=spawn_center[1] - config.PLAYER_SIZE / 2,
-                sprite=self._state.assets['player_sprite'],
-                step_sprite=self._state.assets['player_step_sprite'],
                 state=self._state
             )
 
@@ -104,10 +101,10 @@ class GameEngine:
             self._state.camera.prev_center = self._state.camera.position.copy()
 
         # рендереры
-        self._map_renderer = MinimapRenderer(self._screen, self._state, self._state.room_manager)
+        self._map_renderer = MinimapRenderer(self._screen, self._state)
         self._ui_renderer = UIRenderer(self._screen, self._state)
         self._ui_renderer._map_renderer = self._map_renderer
-        self._renderer = Renderer(self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
+        self._renderer = Renderer(self._state, self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
 
         # инициализируем стартовое оружие
         self._state.weapon = Pointer(sprite=self._state.assets['pointer_sprite'],
@@ -196,10 +193,9 @@ class GameEngine:
                     self._state.room_manager.update_interactives(self._state, dt)
 
                     # Обновляем системы
-                    self._state.projectile_system.update(dt, self._state.room_manager, self._state.enemy_system.enemies)
+                    self._state.projectile_system.update(dt, self._state.enemy_system.enemies)
                     self._state.particle_system.update(dt)
-                    self._state.enemy_system.update(dt, self._state, self._state.room_manager.active_room,
-                                              self._renderer.debug_surface)
+                    self._state.enemy_system.update(dt, self._state, self._renderer.debug_surface)
                     self._state.decals_system.update(dt)
                     self._state.decals_system.update_shadows(entities)
 
@@ -232,7 +228,7 @@ class GameEngine:
                     self._state.camera.update(dt)
 
                     # обновляем снаряды
-                    self._state.projectile_system.update(dt, self._state.room_manager, self._state.enemy_system.enemies)
+                    self._state.projectile_system.update(dt, self._state.enemy_system.enemies)
 
                     # обрабатываем коллизию со стенами и терминалами
                     if self._state.room_manager.active_room:
@@ -289,7 +285,7 @@ class GameEngine:
             # отрисовка (раскидываем рендереры)
             # при post_tp вызываем оба рендерера
             if self._state.is_terminal_ui_open and self._state.terminal_system.post_teleport_flag:
-                self._renderer.render(self._state, self._state.room_manager, self._state.camera, False)
+                self._renderer.render(False)
                 self._state.terminal_system.render()
 
             # вне post_tp рендерим только интерфейс терминалов
@@ -298,12 +294,12 @@ class GameEngine:
 
             # стандартный рендерер
             elif not self._state.is_terminal_ui_open:
-                self._renderer.render(self._state, self._state.room_manager, self._state.camera)
+                self._renderer.render()
 
             if self._input.spawn:
                 cords = self._input.spawn_pos + self._state.room_manager.active_room.offset
-                # # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number))
-                self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
+                self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number, self._state))
+                # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
 
                 print(self._state.stattracker)
                 self._input.spawn = False
@@ -315,6 +311,12 @@ class GameEngine:
         self._load_sprites(self._assets_manager)
         self._state.room_manager.switch_room_sprites(self._state.assets['wall_sprite'],
                                                self._state.assets['floor_sprite'])
+
+        # чистим все системы
+        self._state.decals_system.decals.clear()
+        self._state.particle_system.particles.clear()
+        self._state.enemy_system.enemies.clear()
+        self._state.terminal_system.terminals.clear()
 
         # перерегенерируем уровень
         self._state.room_manager.initialize_level()

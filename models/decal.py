@@ -1,10 +1,8 @@
 import pygame
 from pygame import Vector2
 
-from models.renderable import Renderable
 
-
-class Decal(Renderable):
+class Decal():
     def __init__(self, pos: Vector2, size_x: int, size_y: int, sprite: pygame.Surface, lifetime: float = -1,
                  max_alpha: int = 255, angle: float = 0.0, fade_time: float = 0.0) -> None:
         self.x = pos.x

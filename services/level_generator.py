@@ -3,13 +3,14 @@ import pygame
 import os
 import config
 from collections import deque
+from models.game_state import GameState
 from models.room import Room
 from models.exit import Exit
 
 
 class LevelGenerator:
     def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface,
-                 terminal_sprites: list[pygame.Surface], layout_pool: list[str] | None = None) -> None:
+                 state: GameState, layout_pool: list[str] | None = None) -> None:
         if layout_pool:
             # если список передан вручную используем его
             self.layout_pool = layout_pool
@@ -39,7 +40,8 @@ class LevelGenerator:
 
         self.wall_sprite = wall_sprite
         self.floor_sprite = floor_sprite
-        self.terminal_sprites = terminal_sprites
+        self.terminal_sprites = [state.assets['terminal_sprite_active'],
+                                 state.assets['terminal_sprite_inactive']]
 
     def generate(self, start_col: int, start_row: int) -> (list[Room], Room):
         self.rooms.clear()
@@ -161,7 +163,7 @@ class LevelGenerator:
         new_layout = []
 
         # ищем потенциальные места спавна
-        for y in range(len(layout) - 3):
+        for y in range(1, len(layout) - 3):
             for x in range(2, len(layout[0]) - 2):
                 if layout[y][x] == '0' and layout[y+1][x] == '0':
                     neighbors_cords = [

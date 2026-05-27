@@ -1,4 +1,3 @@
-import pygame
 import math
 import random
 from dataclasses import dataclass
@@ -160,7 +159,7 @@ class Pointer(Weapon):
         angle = random.randint(-3, 3)
         spawn_pos = origin + direction.rotate(angle).normalize() * offset_coef
 
-        projectile_system.spawn(PointerProjectile, spawn_pos, direction.rotate(angle), state.weapon)
+        projectile_system.spawn(PointerProjectile, spawn_pos, direction.rotate(angle))
 
     # отрисовка
     def render(self, surface: pygame.Surface,

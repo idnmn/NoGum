@@ -1,9 +1,8 @@
 import pygame
 from models.collidable import CollisionBody
-from models.renderable import Renderable
 
 
-class Projectile(Renderable):
+class Projectile():
     def __init__(self, x: float, y: float, size: int, velocity: pygame.Vector2 | None = None,
                  damage: float = 0.0, lifetime: float = 0.0) -> None:
         self.body = CollisionBody(

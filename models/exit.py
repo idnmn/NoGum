@@ -1,12 +1,9 @@
 import pygame
-from pygame import Vector2
-
 from models.collidable import CollisionBody
-from models.renderable import Renderable
 
 
 # Переход на следующий этаж
-class Exit(Renderable):
+class Exit():
     def __init__(self, x: float, y: float, size: int) -> None:
         self.body = CollisionBody(
             rect=pygame.Rect(x, y, size, size),

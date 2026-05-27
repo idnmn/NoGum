@@ -79,8 +79,8 @@ TERMINAL_CHANCE: int = 50 # шанс спавна терминала в комн
 MAX_ROOMS: int = 17
 MIN_ROOMS: int = 13
 # лимиты волн врагов в комнатах
-MAX_WAVES: int = 0
-MIN_WAVES: int = 0
+MAX_WAVES: int = 3
+MIN_WAVES: int = 1
 
 # --- UI КОНСТАНТЫ ---
 UI_HP_MAX: int = 100
