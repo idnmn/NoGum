@@ -102,12 +102,6 @@ class GameEngine:
             self._state.camera.curr_center = self._state.camera.position.copy()
             self._state.camera.prev_center = self._state.camera.position.copy()
 
-        # рендереры
-        self._map_renderer = MinimapRenderer(self._screen, self._state)
-        self._ui_renderer = UIRenderer(self._screen, self._state)
-        self._ui_renderer._map_renderer = self._map_renderer
-        self._renderer = Renderer(self._state, self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
-
         # инициализируем стартовое оружие
         self._state.weapon = Pointer(sprite=self._state.assets['pointer_sprite'],
                                      reload_sprite=self._state.assets['pointer_reload'],
@@ -116,6 +110,12 @@ class GameEngine:
             self._state.player.weapon = self._state.weapon
 
         self._state.room_manager.update_active_room(self._state.player)
+
+        # рендереры
+        self._map_renderer = MinimapRenderer(self._screen, self._state)
+        self._ui_renderer = UIRenderer(self._screen, self._state)
+        self._ui_renderer._map_renderer = self._map_renderer
+        self._renderer = Renderer(self._state, self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
 
         # начальный спавн (2 bookworm в стартовой комнате)
         # if self._room_manager.active_room:

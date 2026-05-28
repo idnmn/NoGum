@@ -60,6 +60,12 @@ MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
                                             (50, 90, 60)    # 6
                                           ]
 
+SLIDER_BACKGROUND_COLOR: tuple[int, int, int] = (40, 40, 55)
+SLIDER_FILL_COLOR: tuple[int, int, int] = (155, 255, 135)
+SLIDE_KNOB_INSIDE_COLOR: tuple[int, int, int] = (60, 60, 85)
+SLIDE_KNOB_OUTSIDE_COLOR: tuple[int, int, int] = (100, 100, 125)
+
+
 # --- РАЗМЕРЫ (в пикселях ВНУТРЕННЕГО разрешения) ---
 PLAYER_SIZE: int = 40
 

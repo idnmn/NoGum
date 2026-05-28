@@ -1,7 +1,6 @@
-import pygame
 import config
 from models.game_state import GameState
-from models.player import Player
+from ui_elements.slider import Slider
 from models.weapons import *
 from views.map_renderer import MinimapRenderer
 
@@ -13,9 +12,47 @@ class UIRenderer:
         self._font = pygame.font.Font("assets/QBF_font.ttf", 24)
         self._small_font = pygame.font.Font("assets/QBF_font.ttf", 20)
         self._title_font = pygame.font.Font("assets/QBF_font.ttf", 34)
-        self._dragging_slider_label: str | None = None
+        self._dragging_slider: Slider | None = None
+        self._layout = self._get_panel_layout()
 
-        self._map_renderer: MinimapRenderer = None
+        self._map_renderer: MinimapRenderer | None = None
+
+        # создаём слайдеры
+        bullet_size_slider = Slider(
+            title="Bullet Size",
+            x=self._layout['px'] + 20,
+            y=self._layout['start_y'],
+            width=self._layout['slider_w'],
+            max_value=self._state.weapon.max_bullet_size,
+            min_value=self._state.weapon.min_bullet_size,
+            round=1
+        )
+
+        bullet_speed_slider = Slider(
+            title="Bullet Speed",
+            x=self._layout['px'] + 20,
+            y=self._layout['start_y'] + self._layout['gap'],
+            width=self._layout['slider_w'],
+            max_value=self._state.weapon.max_bullet_speed,
+            min_value=self._state.weapon.min_bullet_speed,
+            round=1
+        )
+
+        fire_rate_slider = Slider(
+            title="Fire Rate",
+            x=self._layout['px'] + 20,
+            y=self._layout['start_y'] + self._layout['gap'] * 2,
+            width=self._layout['slider_w'],
+            max_value=self._state.weapon.max_fire_rate,
+            min_value=self._state.weapon.min_fire_rate,
+            round=1
+        )
+
+        self._sliders = [
+            (bullet_size_slider, self._state.weapon.change_size),
+            (bullet_speed_slider, self._state.weapon.change_speed),
+            (fire_rate_slider, self._state.weapon.change_fire_rate),
+        ]
 
     # единый расчёт геометрии панели
     def _get_panel_layout(self) -> dict:
@@ -25,56 +62,14 @@ class UIRenderer:
         py = (h - panel_h) // 2
         return {
             "px": px, "py": py, "panel_w": panel_w, "panel_h": panel_h,
-            "start_y": py + 200, "gap": 60, "slider_w": panel_w - 40, "slider_h": 10
+            "start_y": py + 180, "gap": 60, "slider_w": panel_w - 40, "slider_h": 10
         }
-
-    # данные для слайдеров
-    def _get_slider_configs(self) -> list[dict]:
-        """
-        единый источник правды для ползунков
-        возвращает список объектов с полными данными для отрисовки и логики
-        """
-        weapon = self._state.weapon
-        layout = self._get_panel_layout()
-        if type(weapon) == Pointer:
-            return [
-                {
-                    "label": "Bullet Size",
-                    "val": weapon.bullet_size,
-                    "min": weapon.min_bullet_size,
-                    "max": weapon.max_bullet_size,
-                    "setter": weapon.change_size,
-                    "rect": pygame.Rect(layout["px"] + 20, layout["start_y"], layout["slider_w"], layout["slider_h"])
-                },
-                {
-                    "label": "Bullet Speed",
-                    "val": weapon.bullet_speed,
-                    "min": weapon.min_bullet_speed,
-                    "max": weapon.max_bullet_speed,
-                    "setter": weapon.change_speed,
-                    "rect": pygame.Rect(layout["px"] + 20, layout["start_y"] + layout["gap"], layout["slider_w"],
-                                        layout["slider_h"])
-                },
-                {
-                    "label": "Fire Rate",
-                    "val": weapon.fire_rate,
-                    "min": weapon.min_fire_rate,
-                    "max": weapon.max_fire_rate,
-                    "setter": weapon.change_fire_rate,
-                    "rect": pygame.Rect(layout["px"] + 20, layout["start_y"] + layout["gap"] * 2, layout["slider_w"],
-                                        layout["slider_h"])
-                }
-            ]
-        else:
-            return []
 
     # внутренний обработчик действий пользователя внутри интерфейса
     def handle_input(self, events: list) -> None:
         weapon = self._state.weapon
         if not weapon:
             return
-
-        configs = self._get_slider_configs()
 
         for event in events:
             if event.type == pygame.QUIT:
@@ -87,35 +82,29 @@ class UIRenderer:
                     self._state.is_paused = False
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                for cfg in configs:
-                    if cfg["rect"].collidepoint(event.pos):
-                        self._dragging_slider_label = cfg["label"]
-                        self._apply_slider(cfg["label"], event.pos, weapon)
+                for item in self._sliders:
+                    slider = item[0]
+                    seter = item[1]
+
+                    if slider.interactive_hitbox.collidepoint(event.pos):
+                        slider.handle_click(event.pos)
+                        seter(slider.value)
+                        self._dragging_slider = item
                         break
+
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                self._dragging_slider_label = None
-            elif event.type == pygame.MOUSEMOTION and self._dragging_slider_label is not None:
-                self._apply_slider(self._dragging_slider_label, event.pos, weapon)
+                self._dragging_slider = None
+            elif event.type == pygame.MOUSEMOTION and self._dragging_slider:
+                self._dragging_slider[0].handle_click(event.pos)
+                self._dragging_slider[1](self._dragging_slider[0].value)
 
-    # изменение значений слайдеров
-    def _apply_slider(self, label: str, pos: tuple[int, int], weapon: Weapon) -> None:
-        """Строго линейное применение значения с округлением."""
-        current_cfg = next((c for c in self._get_slider_configs() if c["label"] == label), None)
-        if not current_cfg:
-            return
+    # балансируем значения слайдеров
+    def _balance_slider_value(self):
+        weapon = self._state.weapon
 
-        rect = current_cfg["rect"]
-        mouse_x = max(rect.left, min(pos[0], rect.right))
-        t = (mouse_x - rect.left) / rect.width
-        raw_val = current_cfg["min"] + t * (current_cfg["max"] - current_cfg["min"])
-
-        #  Округление значений перед применением
-        if label == "Fire Rate":
-            new_val = round(raw_val, 2)  # До десятых (0.1)
-        else:
-            new_val = round(raw_val, 1)     # До целых (1)
-
-        current_cfg["setter"](new_val)
+        self._sliders[0][0].value = weapon.bullet_size
+        self._sliders[1][0].value = weapon.bullet_speed
+        self._sliders[2][0].value = weapon.fire_rate
 
     # отрисовщик in-world составляющей
     def render_in_world(self, world_surface: pygame.Surface) -> None:
@@ -253,6 +242,7 @@ class UIRenderer:
     # панель настройки оружия
     def _draw_upgrade_panel(self) -> None:
         weapon = self._state.weapon
+        self._balance_slider_value() # балансируем слайдеры
 
         layout = self._get_panel_layout()
         px, py, pw, ph = layout["px"], layout["py"], layout["panel_w"], layout["panel_h"]
@@ -271,29 +261,33 @@ class UIRenderer:
         self._screen.blit(weapon_sprite, (px + 20, py + 80))
 
         #  отрисовка ползунков
-        configs = self._get_slider_configs()
+        for slider in [item[0] for item in self._sliders]:
+            slider.render(self._screen)
 
-        for slider in configs:
-            # текст значения
-            self._screen.blit(self._small_font.render(f"{slider['label']}: {slider['val']:.2f}", True, (220, 220, 220)),
-                              (slider["rect"].x, slider["rect"].y - 35))
 
-            # подложка
-            pygame.draw.rect(self._screen, (40, 40, 55), slider["rect"], border_radius=15)
-
-            # линейный расчёт заполнения
-            t = (slider["val"] - slider["min"]) / (slider["max"] - slider["min"])
-            t = max(0.0, min(1.0, t))
-
-            fill_w = int(slider["rect"].width * t)
-            pygame.draw.rect(self._screen, (155, 255, 135),
-                             (slider["rect"].x, slider["rect"].y, fill_w, slider["rect"].height),
-                             border_radius=15)
-
-            # ползунок
-            knob_x = slider["rect"].x + int(slider["rect"].width * t)
-            pygame.draw.rect(self._screen, (100, 100, 125), (knob_x - 9, slider["rect"].centery - 12, 19, 24))
-            pygame.draw.rect(self._screen, (60, 60, 85), (knob_x - 7, slider["rect"].centery - 10, 15, 20))
+        # configs = self._get_slider_configs()
+        #
+        # for slider in configs:
+        #     # текст значения
+        #     self._screen.blit(self._small_font.render(f"{slider['label']}: {slider['val']:.2f}", True, (220, 220, 220)),
+        #                       (slider["rect"].x, slider["rect"].y - 35))
+        #
+        #     # подложка
+        #     pygame.draw.rect(self._screen, (40, 40, 55), slider["rect"], border_radius=15)
+        #
+        #     # линейный расчёт заполнения
+        #     t = (slider["val"] - slider["min"]) / (slider["max"] - slider["min"])
+        #     t = max(0.0, min(1.0, t))
+        #
+        #     fill_w = int(slider["rect"].width * t)
+        #     pygame.draw.rect(self._screen, (155, 255, 135),
+        #                      (slider["rect"].x, slider["rect"].y, fill_w, slider["rect"].height),
+        #                      border_radius=15)
+        #
+        #     # ползунок
+        #     knob_x = slider["rect"].x + int(slider["rect"].width * t)
+        #     pygame.draw.rect(self._screen, (100, 100, 125), (knob_x - 9, slider["rect"].centery - 12, 19, 24))
+        #     pygame.draw.rect(self._screen, (60, 60, 85), (knob_x - 7, slider["rect"].centery - 10, 15, 20))
 
         # статы
         stats_y = py + 340
