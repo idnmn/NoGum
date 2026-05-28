@@ -12,7 +12,7 @@ class Slider():
         self.height = 25
         self._font = pygame.font.Font("assets/QBF_font.ttf", 20)
 
-        self.value = 0.0
+        self._value = 0.0
         self._max_value = max_value
         self._min_value = min_value
         self._round = round
@@ -22,18 +22,33 @@ class Slider():
 
     def render(self, surface: pygame.Surface) -> None:
         # подпись
-        title = self._font.render(f"{self.title}: {self.value:.{self._round}f}",
+        title_offset = 20 if not self._stepped else 25
+        title = self._font.render(f"{self.title}: {self._value:.{self._round}f}",
                                   True, (220, 220, 220))
-        surface.blit(title, (self.x, self.y - 20))
+        surface.blit(title, (self.x, self.y - title_offset))
 
         # подложка
         pygame.draw.rect(surface, config.SLIDER_BACKGROUND_COLOR,
                          (self.x, self.y + 5, self.width, self.height - 10), border_radius=10)
 
         # заполнение
-        fill_width = self.width * ((self.value - self._min_value) / (self._max_value - self._min_value))
+        fill_width = self.width * ((self._value - self._min_value) / (self._max_value - self._min_value))
         pygame.draw.rect(surface, config.SLIDER_FILL_COLOR,
                          (self.x, self.y + 5, fill_width, self.height - 10), border_radius=10)
+
+        # насечки для ступенчатого слайдера
+        if self._stepped:
+            steps_count = int((self._max_value - self._min_value) / self._step)
+            for i in range(1, steps_count + 1):
+                gap_x = self.width // steps_count
+                pygame.draw.line(surface, config.SLIDER_BACKGROUND_COLOR,
+                                 (self.x + gap_x * i - i, self.y - 5),
+                                 (self.x + gap_x * i - i, self.y), width=2)
+
+                pygame.draw.line(surface, config.SLIDER_BACKGROUND_COLOR,
+                                 (self.x + gap_x * i - i, self.y + 5),
+                                 (self.x + gap_x * i - i, self.y + 19), width=2)
+
 
         # ползунок
         knob_rect_outside = (self.x + fill_width - 10, self.y, 20, 25)
@@ -45,9 +60,30 @@ class Slider():
         new_value = (self._max_value - self._min_value) * (mouse_pos[0] - self.x) / self.width
 
         self.value = new_value
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    @value.setter
+    def value(self, new_value):
+        # слайдер с фиксированными шагами
+        if self._stepped:
+            steps_to_value_l = (new_value - self._min_value) // self._step
+            steps_to_value_h = (new_value - self._min_value) // self._step + 1
+
+            stepped_value_l = self._min_value + self._step * steps_to_value_l
+            stepped_value_h = self._min_value + self._step * steps_to_value_h
+
+            if new_value - stepped_value_l < stepped_value_h - new_value:
+                new_value = stepped_value_l
+            else:
+                new_value = stepped_value_h
+
+        self._value = new_value
         if self.value > self._max_value:
-            self.value = self._max_value
+            self._value = self._max_value
 
         if self.value < self._min_value:
-            self.value = self._min_value
+            self._value = self._min_value
 

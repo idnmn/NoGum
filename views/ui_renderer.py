@@ -102,9 +102,9 @@ class UIRenderer:
     def _balance_slider_value(self):
         weapon = self._state.weapon
 
-        self._sliders[0][0].value = weapon.bullet_size
-        self._sliders[1][0].value = weapon.bullet_speed
-        self._sliders[2][0].value = weapon.fire_rate
+        self._sliders[0][0]._value = weapon.bullet_size
+        self._sliders[1][0]._value = weapon.bullet_speed
+        self._sliders[2][0]._value = weapon.fire_rate
 
     # отрисовщик in-world составляющей
     def render_in_world(self, world_surface: pygame.Surface) -> None:

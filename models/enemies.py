@@ -303,8 +303,8 @@ class BookWorm(Enemy):
                     y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
                     size=4,
                     lifetime=10,
-                    max_speed=800,
-                    collect_range=400
+                    max_speed=600,
+                    collect_range=300
                 ))
 
             # с шансом 40% спавним скрап

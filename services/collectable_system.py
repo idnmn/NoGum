@@ -20,6 +20,7 @@ class CollectableSystem:
             # смэрть от старости
             if item.lifetime < 0:
                 item.is_active = False
+                item.spawn_particles(self._state)
                 continue
 
             # коллизия со стенами только активной комнаты
