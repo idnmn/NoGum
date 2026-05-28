@@ -10,6 +10,7 @@ from models.player import Player
 from models.room_manager import RoomManager
 from models.camera import Camera
 from models.weapons import *
+from services.collectable_system import CollectableSystem
 from services.collision_system import CollisionSystem
 from services.decal_system import DecalSystem
 from services.enemy_system import EnemySystem
@@ -58,7 +59,7 @@ class GameEngine:
         # инструменты и системы
         self._clock = pygame.time.Clock()
         self._input = InputHandler(self._state)
-        self._collision_system = CollisionSystem()
+        self._state.collision_system = CollisionSystem()
         self._weapon_system = WeaponSystem()
 
 
@@ -66,6 +67,7 @@ class GameEngine:
                                                          on_enemy_impact=self._on_enemy_impact,
                                                          state=self._state)
         self._state.particle_system = ParticleSystem()
+        self._state.collectable_system = CollectableSystem(self._state)
         self._state.enemy_system = EnemySystem()
         self._state.decals_system = DecalSystem()
         self._state.terminal_system = TerminalSystem(self._screen, self._state)
@@ -195,6 +197,7 @@ class GameEngine:
                     # Обновляем системы
                     self._state.projectile_system.update(dt, self._state.enemy_system.enemies)
                     self._state.particle_system.update(dt)
+                    self._state.collectable_system.update(dt)
                     self._state.enemy_system.update(dt, self._state, self._renderer.debug_surface)
                     self._state.decals_system.update(dt)
                     self._state.decals_system.update_shadows(entities)
@@ -232,23 +235,23 @@ class GameEngine:
 
                     # обрабатываем коллизию со стенами и терминалами
                     if self._state.room_manager.active_room:
-                        self._collision_system.resolve_obstacles(self._state.player.body,
+                        self._state.collision_system.resolve_obstacles(self._state.player.body,
                                                                  self._state.room_manager.active_room.walls)
                         if self._state.room_manager.active_room.terminal:
-                            self._collision_system.resolve_obstacles(self._state.player.body,
+                            self._state.collision_system.resolve_obstacles(self._state.player.body,
                                                                     [self._state.room_manager.active_room.terminal.body])
                         if self._state.room_manager.active_room.exit:
-                            self._collision_system.resolve_obstacles(self._state.player.body,
+                            self._state.collision_system.resolve_obstacles(self._state.player.body,
                                                                     [self._state.room_manager.active_room.exit.body])
 
                         for enemy in self._state.enemy_system.enemies:
-                            self._collision_system.resolve_obstacles(enemy, self._state.room_manager.active_room.walls)
+                            self._state.collision_system.resolve_obstacles(enemy, self._state.room_manager.active_room.walls)
                             if self._state.room_manager.active_room.terminal:
-                                self._collision_system.resolve_obstacles(enemy,
+                                self._state.collision_system.resolve_obstacles(enemy,
                                                                         [self._state.room_manager.active_room.terminal.body])
 
                     # обрабатываем коллизию существ
-                    self._collision_system.resolve_movers(entities)
+                    self._state.collision_system.resolve_movers(entities)
 
                     # обработка стрельбы и перезарядки
                     if self._state.weapon:

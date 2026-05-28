@@ -31,6 +31,8 @@ class GameState:
     enemy_system = None
     decals_system = None
     projectile_system = None
+    collectable_system = None
+    collision_system = None
     terminal_system = None
     assets = dict()
     camera = None

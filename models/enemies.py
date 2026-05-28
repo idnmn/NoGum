@@ -5,8 +5,10 @@ import pygame
 import math
 from pygame import Vector2
 import config
+from models.collectable import EnergyCell
 from models.collidable import CollisionBody
 from models.decal import Decal
+from models.projectile import Projectile
 from models.room import Room
 from models.game_state import GameState
 from services.pathfinder import Pathfinder
@@ -101,6 +103,7 @@ class BookWorm(Enemy):
         self.body.shadow_offset = -5
 
         # определяем статы
+        self.level = level
         self.hp = 20 * level
         self.max_hp = 20 * level
         self.max_speed = 500
@@ -295,6 +298,20 @@ class BookWorm(Enemy):
         )
 
         self._state.decals_system.decals.append(decal)
+
+        # спавним дроп
+        if self._state.player.hp != self._state.player.max_hp:
+            count = random.randint(int(self.level), int(3 * self.level))
+
+            for _ in range(count):
+                self._state.collectable_system.items.append(EnergyCell(
+                    x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                    y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                    size=4,
+                    lifetime=10,
+                    max_speed=800,
+                    collect_range=500
+                ))
 
 class BookWormMommy(Enemy):
     def __init__(self, x: float, y: float, size_x: int, size_y: int, sprite: pygame.Surface,

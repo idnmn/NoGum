@@ -86,6 +86,9 @@ class Renderer:
         # добавляем врагов в очередь
         render_queue += self._state.enemy_system.enemies
 
+        # добавляем подбираемые предметы в очередь
+        render_queue += self._state.collectable_system.items
+
         # сортируем очередь по y координате
         render_queue.sort(key=lambda obj: obj.rect.bottom)
 
