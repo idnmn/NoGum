@@ -30,7 +30,8 @@ PLAYER_DASH_COOLDOWN: float = 5.0  # Кд между рывками
 TRANSITION_TIME: float = 0.5
 
 # баланс
-LEVEL_COEF = 1.02 # коэффициент увеличения стат мобов в зависимости от уровня
+LEVEL_COEF: float = 1.02 # коэффициент увеличения стат мобов в зависимости от уровня
+MAX_POWER_LIMIT: int = 1000
 
 # --- ЦВЕТА ---
 BACKGROUND_COLOR: tuple[int, int, int] = (10, 10, 10)
@@ -59,11 +60,25 @@ MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
                                             (105, 55, 105), # 5
                                             (50, 90, 60)    # 6
                                           ]
-
+# слайдеры
 SLIDER_BACKGROUND_COLOR: tuple[int, int, int] = (40, 40, 55)
 SLIDER_FILL_COLOR: tuple[int, int, int] = (155, 255, 135)
 SLIDE_KNOB_INSIDE_COLOR: tuple[int, int, int] = (60, 60, 85)
 SLIDE_KNOB_OUTSIDE_COLOR: tuple[int, int, int] = (100, 100, 125)
+# кнопки
+BUTTON_ACTIVE_COLOR_INSIDE: tuple[int, int, int] = (60, 60, 85)
+BUTTON_ACTIVE_COLOR_OUTSIDE: tuple[int, int, int] = (100, 100, 125)
+
+BUTTON_INACTIVE_COLOR_INSIDE: tuple[int, int, int] = (30, 30, 45)
+BUTTON_INACTIVE_COLOR_OUTSIDE: tuple[int, int, int] = (65, 65, 80)
+
+BUTTON_SELECTED_COLOR_INSIDE: tuple[int, int, int] = (60, 95, 85)
+BUTTON_SELECTED_COLOR_OUTSIDE: tuple[int, int, int] = (100, 130, 125)
+
+BUTTON_CLICKED_COLOR_INSIDE: tuple[int, int, int] = (35, 150, 105)
+BUTTON_CLICKED_COLOR_OUTSIDE: tuple[int, int, int] = (65, 205, 130)
+
+
 
 
 # --- РАЗМЕРЫ (в пикселях ВНУТРЕННЕГО разрешения) ---
@@ -97,6 +112,8 @@ UI_DASH_BAR_WIDTH: int = 30
 UI_DASH_BAR_HEIGHT: int = 4
 UI_DASH_OFFSET_Y: float = 20.0
 UI_DASH_HIDE_DELAY: float = 1.0
+
+BUTTON_CLICKED_TIME = 0.1
 
 CAMERA_LERP_SPEED = 2.7 # Скорость движения камеры
 

@@ -34,6 +34,7 @@ class GameState:
     collectable_system = None
     collision_system = None
     terminal_system = None
+    buttons = []
     assets = dict()
     camera = None
     stattracker = None

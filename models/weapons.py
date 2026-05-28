@@ -1,5 +1,6 @@
 import math
 import random
+import config
 from dataclasses import dataclass
 from models.projectile import *
 
@@ -18,7 +19,7 @@ class Weapon:
 
     is_reloading: bool = False
     reload_timer = 0.0
-    reload_cooldown = 0.5
+    reload_cooldown = 1.0
 
 class Pointer(Weapon):
     def __init__(self, sprite: pygame.Surface, reload_sprite: pygame.Surface,
@@ -36,7 +37,7 @@ class Pointer(Weapon):
             +speed = -fire_rate
             +size = -speed
             +fire_rate = -size"""
-        self.bullet_size = 5.0 # px
+        self.bullet_size = 2.0 # px
         self.min_bullet_size = 2.0
         self.max_bullet_size = 0.0
         self._size_coef = 5.0
@@ -49,14 +50,33 @@ class Pointer(Weapon):
         self.bullet_speed = 2.0
         self.min_bullet_speed = 2.0
         self.max_bullet_speed = 0.0
-        self._speed_coef = 300.0
+        self._speed_coef = 200.0
 
-        self.power = 1000
+        self.power = 20
         self._damage_coef = 1.0
         self._calculate_max()
 
-        self.clip_size = 50
-        self.clip = 50
+        self.clip_size = 5
+        self.clip = 5
+
+        self.level = 1
+        self.upgrade_cost = 10
+        self.can_upgrade = True
+
+    def upgrade(self):
+        self.level += 1
+        if self.level % 2 == 0:
+            self.upgrade_cost += 5
+            
+        if self.level % 4 == 0:
+            self.clip_size += 5
+        
+        self.power += 5
+
+        self._calculate_max()
+
+        if self.power >= config.MAX_POWER_LIMIT:
+            self.can_upgrade = False
 
     def _calculate_max(self) -> None:
         self.max_bullet_speed = round(self.power / (self.min_bullet_size * self.min_fire_rate), 0)

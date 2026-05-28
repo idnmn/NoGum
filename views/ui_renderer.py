@@ -1,5 +1,6 @@
 import config
 from models.game_state import GameState
+from ui_elements.button import Button
 from ui_elements.slider import Slider
 from models.weapons import *
 from views.map_renderer import MinimapRenderer
@@ -18,7 +19,7 @@ class UIRenderer:
         self._map_renderer: MinimapRenderer | None = None
 
         # создаём слайдеры
-        bullet_size_slider = Slider(
+        self._bullet_size_slider = Slider(
             title="Bullet Size",
             x=self._layout['px'] + 20,
             y=self._layout['start_y'],
@@ -28,7 +29,7 @@ class UIRenderer:
             round=1
         )
 
-        bullet_speed_slider = Slider(
+        self._bullet_speed_slider = Slider(
             title="Bullet Speed",
             x=self._layout['px'] + 20,
             y=self._layout['start_y'] + self._layout['gap'],
@@ -38,7 +39,7 @@ class UIRenderer:
             round=1
         )
 
-        fire_rate_slider = Slider(
+        self._fire_rate_slider = Slider(
             title="Fire Rate",
             x=self._layout['px'] + 20,
             y=self._layout['start_y'] + self._layout['gap'] * 2,
@@ -49,10 +50,31 @@ class UIRenderer:
         )
 
         self._sliders = [
-            (bullet_size_slider, self._state.weapon.change_size),
-            (bullet_speed_slider, self._state.weapon.change_speed),
-            (fire_rate_slider, self._state.weapon.change_fire_rate),
+            (self._bullet_size_slider, self._state.weapon.change_size),
+            (self._bullet_speed_slider, self._state.weapon.change_speed),
+            (self._fire_rate_slider, self._state.weapon.change_fire_rate),
         ]
+
+        # кнопка прокачки оружия
+        self.upgrade_button = Button(
+            title="Upgrade",
+            x=self._layout['px'] + 240,
+            y=self._layout['start_y'] + self._layout['gap'] * 2 + 40,
+            width=150,
+            height=45,
+            is_active=True,
+            action=self._upgrade_weapon
+        )
+        self._state.buttons.append(self.upgrade_button)
+
+    def _upgrade_weapon(self):
+        weapon = self._state.weapon
+        self._state.player.scrap -= weapon.upgrade_cost
+        weapon.upgrade()
+
+        self._bullet_size_slider.max_value = weapon.max_bullet_size
+        self._bullet_speed_slider.max_value = weapon.max_bullet_speed
+        self._fire_rate_slider.max_value = weapon.max_fire_rate
 
     # единый расчёт геометрии панели
     def _get_panel_layout(self) -> dict:
@@ -91,6 +113,10 @@ class UIRenderer:
                         seter(slider.value)
                         self._dragging_slider = item
                         break
+
+                if (self.upgrade_button.interactive_hitbox.collidepoint(event.pos)
+                        and self.upgrade_button.is_active):
+                    self.upgrade_button.click()
 
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 self._dragging_slider = None
@@ -244,6 +270,8 @@ class UIRenderer:
         weapon = self._state.weapon
         self._balance_slider_value() # балансируем слайдеры
 
+        self.upgrade_button.is_active = (self._state.player.scrap >= weapon.upgrade_cost) # обновляем состояние кнопки
+
         layout = self._get_panel_layout()
         px, py, pw, ph = layout["px"], layout["py"], layout["panel_w"], layout["panel_h"]
 
@@ -256,38 +284,27 @@ class UIRenderer:
 
         weapon_sprite = self._state.weapon.sprite
 
-        self._screen.blit(self._title_font.render("Weapon Upgrade", True, (255, 255, 255)), (px + 20, py + 20))
-        self._screen.blit(self._small_font.render(f"Model: {weapon.name}", True, (200, 200, 220)), (px + 20, py + 50))
+        self._screen.blit(self._title_font.render("Weapon Upgrade", True,
+                                                  (255, 255, 255)), (px + 20, py + 20))
+        self._screen.blit(self._small_font.render(f"Model: {weapon.name}", True,
+                                                  (200, 200, 220)), (px + 20, py + 50))
+        self._screen.blit(self._small_font.render(f"LvL: {weapon.level}", True,
+                                                  (200, 200, 220)), (px + 250, py + 50))
         self._screen.blit(weapon_sprite, (px + 20, py + 80))
 
         #  отрисовка ползунков
         for slider in [item[0] for item in self._sliders]:
             slider.render(self._screen)
 
+        # отрисовываем кнопку
+        self.upgrade_button.render(self._screen)
 
-        # configs = self._get_slider_configs()
-        #
-        # for slider in configs:
-        #     # текст значения
-        #     self._screen.blit(self._small_font.render(f"{slider['label']}: {slider['val']:.2f}", True, (220, 220, 220)),
-        #                       (slider["rect"].x, slider["rect"].y - 35))
-        #
-        #     # подложка
-        #     pygame.draw.rect(self._screen, (40, 40, 55), slider["rect"], border_radius=15)
-        #
-        #     # линейный расчёт заполнения
-        #     t = (slider["val"] - slider["min"]) / (slider["max"] - slider["min"])
-        #     t = max(0.0, min(1.0, t))
-        #
-        #     fill_w = int(slider["rect"].width * t)
-        #     pygame.draw.rect(self._screen, (155, 255, 135),
-        #                      (slider["rect"].x, slider["rect"].y, fill_w, slider["rect"].height),
-        #                      border_radius=15)
-        #
-        #     # ползунок
-        #     knob_x = slider["rect"].x + int(slider["rect"].width * t)
-        #     pygame.draw.rect(self._screen, (100, 100, 125), (knob_x - 9, slider["rect"].centery - 12, 19, 24))
-        #     pygame.draw.rect(self._screen, (60, 60, 85), (knob_x - 7, slider["rect"].centery - 10, 15, 20))
+        button_x, button_y = self.upgrade_button.x, self.upgrade_button.y
+        self._screen.blit(self._state.assets["scrap_ico"], (button_x, button_y + 50))
+
+        cost_color = (220, 220, 220) if self._state.player.scrap >= weapon.upgrade_cost else (255, 100, 100)
+        self._screen.blit(self._small_font.render(f" X {weapon.upgrade_cost}", True,
+                                                  cost_color), (button_x + 30, button_y + 57))
 
         # статы
         stats_y = py + 340

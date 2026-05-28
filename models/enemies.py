@@ -295,21 +295,21 @@ class BookWorm(Enemy):
         # спавним дроп
         if self._state.player.hp != self._state.player.max_hp:
             # спавним хилки
-            count = random.randint(int(self.level), int(3 * self.level))
+            count = random.randint(int(2 * self.level), int(3 * self.level))
 
             for _ in range(count):
                 self._state.collectable_system.items.append(EnergyCell(
                     x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
                     y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
-                    size=4,
+                    size=7,
                     lifetime=10,
                     max_speed=600,
                     collect_range=300
                 ))
 
-            # с шансом 40% спавним скрап
-            if random.randint(1, 100) <= 40:
-                count = random.randint(int(self.level), int(2 * self.level))
+            # с шансом 80% спавним скрап
+            if random.randint(1, 100) <= 80:
+                count = random.randint(int(2 * self.level), int(4 * self.level))
 
                 for _ in range(count):
                     self._state.collectable_system.items.append(Scrap(

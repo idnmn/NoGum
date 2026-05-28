@@ -13,7 +13,7 @@ class Slider():
         self._font = pygame.font.Font("assets/QBF_font.ttf", 20)
 
         self._value = 0.0
-        self._max_value = max_value
+        self.max_value = max_value
         self._min_value = min_value
         self._round = round
 
@@ -32,13 +32,13 @@ class Slider():
                          (self.x, self.y + 5, self.width, self.height - 10), border_radius=10)
 
         # заполнение
-        fill_width = self.width * ((self._value - self._min_value) / (self._max_value - self._min_value))
+        fill_width = self.width * ((self._value - self._min_value) / (self.max_value - self._min_value))
         pygame.draw.rect(surface, config.SLIDER_FILL_COLOR,
                          (self.x, self.y + 5, fill_width, self.height - 10), border_radius=10)
 
         # насечки для ступенчатого слайдера
         if self._stepped:
-            steps_count = int((self._max_value - self._min_value) / self._step)
+            steps_count = int((self.max_value - self._min_value) / self._step)
             for i in range(1, steps_count + 1):
                 gap_x = self.width // steps_count
                 pygame.draw.line(surface, config.SLIDER_BACKGROUND_COLOR,
@@ -57,7 +57,7 @@ class Slider():
         pygame.draw.rect(surface, config.SLIDE_KNOB_INSIDE_COLOR, knob_rect_inside, border_radius=3)
 
     def handle_click(self, mouse_pos):
-        new_value = (self._max_value - self._min_value) * (mouse_pos[0] - self.x) / self.width
+        new_value = self._min_value + (self.max_value - self._min_value) * (mouse_pos[0] - self.x) / self.width
 
         self.value = new_value
 
@@ -81,9 +81,9 @@ class Slider():
                 new_value = stepped_value_h
 
         self._value = new_value
-        if self.value > self._max_value:
-            self._value = self._max_value
+        if self._value > self.max_value:
+            self._value = self.max_value
 
-        if self.value < self._min_value:
+        if self._value < self._min_value:
             self._value = self._min_value
 

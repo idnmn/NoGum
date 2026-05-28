@@ -173,6 +173,16 @@ class GameEngine:
             else:
                 self._input.process_events(events)
 
+            if self._state.buttons:
+                mouse_pos = pygame.mouse.get_pos()
+                for button in self._state.buttons:
+                    if not button.state == 'clicked':
+                        if button.interactive_hitbox.collidepoint(mouse_pos) and button.is_active:
+                            button.state = 'selected'
+                        else:
+                            button.state = 'active' if button.is_active else 'inactive'
+                    button.update(dt)
+
             # не на паузе
             if not self._state.is_paused:
                 # hit-pause логика
@@ -348,7 +358,7 @@ class GameEngine:
         self._state.terminal_system.room_manager = self._state.room_manager
         self._state.terminal_system.set_world_bounds(world_bounds)
         self._state.terminal_system.terminals = self._state.room_manager.terminals
-        self._state.terminal_system._state = self._state
+        self._state.terminal_system.state = self._state
         self._state.terminal_system._walls_color = \
             config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1]
 
