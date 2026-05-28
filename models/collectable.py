@@ -91,3 +91,44 @@ class EnergyCell(Collectable):
                 color=(255, 215, 80),
                 size=random.uniform(2, 4)
             ))
+
+
+# местная валюта
+class Scrap(Collectable):
+    def __init__(self, x: float, y: float, size: int, lifetime: float,
+                 max_speed: float, collect_range: float, sprites: list[pygame.Surface]) -> None:
+        super().__init__(x, y, size, lifetime, max_speed, collect_range)
+        self._scale = random.randint(1, 3)
+
+        g = random.randint(150, 200)
+        self._color = (g, g, g)
+        self._sprite = random.choice(sprites)
+
+    def render(self, surface: pygame.Surface) -> None:
+        surface.blit(self._sprite, (self.rect.x, self.rect.y))
+
+        # pygame.draw.circle(surface, (200, 200, 200), self.rect.center,
+        #                    int((self.rect.width // 2) * self._scale), 0)
+        # pygame.draw.circle(surface, self._color, self.rect.center,
+        #                    int((self.rect.width//2) * self._scale * 0.8), 0)
+
+    def collect(self, state: GameState) -> None:
+        state.player.scrap += self._scale
+        state.stattracker.scrap_collected += self._scale
+
+    def spawn_particles(self, state: GameState) -> None:
+        pos = self.body.rect.center
+
+        for _ in range(random.randint(5, 8)):
+            angle = random.uniform(0, 6.2832)  # 2 * pi
+            speed = random.uniform(100, 300)
+            vx, vy = pygame.Vector2(speed, 0).rotate_rad(angle)
+
+            state.particle_system.particles.append(Particle(
+                x=pos[0], y=pos[1],
+                vx=vx, vy=vy,
+                lifetime=0.3,
+                max_lifetime=0.3,
+                color=self._color,
+                size=random.uniform(3, 5)
+            ))

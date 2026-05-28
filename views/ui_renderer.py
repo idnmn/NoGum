@@ -74,7 +74,7 @@ class UIRenderer:
         if not weapon:
             return
 
-        configs = self._get_slider_configs(weapon)
+        configs = self._get_slider_configs()
 
         for event in events:
             if event.type == pygame.QUIT:
@@ -100,7 +100,7 @@ class UIRenderer:
     # изменение значений слайдеров
     def _apply_slider(self, label: str, pos: tuple[int, int], weapon: Weapon) -> None:
         """Строго линейное применение значения с округлением."""
-        current_cfg = next((c for c in self._get_slider_configs(weapon) if c["label"] == label), None)
+        current_cfg = next((c for c in self._get_slider_configs() if c["label"] == label), None)
         if not current_cfg:
             return
 
@@ -126,6 +126,8 @@ class UIRenderer:
         state = self._state
 
         self._draw_hp_bar()
+
+        self._draw_scrap_counter()
 
         if self._state.is_minimap_visible:
             self._map_renderer.render()
@@ -167,6 +169,19 @@ class UIRenderer:
                                       True, config.UI_TEXT_COLOR)
         self._screen.blit(text_surf, (x + fill_offset_x,
                                       y + fill_offset_y + bar_fill.get_height() + 10))
+
+    # счетчик обломков
+    def _draw_scrap_counter(self) -> None:
+        state = self._state
+
+        # фиксирован в левом верхнем углу
+        x, y = 30, 100
+
+        self._screen.blit(state.assets['scrap_ico'], (x, y))
+
+        text_surf = self._font.render(f"{state.player.scrap}",
+                                      True, config.UI_TEXT_COLOR)
+        self._screen.blit(text_surf, (x + 40, y + 8))
 
     # индикатор зарядки рывка
     def _draw_dash_indicator(self, world_surface: pygame.Surface) -> None:
@@ -256,7 +271,7 @@ class UIRenderer:
         self._screen.blit(weapon_sprite, (px + 20, py + 80))
 
         #  отрисовка ползунков
-        configs = self._get_slider_configs(weapon)
+        configs = self._get_slider_configs()
 
         for slider in configs:
             # текст значения

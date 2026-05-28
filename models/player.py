@@ -55,6 +55,9 @@ class Player():
         self._visual_damage_cooldown = 0.2
         self._visual_damage_timer = -1.0
 
+        # счетчик обломков в кармане
+        self.scrap = 0
+
     def set_mouse_pos(self, pos: tuple[float, float]) -> None:
         self.mouse_world_pos.update(pos)
         self.facing_right = self.mouse_world_pos.x >= self.rect.centerx
@@ -217,6 +220,8 @@ class Player():
         self.sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)
         if self.hp <= 0:
             self.is_alive = False
+
+        self._state.stattracker.damage_taken += int(amount)
 
     @property
     def hp_ratio(self) -> float:

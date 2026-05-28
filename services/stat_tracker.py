@@ -11,3 +11,5 @@ class StatTracker:
     rooms_explored: int = 1
     levels_completed: int = 0
     terminal_teleportations: int = 0
+
+    scrap_collected: int = 0

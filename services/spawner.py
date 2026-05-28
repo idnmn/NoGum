@@ -1,4 +1,5 @@
 from models.enemies import *
+from models.room import Room
 
 
 class Spawner:

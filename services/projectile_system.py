@@ -56,6 +56,7 @@ class ProjectileSystem:
                 if p.rect.colliderect(enemy.body.rect):
                     p.is_active = False
                     if enemy.take_damage(p.damage):
+                        self._state.stattracker.damage_dealt += int(p.damage)
                         self._on_enemy_impact((p.rect.centerx, p.rect.centery), enemy)
 
         # очистка неактивных снарядов

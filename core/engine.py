@@ -167,7 +167,7 @@ class GameEngine:
 
             # перераспределяем хэндлеры
             if self._state.is_upgrade_ui_open:
-                self._ui_renderer.handle_input(events, self._state.weapon)
+                self._ui_renderer.handle_input(events)
             elif self._state.is_terminal_ui_open:
                 self._state.terminal_system.handle_input(events)
             else:
@@ -399,6 +399,10 @@ class GameEngine:
         self._state.assets['terminal_sprite_inactive'] = assets_manager.load_sprite("terminal_inactive.png",
                                                                                   (config.TILE_SIZE,
                                                                                    int(config.TILE_SIZE * 1.33)))
+
+        self._state.assets['scrap_sprites'] = [assets_manager.load_sprite(f"scrap_{i}.png",
+                                                                          (28, 28)) for i in range(1, 6)]
+        self._state.assets['scrap_ico'] = assets_manager.load_sprite("scrap_ico.png", (32, 32))
 
     def _on_wall_impact(self, pos: tuple[float, float]) -> None:
         distance = Vector2((self._state.player.rect.centerx - pos[0],

@@ -1,15 +1,8 @@
-import random
-from xml.dom.minidom import Entity
-
-import pygame
 import math
-from pygame import Vector2
 import config
-from models.collectable import EnergyCell
+from models.collectable import *
 from models.collidable import CollisionBody
 from models.decal import Decal
-from models.projectile import Projectile
-from models.room import Room
 from models.game_state import GameState
 from services.pathfinder import Pathfinder
 
@@ -301,6 +294,7 @@ class BookWorm(Enemy):
 
         # спавним дроп
         if self._state.player.hp != self._state.player.max_hp:
+            # спавним хилки
             count = random.randint(int(self.level), int(3 * self.level))
 
             for _ in range(count):
@@ -310,8 +304,37 @@ class BookWorm(Enemy):
                     size=4,
                     lifetime=10,
                     max_speed=800,
-                    collect_range=500
+                    collect_range=400
                 ))
+
+            # с шансом 40% спавним скрап
+            if random.randint(1, 100) <= 40:
+                count = random.randint(int(self.level), int(2 * self.level))
+
+                for _ in range(count):
+                    self._state.collectable_system.items.append(Scrap(
+                        x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                        y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                        size=6,
+                        lifetime=10,
+                        max_speed=300,
+                        collect_range=300,
+                        sprites=self._state.assets['scrap_sprites']
+                    ))
+        else:
+            count = random.randint(int(self.level), int(2 * self.level))
+
+            for _ in range(count):
+                self._state.collectable_system.items.append(Scrap(
+                    x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                    y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                    size=6,
+                    lifetime=10,
+                    max_speed=300,
+                    collect_range=300,
+                    sprites=self._state.assets['scrap_sprites']
+                ))
+
 
 class BookWormMommy(Enemy):
     def __init__(self, x: float, y: float, size_x: int, size_y: int, sprite: pygame.Surface,
@@ -322,6 +345,7 @@ class BookWormMommy(Enemy):
         self.body.shadow_offset = -10
 
         # определяем статы
+        self.level = level
         self.hp = 50 * level
         self.max_hp = 50 * level
         self.max_speed = 300
@@ -583,6 +607,23 @@ class BookWormMommy(Enemy):
             )
 
             self._state.enemy_system.enemies.append(bookworm)
+
+        # спавним дроп
+        count = random.randint(int(3 * self.level), int(5 * self.level))
+
+        for _ in range(count):
+            rand_x = random.uniform(-self.rect.width * 1.5, self.rect.width * 1.5)
+            rand_y = random.uniform(-self.rect.width * 1.5, self.rect.width * 1.5)
+
+            self._state.collectable_system.items.append(Scrap(
+                x=self.rect.centerx + rand_x,
+                y=self.rect.centery + rand_y,
+                size=6,
+                lifetime=10,
+                max_speed=300,
+                collect_range=300,
+                sprites=self._state.assets['scrap_sprites']
+            ))
 
         # трясём камеру
         self._state.camera.shake(10, 0.15)
