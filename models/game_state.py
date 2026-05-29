@@ -12,6 +12,7 @@ class GameState:
 
     # флаги состояний
     is_running: bool = True
+    weapon_fired: bool = False
 
     is_minimap_visible: bool = False
     is_upgrade_ui_open: bool = False

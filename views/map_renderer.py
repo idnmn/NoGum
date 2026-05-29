@@ -1,8 +1,7 @@
 import pygame
 import config
 from models.game_state import GameState
-from models.room_manager import RoomManager
-from models.player import Player
+from services.room_manager import RoomManager
 
 
 class MinimapRenderer:

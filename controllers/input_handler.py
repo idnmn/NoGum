@@ -52,10 +52,15 @@ class InputHandler:
                 if event.key == pygame.K_TAB:  # миникарта
                     self._state.is_minimap_visible = False
 
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not self._state.is_paused:
+            # нажатия мыши
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 self._shoot_requested = True
+                self._state.weapon_fired = True
 
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3 and not self._state.is_paused:
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                self._state.weapon_fired = False
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 self.spawn = True
                 self.spawn_pos = event.pos
 
@@ -71,7 +76,9 @@ class InputHandler:
     def is_dash_requested(self) -> bool: # проверяем отработку рывка
         return self._dash_requested
 
-    def is_shooting_requested(self) -> bool:  # проверка выстрела
+    def is_shooting_requested(self) -> bool:  # флаг выстрела
+        if self._state.weapon.is_autofired:
+            return self._shoot_requested or self._state.weapon_fired
         return self._shoot_requested
 
     def is_reload_requested(self) -> bool:  # проверка перезарядки

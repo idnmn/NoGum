@@ -21,6 +21,8 @@ class Weapon:
     reload_timer = 0.0
     reload_cooldown = 1.0
 
+    is_autofired: bool = False
+
 class Pointer(Weapon):
     def __init__(self, sprite: pygame.Surface, reload_sprite: pygame.Surface,
                  crosshair: pygame.Surface) -> None:
@@ -52,7 +54,7 @@ class Pointer(Weapon):
         self.max_bullet_speed = 0.0
         self._speed_coef = 200.0
 
-        self.power = 20
+        self.power = 30
         self._damage_coef = 1.0
         self._calculate_max()
 
@@ -66,7 +68,7 @@ class Pointer(Weapon):
     def upgrade(self):
         self.level += 1
         if self.level % 2 == 0:
-            self.upgrade_cost += 5
+            self.upgrade_cost += 10
             
         if self.level % 4 == 0:
             self.clip_size += 5

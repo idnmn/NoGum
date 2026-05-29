@@ -74,6 +74,7 @@ class Enemy():
         self.hp -= damage
         if self.hp <= 0:
             self.is_alive = False
+            self._state.stattracker.kills += 1
 
         if damage > 0:
             self._visual_damage_timer = self._visual_damage_cooldown

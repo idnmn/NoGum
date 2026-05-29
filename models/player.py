@@ -7,7 +7,6 @@ from models.collidable import CollisionBody
 from models.game_state import GameState
 from models.weapons import Weapon
 from models.decal import Decal
-from services.decal_system import DecalSystem
 
 
 class Player():
@@ -27,6 +26,7 @@ class Player():
         self._dash_timer: float = 0.0
         self._dash_cooldown_timer: float = 0.0
         self._dash_ui_timer: float = 0.0
+        self._can_dash: bool = True
 
         # подтягиваем статы из конфига
         self.max_speed = config.PLAYER_MAX_SPEED
@@ -54,6 +54,9 @@ class Player():
 
         self._visual_damage_cooldown = 0.2
         self._visual_damage_timer = -1.0
+
+        self._self_damage_timer = 0.0
+        self._self_damage_cooldown = 3
 
         # счетчик обломков в кармане
         self.scrap = 0
@@ -133,6 +136,10 @@ class Player():
         if self._dash_cooldown_timer > 0:
             self._dash_cooldown_timer -= dt
 
+        if self._dash_cooldown_timer <= 0 and not self._can_dash:
+            self._can_dash = True
+            self._state.particle_system.spawn_dash_reloaded(self.rect.center)
+
         # обновляем таймер для ui
         if self._dash_ui_timer > 0:
             self._dash_ui_timer -= dt
@@ -140,6 +147,14 @@ class Player():
         # обновляем таймер шагов
         if self._step_timer > 0:
             self._step_timer -= dt
+
+        # таймер утекающего здоровья
+        if self._self_damage_timer > 0:
+            self._self_damage_timer -= dt
+
+        if self._self_damage_timer <= 0:
+            self._self_damage_timer = self._self_damage_cooldown
+            self.take_damage(3)
 
         # обновляем таймер визуализации урона
         if self._visual_damage_timer > 0:
@@ -153,10 +168,12 @@ class Player():
         if dash_requested and self._dash_cooldown_timer <= 0 and (dx != 0 or dy != 0):
             self._dash_timer = self.dash_duration
             self._dash_cooldown_timer = self.dash_cooldown
-            self._dash_ui_timer = config.UI_DASH_HIDE_DELAY
+            self._can_dash = False
+            self._state.particle_system.spawn_dashed(self.rect.center)
 
         # обновляем таймер для рывка
         if self._dash_timer > 0:
+            self._state.particle_system.spawn_while_dash(self.rect.center, Vector2(dx, dy))
             self._dash_timer -= dt
 
         # используем параметры рывка, пока активен его таймер
@@ -211,10 +228,13 @@ class Player():
         self.current_tilt = max(-config.PLAYER_TILT_MAX_ANGLE,
                                 min(config.PLAYER_TILT_MAX_ANGLE, self.current_tilt))
 
-    def take_damage(self, amount: float) -> None:
+    def take_damage(self, amount: float, no_shake: bool = False) -> None:
         self.hp -= int(amount)
 
-        self._state.camera.shake(5, 0.15)
+        if not no_shake:
+            self._state.camera.shake(5, 0.15)
+
+        self._state.particle_system.spawn_player_damaged(self.body.rect.center)
 
         self._visual_damage_timer = self._visual_damage_cooldown
         self.sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)
@@ -234,4 +254,4 @@ class Player():
 
     @property
     def is_dash_ui_visible(self) -> bool:
-        return self._dash_ui_timer > 0 or self._dash_cooldown_timer > 0
+        return self._dash_cooldown_timer > 0

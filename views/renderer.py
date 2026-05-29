@@ -1,8 +1,6 @@
 import pygame
 import config
 from models.game_state import GameState
-from models.room_manager import RoomManager
-from models.camera import Camera
 from views.ui_renderer import UIRenderer
 
 

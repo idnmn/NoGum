@@ -4,7 +4,7 @@ from core.asset_manager import AssetManager
 from models.game_state import GameState
 from controllers.input_handler import InputHandler
 from models.player import Player
-from models.room_manager import RoomManager
+from services.room_manager import RoomManager
 from models.camera import Camera
 from models.weapons import *
 from services.collectable_system import CollectableSystem
@@ -58,7 +58,7 @@ class GameEngine:
         self._state.clock = pygame.time.Clock()
         self._input = InputHandler(self._state)
         self._state.collision_system = CollisionSystem()
-        self._weapon_system = WeaponSystem()
+        self._weapon_system = WeaponSystem(self._state)
 
 
         self._state.projectile_system = ProjectileSystem(on_wall_impact=self._on_wall_impact,
@@ -263,8 +263,7 @@ class GameEngine:
 
                     # обработка стрельбы и перезарядки
                     if self._state.weapon:
-                        shot_fired = self._weapon_system.update(dt, self._state.weapon,
-                                                                self._input.is_shooting_requested(),
+                        shot_fired = self._weapon_system.update(dt, self._input.is_shooting_requested(),
                                                                 self._input.is_reload_requested())
                         if shot_fired:
                             self._state.weapon.fire(self._state.projectile_system, self._state)
