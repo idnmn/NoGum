@@ -13,6 +13,7 @@ class UIRenderer:
         self._font = pygame.font.Font("assets/QBF_font.ttf", 24)
         self._small_font = pygame.font.Font("assets/QBF_font.ttf", 20)
         self._title_font = pygame.font.Font("assets/QBF_font.ttf", 34)
+        self._micro_font = pygame.font.Font("assets/QBF_font.ttf", 16)
         self._dragging_slider: Slider | None = None
         self._layout = self._get_panel_layout()
 
@@ -157,6 +158,9 @@ class UIRenderer:
         if state.is_upgrade_ui_open:
             self._draw_upgrade_panel()
 
+        if config.PRINT_FPS:
+            self._draw_fps_counter()
+
     # полоска хп игрока
     def _draw_hp_bar(self) -> None:
         state = self._state
@@ -218,7 +222,7 @@ class UIRenderer:
                          (bar_x, bar_y, fill_w, config.UI_DASH_BAR_HEIGHT))
 
     # худ для оружия
-    def _draw_weapon_hud(self,) -> None:
+    def _draw_weapon_hud(self) -> None:
         weapon = self._state.weapon
 
         if not weapon or not weapon.name:
@@ -257,6 +261,26 @@ class UIRenderer:
         self._screen.blit(indicator_sprite, (width - 170 + indicator_sprite_x, height - 100 + indicator_sprite_y))
         self._screen.blit(surf, (surf_x, surf_y))
         self._screen.blit(clip, (width - 170 + clip_x, height - 100 + clip_y))
+
+    # счетчик FPS
+    def _draw_fps_counter(self) -> None:
+        x = self._screen.get_width() - 40
+        y = 5
+
+        pygame.draw.rect(self._screen, (30, 30, 30), (x, y, 35, 20))
+
+        fps = int(self._state.clock.get_fps())
+        if fps < 50:
+            color = (255, 60, 60)
+        elif fps < 80:
+            color = (255, 125, 75)
+        elif fps < 120:
+            color = (255, 245, 140)
+        else:
+            color = (110, 255, 60)
+        self._screen.blit(self._micro_font.render(str(fps), True, color), (x + 1, y + 1))
+
+
 
     # прицел
     def _draw_crosshair(self, sprite: pygame.Surface) -> None:

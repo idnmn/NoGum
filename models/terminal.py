@@ -14,11 +14,7 @@ class Terminal():
         )
         self.body.shadow_offset = -7
 
-        self.interactive_hitbox = CollisionBody(
-            rect=pygame.Rect(x - size, y - size, size * 3, size * 3),
-            layer="interactive",
-            tags={"terminal"}
-        )
+        self.interactive_hitbox = pygame.Rect(x - size, y - size, size * 3, size * 3)
 
         self.sprite_active = sprite_active.copy().convert_alpha()
         self.near_player_sprite = sprite_active.copy()

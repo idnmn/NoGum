@@ -1,7 +1,4 @@
-import pygame
 from pygame import Vector2
-
-import config
 from random import randint
 from core.asset_manager import AssetManager
 from models.game_state import GameState
@@ -53,11 +50,12 @@ class GameEngine:
         # инициализируем уровень ДО игрока чтобы взять координаты спавна
         self._state.room_manager = RoomManager(wall_sprite=self._state.assets['wall_sprite'],
                                          floor_sprite=self._state.assets['floor_sprite'],
+                                         exit_sprite=self._state.assets['exit_sprite'],
                                          state=self._state)
         spawn_center = self._state.room_manager.active_room.bounds.center
 
         # инструменты и системы
-        self._clock = pygame.time.Clock()
+        self._state.clock = pygame.time.Clock()
         self._input = InputHandler(self._state)
         self._state.collision_system = CollisionSystem()
         self._weapon_system = WeaponSystem()
@@ -135,7 +133,7 @@ class GameEngine:
     def run(self) -> None:
         while self._state.is_running:
             # Delta time в секундах
-            dt = self._clock.tick(config.FPS) / 1000.0
+            dt = self._state.clock.tick(config.FPS) / 1000.0
 
             # Переход между уровнями
             if self._state.is_transition:
@@ -298,7 +296,7 @@ class GameEngine:
             # отрисовка (раскидываем рендереры)
             # при post_tp вызываем оба рендерера
             if self._state.is_terminal_ui_open and self._state.terminal_system.post_teleport_flag:
-                self._renderer.render(False)
+                self._renderer.render(False) # не обновляет кадр
                 self._state.terminal_system.render()
 
             # вне post_tp рендерим только интерфейс терминалов
@@ -323,7 +321,8 @@ class GameEngine:
         # перезагружаем спрайты
         self._load_sprites(self._assets_manager)
         self._state.room_manager.switch_room_sprites(self._state.assets['wall_sprite'],
-                                               self._state.assets['floor_sprite'])
+                                               self._state.assets['floor_sprite'],
+                                                     self._state.assets['exit_sprite'])
 
         # чистим все системы
         self._state.decals_system.decals.clear()
@@ -337,8 +336,7 @@ class GameEngine:
         # пересчитываем границы мира
         world_bounds = self._state.room_manager.world_bounds
         self._renderer._world_bounds = world_bounds
-        self._renderer.world_surface = pygame.transform.scale(self._renderer.world_surface,
-                                                              (world_bounds.width, world_bounds.height))
+        self._renderer.world_surface = pygame.Surface((world_bounds.width, world_bounds.height))
 
         # переносим игрока на новый спавн
         spawn_center = self._state.room_manager.start_room.bounds.center
@@ -373,6 +371,9 @@ class GameEngine:
                                                  (config.TILE_SIZE, config.TILE_SIZE * 2))
         self._state.assets['floor_sprite'] = assets_manager.load_sprite(f"floor{self._state.level_seed}.png",
                                                   (config.TILE_SIZE, config.TILE_SIZE))
+        self._state.assets['exit_sprite'] = assets_manager.load_sprite(f"exit{self._state.level_seed}.png",
+                                                  (config.EXIT_SIZE, config.EXIT_SIZE))
+        self._state.assets['exit_arrow'] = assets_manager.load_sprite(f"exit_arrow.png", (48, 48))
 
         self._state.assets['player_sprite'] = assets_manager.load_sprite("player.png",
                                                                          (config.PLAYER_SIZE,

@@ -21,6 +21,8 @@ class ParticleSystem:
     def __init__(self) -> None:
         self.particles: list[Particle] = []
 
+        self._limit = 500
+
     def spawn_wall_impact(self, pos: tuple[float, float], color: tuple[int, int, int] = (255, 200, 50)) -> None:
         for _ in range(config.WALL_IMPACT_PARTICLE_COUNT):
             angle = random.uniform(0, 6.2832)  # 2 * pi
@@ -60,3 +62,6 @@ class ParticleSystem:
             p.lifetime -= dt
 
         self.particles = [p for p in self.particles if p.lifetime > 0]
+
+        while len(self.particles) > self._limit:
+            self.particles.pop(0)

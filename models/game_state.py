@@ -26,6 +26,7 @@ class GameState:
     # системы и объедки
     player = None
     weapon = None
+    clock = None
     room_manager = None
     particle_system = None
     enemy_system = None

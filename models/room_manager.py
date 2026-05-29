@@ -11,9 +11,11 @@ from services.level_generator import LevelGenerator
 
 # класс некого "оркестратора комнат", для удобной работы с несколькими комнатами
 class RoomManager:
-    def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface, state: GameState) -> None:
+    def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface,
+                 exit_sprite: pygame.Surface, state: GameState) -> None:
         self._generator = LevelGenerator(wall_sprite=wall_sprite,
                                          floor_sprite=floor_sprite,
+                                         exit_sprite=exit_sprite,
                                          state=state)
         self._state = state
 
@@ -47,9 +49,11 @@ class RoomManager:
 
         self.max_depth = max([room.depth for room in self.rooms])
 
-    def switch_room_sprites(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface):
+    def switch_room_sprites(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface,
+                            exit_sprite: pygame.Surface) -> None:
         self._generator.wall_sprite = wall_sprite
         self._generator.floor_sprite = floor_sprite
+        self._generator.exit_sprite = exit_sprite
 
     def update_interactives(self, state: GameState, dt):
         terminal = self.active_room.terminal
@@ -58,10 +62,10 @@ class RoomManager:
         # меняем состояние терминала если роядом игрок
         if terminal:
             if terminal.is_active:
-                if terminal.interactive_hitbox.rect.colliderect(state.player.rect) and not terminal.is_near_player:
+                if terminal.interactive_hitbox.colliderect(state.player.rect) and not terminal.is_near_player:
                     terminal.is_near_player = True
 
-                elif not terminal.interactive_hitbox.rect.colliderect(state.player.rect) and terminal.is_near_player:
+                elif not terminal.interactive_hitbox.colliderect(state.player.rect) and terminal.is_near_player:
                     terminal.is_near_player = False
 
         # аналогично для выхода
@@ -95,7 +99,7 @@ class RoomManager:
         return None
 
     # границы мира
-    def _count_world_bounds(self) -> None:
+    def _count_world_bounds(self) -> pygame.Rect | None:
         if not self.rooms:
             return pygame.Rect(0, 0, 0, 0)
 
@@ -108,4 +112,5 @@ class RoomManager:
             int(min_x), int(min_y),
             int(max_right - min_x), int(max_bottom - min_y)
         )
+        return
 

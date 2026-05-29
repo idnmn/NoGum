@@ -13,6 +13,7 @@ WINDOW_TITLE: str = "NoGum!"
 # True  -> Запуск на весь экран (автоматически под монитор)
 # False -> Запуск в окне размером INTERNAL_WIDTH x INTERNAL_HEIGHT
 FULLSCREEN: bool = False
+PRINT_FPS: bool = True # выводит счетчик FPS в реальном времени на экран
 
 # --- ГЕЙМПЛЕЙНЫЕ КОНСТАНТЫ ---
 # Физика движения
@@ -100,8 +101,8 @@ TERMINAL_CHANCE: int = 50 # шанс спавна терминала в комн
 MAX_ROOMS: int = 17
 MIN_ROOMS: int = 13
 # лимиты волн врагов в комнатах
-MAX_WAVES: int = 3
-MIN_WAVES: int = 1
+MAX_WAVES: int = 0
+MIN_WAVES: int = 0
 
 # --- UI КОНСТАНТЫ ---
 UI_HP_MAX: int = 100

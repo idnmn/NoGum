@@ -10,7 +10,7 @@ from models.exit import Exit
 
 class LevelGenerator:
     def __init__(self, wall_sprite: pygame.Surface, floor_sprite: pygame.Surface,
-                 state: GameState, layout_pool: list[str] | None = None) -> None:
+                 exit_sprite: pygame.Surface, state: GameState, layout_pool: list[str] | None = None) -> None:
         if layout_pool:
             # если список передан вручную используем его
             self.layout_pool = layout_pool
@@ -32,6 +32,7 @@ class LevelGenerator:
                 else:
                     print("Пупупу, нет лайаутов")
 
+        self._state = state
 
         self.rooms: list[Room] = []
         self.occupied: set[tuple[int, int]] = set()
@@ -40,6 +41,7 @@ class LevelGenerator:
 
         self.wall_sprite = wall_sprite
         self.floor_sprite = floor_sprite
+        self.exit_sprite = exit_sprite
         self.terminal_sprites = [state.assets['terminal_sprite_active'],
                                  state.assets['terminal_sprite_inactive']]
 
@@ -153,7 +155,7 @@ class LevelGenerator:
         exit_room.terminal = None
         exit_room.exit = Exit(exit_room.offset.x + config.TILE_SIZE * 11.5,
                               exit_room.offset.y + config.TILE_SIZE * 5.5,
-                              config.EXIT_SIZE)
+                              config.EXIT_SIZE, self.exit_sprite, self._state.assets['exit_arrow'])
         # exit_room.is_explored = True
 
         return self.rooms, start_room_ref

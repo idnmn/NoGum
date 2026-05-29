@@ -13,6 +13,8 @@ class ProjectileSystem:
         self._on_wall_impact = on_wall_impact
         self._on_enemy_impact = on_enemy_impact
 
+        self._limit = 100
+
     def spawn(self, projectile, origin: pygame.Vector2, direction: pygame.Vector2) -> None:
         if direction.length() == 0:
             direction = pygame.Vector2(1, 0)
@@ -61,3 +63,6 @@ class ProjectileSystem:
 
         # очистка неактивных снарядов
         self.projectiles = [p for p in self.projectiles if p.is_active]
+
+        while len(self.projectiles) > self._limit:
+            self.projectiles.pop(0)
