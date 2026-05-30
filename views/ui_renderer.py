@@ -1,5 +1,6 @@
 import config
 from models.game_state import GameState
+from skills.skill import Skill
 from ui_elements.button import Button
 from ui_elements.slider import Slider
 from models.weapons import *
@@ -135,7 +136,8 @@ class UIRenderer:
 
     # отрисовщик in-world составляющей
     def render_in_world(self, world_surface: pygame.Surface) -> None:
-        self._draw_dash_indicator(world_surface)
+        self._draw_skill_indicator(world_surface, self._state.player.first_skill, 1)
+        self._draw_skill_indicator(world_surface, self._state.player.second_skill, 2)
 
     # отрисовщик out-world составляющкей
     def render_out_world(self) -> None:
@@ -202,24 +204,29 @@ class UIRenderer:
                                       True, config.UI_TEXT_COLOR)
         self._screen.blit(text_surf, (x + 40, y + 8))
 
-    # индикатор зарядки рывка
-    def _draw_dash_indicator(self, world_surface: pygame.Surface) -> None:
-        player = self._state.player
-
-        if not player.is_dash_ui_visible:
+    # индикатор зарядки скилла
+    def _draw_skill_indicator(self, world_surface: pygame.Surface, skill: Skill, skill_number: int) -> None:
+        if skill.is_ready:
             return
 
+        background_color = skill.indicator_background_color
+        fill_color = skill.indicator_fill_color
+
+        player = self._state.player
+
         # рисуется на world_surface в мировых координатах
+        bar_offset_y = config.UI_SKILL_BAR_HEIGHT + 2 if skill_number == 2 else 0
+
         center = player.body.rect.center
-        bar_x = center[0] - config.UI_DASH_BAR_WIDTH / 2
-        bar_y = center[1] + config.UI_DASH_OFFSET_Y
+        bar_x = center[0] - config.UI_SKILL_BAR_WIDTH / 2
+        bar_y = center[1] + config.UI_SKILL_OFFSET_Y + bar_offset_y
 
-        pygame.draw.rect(world_surface, config.UI_DASH_BG_COLOR,
-                         (bar_x, bar_y, config.UI_DASH_BAR_WIDTH, config.UI_DASH_BAR_HEIGHT))
+        pygame.draw.rect(world_surface, background_color,
+                         (bar_x, bar_y, config.UI_SKILL_BAR_WIDTH, config.UI_SKILL_BAR_HEIGHT))
 
-        fill_w = int(config.UI_DASH_BAR_WIDTH * player.dash_cooldown_ratio)
-        pygame.draw.rect(world_surface, config.UI_DASH_COLOR,
-                         (bar_x, bar_y, fill_w, config.UI_DASH_BAR_HEIGHT))
+        fill_w = int(config.UI_SKILL_BAR_WIDTH * skill.cooldown_ratio)
+        pygame.draw.rect(world_surface, fill_color,
+                         (bar_x, bar_y, fill_w, config.UI_SKILL_BAR_HEIGHT))
 
     # худ для оружия
     def _draw_weapon_hud(self) -> None:

@@ -7,6 +7,8 @@ from models.collidable import CollisionBody
 from models.game_state import GameState
 from models.weapons import Weapon
 from models.decal import Decal
+from skills.slash import Slash
+from skills.standart_dash import StandardDash
 
 
 class Player():
@@ -17,29 +19,24 @@ class Player():
             tags={"player"}
         )
         self._state = state
+        self.first_skill = StandardDash(state)
+        self.second_skill = Slash(state)
 
         self._source_sprite = state.assets['player_sprite']
         self.sprite = self._source_sprite.copy()
         self.step_sprite = state.assets['player_step_sprite']
 
-        # состояние рывка (таймеры)
-        self._dash_timer: float = 0.0
-        self._dash_cooldown_timer: float = 0.0
-        self._dash_ui_timer: float = 0.0
-        self._can_dash: bool = True
-
         # подтягиваем статы из конфига
         self.max_speed = config.PLAYER_MAX_SPEED
+        self.current_max_speed = config.PLAYER_MAX_SPEED
         self.acceleration = config.PLAYER_ACCELERATION
+        self.current_acceleration = config.PLAYER_ACCELERATION
         self.friction = config.FRICTION
-        self.dash_speed = config.PLAYER_DASH_SPEED
-        self.dash_cooldown = config.PLAYER_DASH_COOLDOWN
-        self._max_dash_cooldown = self.dash_cooldown
-        self.dash_duration = config.PLAYER_DASH_DURATION
         self.hp = config.UI_HP_MAX
         self.max_hp = config.UI_HP_MAX
 
         self.is_alive = True
+        self.ignore_enemy = False
 
         self.visual_offset_y = -config.PLAYER_SIZE // 2
 
@@ -95,6 +92,14 @@ class Player():
         if self.weapon and self.weapon.sprite:
             self.weapon.render(surface, self.mouse_world_pos, Vector2(self.rect.center))
 
+        # отрисовка скилов
+        if self.first_skill.is_using:
+            self.first_skill.render(surface)
+
+        if self.second_skill.is_using:
+            self.second_skill.render(surface)
+
+
     # Отрисовка шагов
     def _draw_step(self) -> None:
         offset_x, offset_y = 0, 0
@@ -125,24 +130,18 @@ class Player():
 
         self._state.decals_system.decals.append(step)
 
-    def update(self, dx: float, dy: float, dt: float, dash_requested: bool) -> None:
+    def update(self, dx: float, dy: float, dt: float) -> None:
         """
         dx, dy: Направление ввода
         dt: Delta time в секундах
         dash_requested - флаг отработки рывка
         """
+        self.body.dx = dx
+        self.body.dy = dy
 
-        # обновляем таймер для кд
-        if self._dash_cooldown_timer > 0:
-            self._dash_cooldown_timer -= dt
-
-        if self._dash_cooldown_timer <= 0 and not self._can_dash:
-            self._can_dash = True
-            self._state.particle_system.spawn_dash_reloaded(self.rect.center)
-
-        # обновляем таймер для ui
-        if self._dash_ui_timer > 0:
-            self._dash_ui_timer -= dt
+        # обновление скиллов
+        self.first_skill.update(dt)
+        self.second_skill.update(dt)
 
         # обновляем таймер шагов
         if self._step_timer > 0:
@@ -164,27 +163,11 @@ class Player():
         if self._visual_damage_timer <= 0:
             self.sprite = self._source_sprite.copy()
 
-        # делаем рывок (коли можем)
-        if dash_requested and self._dash_cooldown_timer <= 0 and (dx != 0 or dy != 0):
-            self._dash_timer = self.dash_duration
-            self._dash_cooldown_timer = self.dash_cooldown
-            self._can_dash = False
-            self._state.particle_system.spawn_dashed(self.rect.center)
-
-        # обновляем таймер для рывка
-        if self._dash_timer > 0:
-            self._state.particle_system.spawn_while_dash(self.rect.center, Vector2(dx, dy))
-            self._dash_timer -= dt
-
-        # используем параметры рывка, пока активен его таймер
-        current_max_speed = self.dash_speed if self._dash_timer > 0 else self.max_speed
-        current_accel = self.acceleration * 10 if self._dash_timer > 0 else self.acceleration
-
         # вычисляем ускорение из ввода
         if dx != 0.0 or dy != 0.0:
             length = math.hypot(dx, dy)
-            ax = (dx / length) * current_accel
-            ay = (dy / length) * current_accel
+            ax = (dx / length) * self.current_acceleration
+            ay = (dy / length) * self.current_acceleration
         else:
             ax = ay = 0.0
             # применяем трение
@@ -199,7 +182,7 @@ class Player():
         # ограничиваем максимальную скорость
         current_speed = self.body.velocity.magnitude()
         if current_speed > self.max_speed:
-            scale = current_max_speed / current_speed
+            scale = self.current_max_speed / current_speed
             self.body.vx *= scale
             self.body.vy *= scale
 
@@ -246,12 +229,3 @@ class Player():
     @property
     def hp_ratio(self) -> float:
         return max(0.0, min(1.0, self.hp / self.max_hp))
-
-    @property
-    def dash_cooldown_ratio(self) -> float:
-        if self._max_dash_cooldown <= 0: return 1.0
-        return max(0.0, min(1.0, 1.0 - (self._dash_cooldown_timer / self._max_dash_cooldown)))
-
-    @property
-    def is_dash_ui_visible(self) -> bool:
-        return self._dash_cooldown_timer > 0

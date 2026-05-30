@@ -6,8 +6,10 @@ from models.game_state import GameState
 class InputHandler:
     def __init__(self, state: GameState) -> None:
         self._state = state
-        self._dash_requested: bool = False
+        self._first_skill_use_requested: bool = False
         self._shoot_requested = False
+        self._second_skill_use_requested = False
+        self._second_skill_use_requested = False
         self._reload_requested = False
         self._interactive_requested = False
 
@@ -16,8 +18,9 @@ class InputHandler:
 
     # системные ивенты
     def process_events(self, events) -> None:
-        self._dash_requested = False
+        self._first_skill_use_requested = False
         self._shoot_requested = False
+        self._second_skill_use_requested = False
         self._reload_requested = False
         self._interactive_requested = False
 
@@ -28,7 +31,7 @@ class InputHandler:
             elif event.type == pygame.KEYDOWN:
                 if not self._state.is_paused:
                     if event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT): # Рывок
-                        self._dash_requested = True
+                        self._first_skill_use_requested = True
 
                     elif event.key == pygame.K_TAB: # миникарта
                         self._state.is_minimap_visible = True
@@ -57,10 +60,13 @@ class InputHandler:
                 self._shoot_requested = True
                 self._state.weapon_fired = True
 
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                self._second_skill_use_requested = True
+
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 self._state.weapon_fired = False
 
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
                 self.spawn = True
                 self.spawn_pos = event.pos
 
@@ -73,13 +79,16 @@ class InputHandler:
             return float(dx), float(dy)
         return 0.0, 0.0
 
-    def is_dash_requested(self) -> bool: # проверяем отработку рывка
-        return self._dash_requested
+    def is_first_skill_used(self) -> bool: # проверяем отработку рывка
+        return self._first_skill_use_requested
 
     def is_shooting_requested(self) -> bool:  # флаг выстрела
         if self._state.weapon.is_autofired:
             return self._shoot_requested or self._state.weapon_fired
         return self._shoot_requested
+
+    def is_second_skill_used(self) -> bool:  # флаг ближней атаки
+        return self._second_skill_use_requested
 
     def is_reload_requested(self) -> bool:  # проверка перезарядки
         return self._reload_requested

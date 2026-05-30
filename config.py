@@ -6,7 +6,7 @@ INTERNAL_WIDTH: int = 1248
 INTERNAL_HEIGHT: int = 720
 
 # --- НАСТРОЙКИ ОКНА ---
-FPS: int = 500
+FPS: int = 144
 WINDOW_TITLE: str = "NoGum!"
 
 # Режим отображения:
@@ -22,10 +22,20 @@ PLAYER_ACCELERATION: float = 3000.0
 FRICTION: float = 20.0
 PLAYER_TILT_MAX_ANGLE: float = 20.0   # Максимальный угол наклона в градусах
 PLAYER_TILT_SMOOTHING: float = 40.0    # Скорость плавного перехода к целевому углу
+
 # Рывок
-PLAYER_DASH_SPEED: float = 2000.0  # Скорость во время рывка
-PLAYER_DASH_DURATION: float = 0.15  # Длительность
-PLAYER_DASH_COOLDOWN: float = 5.0  # Кд между рывками
+STANDARD_DASH_SPEED: float = 2000.0  # Скорость во время рывка
+STANDARD_DASH_DURATION: float = 0.15  # Длительность
+STANDARD_DASH_COOLDOWN: float = 5.0  # Кд между рывками
+
+# Слэш
+SLASH_RADIUS: float = 150.0
+SLASH_ANGLE_SPAN: int = 120
+SLASH_DAMAGE: float = 10.0
+SLASH_STUN_TIME: float = 0.3
+SLASH_ATTACK_TIME: float = 0.06
+SLASH_COOLDOWN: float = 3.0
+
 
 # переход между этажами
 TRANSITION_TIME: float = 0.5
@@ -37,8 +47,13 @@ MAX_POWER_LIMIT: int = 1000
 # --- ЦВЕТА ---
 BACKGROUND_COLOR: tuple[int, int, int] = (10, 10, 10)
 
+# индикатор рывка
 UI_DASH_COLOR: tuple[int, int, int] = (115, 245, 155)
 UI_DASH_BG_COLOR: tuple[int, int, int] = (50, 100, 70)
+
+# индикатор слэша
+UI_SLASH_COLOR: tuple[int, int, int] = (115, 190, 185)
+UI_SLASH_BG_COLOR: tuple[int, int, int] = (50, 85, 100)
 
 UI_HP_COLOR: tuple[int, int, int] = (255, 255, 40)
 UI_HP_BG_COLOR: tuple[int, int, int] = (45, 45, 20)
@@ -109,16 +124,17 @@ UI_HP_MAX: int = 100
 UI_HP_BAR_WIDTH: int = 200
 UI_HP_BAR_HEIGHT: int = 50
 
-UI_DASH_BAR_WIDTH: int = 30
-UI_DASH_BAR_HEIGHT: int = 4
-UI_DASH_OFFSET_Y: float = 20.0
-UI_DASH_HIDE_DELAY: float = 1.0
+UI_SKILL_BAR_WIDTH: int = 30
+UI_SKILL_BAR_HEIGHT: int = 4
+UI_SKILL_OFFSET_Y: float = 20.0
+UI_SKILL_HIDE_DELAY: float = 1.0
 
 BUTTON_CLICKED_TIME = 0.1
 
 CAMERA_LERP_SPEED = 2.7 # Скорость движения камеры
 
 DRAW_PATH = False # debug отрисовщик для pathfinder'а
+DRAW_SLASH = False
 
 # Mini-Map
 MINIMAP_WIDTH: int = 400

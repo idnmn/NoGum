@@ -1,5 +1,10 @@
+from locale import normalize
+
 import pygame
 import random
+
+from pygame import Vector2
+
 import config
 import math
 from dataclasses import dataclass
@@ -8,6 +13,7 @@ from dataclasses import dataclass
 class Particle:
     x: float; y: float; vx: float; vy: float
     lifetime: float; max_lifetime: float; color: tuple[int, int, int]; size: float
+    is_square: bool = False
 
     @property
     def rect(self) -> pygame.Rect:
@@ -16,13 +22,17 @@ class Particle:
     def render(self, surface: pygame.Surface) -> None:
         alpha = int(255 * (self.lifetime / self.max_lifetime))
         color = (self.color[0], self.color[1], self.color[2], alpha)
-        pygame.draw.circle(surface, color, (int(self.x), int(self.y)), int(self.size), )
+        if not self.is_square:
+            pygame.draw.circle(surface, color, (int(self.x), int(self.y)), int(self.size))
+        else:
+            pygame.draw.rect(surface, color, (self.x - self.size, self.y - self.size,
+                                              self.size * 2, self.size * 2))
 
 class ParticleSystem:
     def __init__(self) -> None:
         self.particles: list[Particle] = []
 
-        self._limit = 500
+        self._limit = 5000
 
     def spawn_wall_impact(self, pos: tuple[float, float], color: tuple[int, int, int] = (255, 200, 50)) -> None:
         for _ in range(config.WALL_IMPACT_PARTICLE_COUNT):
@@ -55,7 +65,7 @@ class ParticleSystem:
             ))
 
     def spawn_player_damaged(self, pos: tuple[float, float], color: tuple[int, int, int] = (250, 255, 60)) -> None:
-        for _ in range(random.randint(4, 7)):
+        for _ in range(random.randint(3, 5)):
             angle = random.uniform(0, 6.2832)  # 2 * pi
             speed = random.uniform(100, 150)
             vx, vy = pygame.Vector2(speed, 0).rotate_rad(angle)
@@ -67,7 +77,8 @@ class ParticleSystem:
                 lifetime=0.3,
                 max_lifetime=0.3,
                 color=color,
-                size=random.uniform(2, 4)
+                size=random.uniform(2, 4),
+                is_square=True
             ))
 
     def spawn_dash_reloaded(self, pos: tuple[float, float]) -> None:
@@ -101,20 +112,59 @@ class ParticleSystem:
                 size=4
             ))
 
-    def spawn_while_dash(self, pos: tuple[float, float], dir: pygame.Vector2) -> None:
+    def spawn_while_dash(self, pos: tuple[float, float], dir: pygame.Vector2,
+                         color: tuple[int, int, int], owner_size: int) -> None:
         for _ in range(random.randint(2, 3)):
             speed = random.uniform(600, 800)
-            vx, vy = dir * speed
-            rand_x, rand_y = (random.randint(int(-config.PLAYER_SIZE * 0.8), int(config.PLAYER_SIZE * 0.8)),
-                              random.randint(int(-config.PLAYER_SIZE * 0.8), int(config.PLAYER_SIZE * 0.8)))
+            vx, vy = -dir * speed
+            rand_x, rand_y = (random.randint(int(-owner_size * 0.8), int(owner_size * 0.8)),
+                              random.randint(int(-owner_size * 0.8), int(owner_size * 0.8)))
 
             self.particles.append(Particle(
                 x=pos[0] + rand_x, y=pos[1] + rand_y,
                 vx=vx, vy=vy,
                 lifetime=0.2,
                 max_lifetime=0.2,
+                color=color,
+                size=random.uniform(2, 4)
+            ))
+
+    def spawn_slash_marked(self, pos: tuple[float, float], owner_size: int) -> None:
+        for _ in range(random.randint(0, 1)):
+            angle = random.uniform(0, 6.2832)  # 2 * pi
+            pos_x, pos_y = pygame.Vector2(pos[0], pos[1]) + Vector2(owner_size / 2).rotate_rad(angle)
+
+            self.particles.append(Particle(
+                x=pos_x, y=pos_y,
+                vx=0, vy=0,
+                lifetime=0.4,
+                max_lifetime=0.4,
                 color=config.UI_DASH_COLOR,
                 size=random.uniform(2, 4)
+            ))
+
+    def spawn_slash(self, origin: tuple[float, float], end_pos: tuple[float, float], radius: int, facing_right) -> None:
+        count = random.randint(int(radius * 0.5), int(radius * 0.7))
+        if facing_right:
+            dir = (end_pos - origin).normalize().rotate(90)
+        else:
+            dir = (end_pos - origin).normalize().rotate(-90)
+
+        for _ in range(count):
+            angle = math.degrees(math.atan2(end_pos[1] - origin[1], end_pos[0] - origin[0]))
+            dist = random.uniform(0, radius * 0.6)
+            pos = origin + Vector2(dist).rotate(angle - 30)
+            rand_pos = random.randint(-int(radius * 0.15), int(radius * 0.15))
+            size_range = 6 * dist / radius
+            speed = 900
+
+            self.particles.append(Particle(
+                x=pos.x + rand_pos, y=pos.y + rand_pos,
+                vx=dir.x * speed, vy=dir.y * speed,
+                lifetime=0.15,
+                max_lifetime=0.15,
+                color=config.UI_DASH_COLOR,
+                size=1 + size_range,
             ))
 
     def update(self, dt: float) -> None:

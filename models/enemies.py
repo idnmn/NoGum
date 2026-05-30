@@ -23,6 +23,8 @@ class Enemy():
                 self.body.rect.width + 2,
                 self.body.rect.height + 2
             )
+        self.sprite = pygame.Surface((self.body.rect.width, self.body.rect.height))
+        self.mask = pygame.mask.from_surface(self.sprite)
 
         self.type = enemy_type
         self.hp = 0.0
@@ -50,8 +52,12 @@ class Enemy():
 
         self._facing_right = True
 
+        self.slash_marked = False
+        self.slash_killed = False
+
     def update(self, dt: float, surface: pygame.Surface) -> None:
-        pass
+        if self.slash_marked and random.randint(0, 100) < 20:
+            self._state.particle_system.spawn_slash_marked(self.rect.center, max(self.rect.width, self.rect.height))
 
     def update_timers(self, dt: float) -> None:
         if self._repath_timer > 0:
@@ -84,13 +90,17 @@ class Enemy():
     def render(self, surface: pygame.Surface) -> None:
         pygame.draw.rect(surface, (255, 255, 255), self.body.rect)
 
+    def drop(self):
+        pass
+
     @property
     def rect(self) -> pygame.Rect:
         return self.body.rect
 
+
 class BookWorm(Enemy):
     def __init__(self, x: float, y: float, size_x: int, size_y: int, sprite: pygame.Surface,
-                 state: GameState, enemy_type: str = "bookworm", level: float = 1.0) -> None:
+                 state: GameState, enemy_type: str = "bookworm", level: float = 1.0, search_index: int = 0) -> None:
         super().__init__(x, y, size_x, size_y, state, enemy_type)
         self._source_sprite = pygame.transform.scale(sprite, (size_x, size_y)).convert_alpha()
         self.sprite = self._source_sprite
@@ -108,8 +118,9 @@ class BookWorm(Enemy):
         self.attack_range = 200
         self.aggr_range = 1000
         self.impact_color = (200, 0, 0)
+        self.search_index: int = 0
 
-        self.state: str = 'recovery'  # chase, charge, dash, recovery
+        self.state: str = 'recovery'  # chase, charge, dash, recovery, stun
         self._state_timer = 0.5
         self.dash_dir = Vector2(0)
         self.pre_attack_cooldown = 0.5              # кд перед рывком
@@ -148,6 +159,8 @@ class BookWorm(Enemy):
         surface.blit(self.sprite, (self.rect.x, self.rect.y))
 
     def update(self, dt: float, surface: pygame.Surface) -> None:
+        super().update(dt, surface)
+
         # обновляем таймеры
         active_room = self._state.room_manager.active_room
         self.update_timers(dt)
@@ -166,117 +179,125 @@ class BookWorm(Enemy):
         dir_to_player = (pygame.Vector2(self._state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
 
         # Обрабатываем логику по состояниям
-        if self.state == 'chase':  # поиск игрока
-            dx = self.next_point.x - self.body.rect.centerx
-            dy = self.next_point.y - self.body.rect.centery
+        if not self.state == 'stun':
+            if self.state == 'chase':  # поиск игрока
+                dx = self.next_point.x - self.body.rect.centerx
+                dy = self.next_point.y - self.body.rect.centery
 
-            # обновляем данные с pathfinder'а
-            if self._repath_timer <= 0:
-                self._repath_timer = self._repath_cooldown
-                self.pathfinder.search_path(Vector2(self.rect.center), Vector2(self._state.player.rect.center), active_room,
-                                            search_index=2)
-                if self.pathfinder.path_points:
-                    self.next_point = self.pathfinder.path_points[0]
+                # обновляем данные с pathfinder'а
+                if self._repath_timer <= 0:
+                    self._repath_timer = self._repath_cooldown
+                    if self.pathfinder.search_path(Vector2(self.rect.center), Vector2(self._state.player.rect.center), active_room,
+                                                search_index=self.search_index):
+                        self.is_alive = False
+                    if self.pathfinder.path_points:
+                        self.next_point = self.pathfinder.path_points[0]
 
-                # debug рендер
-                for i, point in enumerate(self.pathfinder.path_points):
-                    draw_point = point - active_room.offset
-                    pygame.draw.circle(surface, (255, 210, 80), (draw_point.x, draw_point.y), 5)
+                    # debug рендер
+                    for i, point in enumerate(self.pathfinder.path_points):
+                        draw_point = point - active_room.offset
+                        pygame.draw.circle(surface, (255, 210, 80), (draw_point.x, draw_point.y), 5)
 
-                    if i == 0:
-                        pygame.draw.circle(surface, (255, 210, 80), self.rect.center - active_room.offset, 5)
-                        pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
-                                         self.rect.center - active_room.offset, 3)
+                        if i == 0:
+                            pygame.draw.circle(surface, (255, 210, 80), self.rect.center - active_room.offset, 5)
+                            pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
+                                             self.rect.center - active_room.offset, 3)
 
-                    if i + 1 < len(self.pathfinder.path_points):
-                        next_draw = self.pathfinder.path_points[i + 1] - active_room.offset
-                        pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
-                                         (next_draw.x, next_draw.y), 3)
+                        if i + 1 < len(self.pathfinder.path_points):
+                            next_draw = self.pathfinder.path_points[i + 1] - active_room.offset
+                            pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
+                                             (next_draw.x, next_draw.y), 3)
 
-            # если игрок в радиусе атаки начинаем заряжать рывок
-            if dist_to_player < self.attack_range and self._state_timer <= 0:
-                self.state = "charge"
-                self._state_timer = self.pre_attack_cooldown
+                # если игрок в радиусе атаки начинаем заряжать рывок
+                if dist_to_player < self.attack_range and self._state_timer <= 0:
+                    self.state = "charge"
+                    self._state_timer = self.pre_attack_cooldown
+                    self.body.vx = 0.0
+                    self.body.vy = 0.0
+                    self.dash_dir = dir_to_player.copy()
+                else:
+                    direction = Vector2(dx, dy)
+
+                    if direction.magnitude() < self.aggr_range and direction.magnitude() != 0:
+                        direction = direction.normalize()
+                        dx, dy = direction
+                    else:
+                        direction = Vector2(0)
+                        dx, dy = direction
+
+                    # вычисляем ускорение из pathfinder'а
+                    if dx != 0.0 or dy != 0.0:
+                        ax = dx * self.acceleration
+                        ay = dy * self.acceleration
+                    else:
+                        ax = ay = 0.0
+                        # применяем трение
+                        damping = math.exp(-self.friction * dt)
+                        self.body.vx *= damping
+                        self.body.vy *= damping
+
+                    # интегрируем ускорение в скорость
+                    self.body.vx += ax * dt
+                    self.body.vy += ay * dt
+
+                    # ограничиваем максимальную скорость
+                    current_speed = self.body.velocity.magnitude()
+                    if current_speed > self.max_speed:
+                        scale = self.max_speed / current_speed
+                        self.body.vx *= scale
+                        self.body.vy *= scale
+
+                    # защита от дрейфа
+                    if current_speed < 2.0:
+                        self.body.vx = 0.0
+                        self.body.vy = 0.0
+
+            elif self.state == 'charge':  # готовится к рывку
                 self.body.vx = 0.0
                 self.body.vy = 0.0
                 self.dash_dir = dir_to_player.copy()
-            else:
-                direction = Vector2(dx, dy)
+                # делаем рывок
+                if self._state_timer <= 0:
+                    self.state = "dash"
+                    self._state_timer = self.dash_duration
+                    self.body.vx = self.dash_dir.x * self.dash_speed
+                    self.body.vy = self.dash_dir.y * self.dash_speed
 
-                if direction.magnitude() < self.aggr_range and direction.magnitude() != 0:
-                    direction = direction.normalize()
-                    dx, dy = direction
-                else:
-                    direction = Vector2(0)
-                    dx, dy = direction
+            elif self.state == "dash":
+                self._state.particle_system.spawn_while_dash(self.rect.center, self.dash_dir,
+                                                             (220, 220, 220), self.rect.height)
 
-                # вычисляем ускорение из pathfinder'а
-                if dx != 0.0 or dy != 0.0:
-                    ax = dx * self.acceleration
-                    ay = dy * self.acceleration
-                else:
-                    ax = ay = 0.0
-                    # применяем трение
-                    damping = math.exp(-self.friction * dt)
-                    self.body.vx *= damping
-                    self.body.vy *= damping
+                # сбрасываем рывок при контакте или по истечению таймера
+                if self.attack_hitbox.colliderect(self._state.player.rect) or self._state_timer <= 0:
+                    if self.attack_hitbox.colliderect(self._state.player.rect):
+                        self._state.player.take_damage(self.attack_damage)
+                        self._damage_timer = self.damage_cooldown
 
-                # интегрируем ускорение в скорость
-                self.body.vx += ax * dt
-                self.body.vy += ay * dt
-
-                # ограничиваем максимальную скорость
-                current_speed = self.body.velocity.magnitude()
-                if current_speed > self.max_speed:
-                    scale = self.max_speed / current_speed
-                    self.body.vx *= scale
-                    self.body.vy *= scale
-
-                # защита от дрейфа
-                if current_speed < 2.0:
+                    self.state = "recovery"
+                    self._state_timer = self.post_attack_cooldown
                     self.body.vx = 0.0
                     self.body.vy = 0.0
 
-        elif self.state == 'charge':  # готовится к рывку
-            self.body.vx = 0.0
-            self.body.vy = 0.0
-            self.dash_dir = dir_to_player.copy()
-            # делаем рывок
-            if self._state_timer <= 0:
-                self.state = "dash"
-                self._state_timer = self.dash_duration
-                self.body.vx = self.dash_dir.x * self.dash_speed
-                self.body.vy = self.dash_dir.y * self.dash_speed
+            elif self.state == "recovery":
+                if self._state_timer <= 0:
+                    self.state = "chase"
+                    self._state_timer = self.between_dash_cooldown
 
-        elif self.state == "dash":
-            # сбрасываем рывок при контакте или по истечению таймера
-            if self.attack_hitbox.colliderect(self._state.player.rect) or self._state_timer <= 0:
-                if self.attack_hitbox.colliderect(self._state.player.rect):
-                    self._state.player.take_damage(self.attack_damage)
+            # контактный урон
+            if self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase":
+                if self._damage_timer <= 0:
+                    self._state.player.take_damage(self.contact_damage)
                     self._damage_timer = self.damage_cooldown
 
-                self.state = "recovery"
-                self._state_timer = self.post_attack_cooldown
-                self.body.vx = 0.0
-                self.body.vy = 0.0
+            # обновляем позицию
+            self.body.rect.x += self.body.vx * dt
+            self.body.rect.y += self.body.vy * dt
 
-        elif self.state == "recovery":
+            self.attack_hitbox.x = self.body.rect.x - 1
+            self.attack_hitbox.y = self.body.rect.y - 1
+        else:
             if self._state_timer <= 0:
                 self.state = "chase"
-                self._state_timer = self.between_dash_cooldown
-
-        # контактный урон
-        if self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase":
-            if self._damage_timer <= 0:
-                self._state.player.take_damage(self.contact_damage)
-                self._damage_timer = self.damage_cooldown
-
-        # обновляем позицию
-        self.body.rect.x += self.body.vx * dt
-        self.body.rect.y += self.body.vy * dt
-
-        self.attack_hitbox.x = self.body.rect.x - 1
-        self.attack_hitbox.y = self.body.rect.y - 1
 
     def on_death(self) -> None:
         random_size = random.randint(-3, 5)
@@ -293,11 +314,13 @@ class BookWorm(Enemy):
 
         self._state.decals_system.decals.append(decal)
 
-        # спавним дроп
+        self.drop()
+
+    # спавним дроп
+    def drop(self) -> None:
         if self._state.player.hp != self._state.player.max_hp:
             # спавним хилки
             count = random.randint(int(2 * self.level), int(3 * self.level))
-
             for _ in range(count):
                 self._state.collectable_system.items.append(EnergyCell(
                     x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
@@ -311,7 +334,6 @@ class BookWorm(Enemy):
             # с шансом 80% спавним скрап
             if random.randint(1, 100) <= 80:
                 count = random.randint(int(2 * self.level), int(4 * self.level))
-
                 for _ in range(count):
                     self._state.collectable_system.items.append(Scrap(
                         x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
@@ -322,9 +344,22 @@ class BookWorm(Enemy):
                         collect_range=300,
                         sprites=self._state.assets['scrap_sprites']
                     ))
+        # гарантированный скрап если игрок не ранен
         else:
             count = random.randint(int(self.level), int(2 * self.level))
-
+            for _ in range(count):
+                self._state.collectable_system.items.append(Scrap(
+                    x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                    y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                    size=6,
+                    lifetime=10,
+                    max_speed=300,
+                    collect_range=300,
+                    sprites=self._state.assets['scrap_sprites']
+                ))
+        # доп дроп при добивании слешером
+        if self.slash_killed:
+            count = int(self.level)
             for _ in range(count):
                 self._state.collectable_system.items.append(Scrap(
                     x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
@@ -336,10 +371,21 @@ class BookWorm(Enemy):
                     sprites=self._state.assets['scrap_sprites']
                 ))
 
+            count = random.randint(int(self.level), int(2 * self.level))
+            for _ in range(count):
+                self._state.collectable_system.items.append(EnergyCell(
+                    x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                    y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                    size=7,
+                    lifetime=10,
+                    max_speed=600,
+                    collect_range=300
+                ))
+
 
 class BookWormMommy(Enemy):
     def __init__(self, x: float, y: float, size_x: int, size_y: int, sprite: pygame.Surface,
-                 state: GameState, enemy_type: str = "bookworm", level: float = 1.0) -> None:
+                 state: GameState, enemy_type: str = "bookworm", level: float = 1.0, search_index: int = 0) -> None:
         super().__init__(x, y, size_x, size_y, state, enemy_type)
         self._source_sprite = pygame.transform.scale(sprite, (size_x, size_y)).convert_alpha()
         self.sprite = self._source_sprite
@@ -357,6 +403,7 @@ class BookWormMommy(Enemy):
         self.attack_range = 200
         self.aggr_range = 1000
         self.impact_color = (200, 0, 0)
+        self.search_index = search_index
 
         self.state: str = 'recovery'  # chase, charge, dash, recovery, death
         self._state_timer = 0.5
@@ -413,6 +460,8 @@ class BookWormMommy(Enemy):
         surface.blit(sprite, (self.rect.x + offset_x, self.rect.y + offset_y))
 
     def update(self, dt: float, surface: pygame.Surface) -> None:
+        super().update(dt, surface)
+
         # обновляем таймеры
         active_room = self._state.room_manager.active_room
         self.update_timers(dt)
@@ -431,127 +480,135 @@ class BookWormMommy(Enemy):
         dir_to_player = (pygame.Vector2(self._state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
 
         # Обрабатываем логику по состояниям
-        if self.state == 'chase':  # поиск игрока
-            dx = self.next_point.x - self.body.rect.centerx
-            dy = self.next_point.y - self.body.rect.centery
+        if not self.state == 'stun':
+            if self.state == 'chase':  # поиск игрока
+                dx = self.next_point.x - self.body.rect.centerx
+                dy = self.next_point.y - self.body.rect.centery
 
-            # обновляем данные с pathfinder'а
-            if self._repath_timer <= 0:
-                self._repath_timer = self._repath_cooldown
-                self.pathfinder.search_path(Vector2(self.rect.center), Vector2(self._state.player.rect.center), active_room,
-                                            search_index=0)
-                if self.pathfinder.path_points:
-                    self.next_point = self.pathfinder.path_points[0]
+                # обновляем данные с pathfinder'а
+                if self._repath_timer <= 0:
+                    self._repath_timer = self._repath_cooldown
+                    if self.pathfinder.search_path(Vector2(self.rect.center), Vector2(self._state.player.rect.center), active_room,
+                                                search_index=self.search_index):
+                        self.is_alive = False
+                    if self.pathfinder.path_points:
+                        self.next_point = self.pathfinder.path_points[0]
 
-                # debug рендер
-                for i, point in enumerate(self.pathfinder.path_points):
-                    draw_point = point - active_room.offset
-                    pygame.draw.circle(surface, (255, 210, 80), (draw_point.x, draw_point.y), 5)
+                    # debug рендер
+                    for i, point in enumerate(self.pathfinder.path_points):
+                        draw_point = point - active_room.offset
+                        pygame.draw.circle(surface, (255, 210, 80), (draw_point.x, draw_point.y), 5)
 
-                    if i == 0:
-                        pygame.draw.circle(surface, (255, 210, 80), self.rect.center - active_room.offset, 5)
-                        pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
-                                         self.rect.center - active_room.offset, 3)
+                        if i == 0:
+                            pygame.draw.circle(surface, (255, 210, 80), self.rect.center - active_room.offset, 5)
+                            pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
+                                             self.rect.center - active_room.offset, 3)
 
-                    if i + 1 < len(self.pathfinder.path_points):
-                        next_draw = self.pathfinder.path_points[i + 1] - active_room.offset
-                        pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
-                                         (next_draw.x, next_draw.y), 3)
+                        if i + 1 < len(self.pathfinder.path_points):
+                            next_draw = self.pathfinder.path_points[i + 1] - active_room.offset
+                            pygame.draw.line(surface, (255, 210, 80), (draw_point.x, draw_point.y),
+                                             (next_draw.x, next_draw.y), 3)
 
-            # если игрок в радиусе атаки начинаем заряжать рывок
-            if dist_to_player < self.attack_range and self._state_timer <= 0:
-                self.state = "charge"
-                self._state_timer = self.pre_attack_cooldown
+                # если игрок в радиусе атаки начинаем заряжать рывок
+                if dist_to_player < self.attack_range and self._state_timer <= 0:
+                    self.state = "charge"
+                    self._state_timer = self.pre_attack_cooldown
+                    self.body.vx = 0.0
+                    self.body.vy = 0.0
+                    self.dash_dir = dir_to_player.copy()
+                else:
+                    direction = Vector2(dx, dy)
+
+                    if direction.magnitude() < self.aggr_range and direction.magnitude() != 0:
+                        direction = direction.normalize()
+                        dx, dy = direction
+                    else:
+                        direction = Vector2(0)
+                        dx, dy = direction
+
+                    # вычисляем ускорение из pathfinder'а
+                    if dx != 0.0 or dy != 0.0:
+                        ax = dx * self.acceleration
+                        ay = dy * self.acceleration
+                    else:
+                        ax = ay = 0.0
+                        # применяем трение
+                        damping = math.exp(-self.friction * dt)
+                        self.body.vx *= damping
+                        self.body.vy *= damping
+
+                    # интегрируем ускорение в скорость
+                    self.body.vx += ax * dt
+                    self.body.vy += ay * dt
+
+                    # ограничиваем максимальную скорость
+                    current_speed = self.body.velocity.magnitude()
+                    if current_speed > self.max_speed:
+                        scale = self.max_speed / current_speed
+                        self.body.vx *= scale
+                        self.body.vy *= scale
+
+                    # защита от дрейфа
+                    if current_speed < 2.0:
+                        self.body.vx = 0.0
+                        self.body.vy = 0.0
+
+            elif self.state == 'charge':  # готовится к рывку
                 self.body.vx = 0.0
                 self.body.vy = 0.0
                 self.dash_dir = dir_to_player.copy()
-            else:
-                direction = Vector2(dx, dy)
+                # делаем рывок
+                if self._state_timer <= 0:
+                    self.state = "dash"
+                    self._state_timer = self.dash_duration
+                    self.body.vx = self.dash_dir.x * self.dash_speed
+                    self.body.vy = self.dash_dir.y * self.dash_speed
 
-                if direction.magnitude() < self.aggr_range and direction.magnitude() != 0:
-                    direction = direction.normalize()
-                    dx, dy = direction
-                else:
-                    direction = Vector2(0)
-                    dx, dy = direction
+            elif self.state == "dash": # рывок
+                self._state.particle_system.spawn_while_dash(self.rect.center, self.dash_dir,
+                                                             (220, 220, 220), self.rect.height)
 
-                # вычисляем ускорение из pathfinder'а
-                if dx != 0.0 or dy != 0.0:
-                    ax = dx * self.acceleration
-                    ay = dy * self.acceleration
-                else:
-                    ax = ay = 0.0
-                    # применяем трение
-                    damping = math.exp(-self.friction * dt)
-                    self.body.vx *= damping
-                    self.body.vy *= damping
+                # сбрасываем рывок при контакте или по истечению таймера
+                if self.attack_hitbox.colliderect(self._state.player.rect) or self._state_timer <= 0:
+                    if self.attack_hitbox.colliderect(self._state.player.rect):
+                        self._state.player.take_damage(self.attack_damage)
+                        self._damage_timer = self.damage_cooldown
 
-                # интегрируем ускорение в скорость
-                self.body.vx += ax * dt
-                self.body.vy += ay * dt
-
-                # ограничиваем максимальную скорость
-                current_speed = self.body.velocity.magnitude()
-                if current_speed > self.max_speed:
-                    scale = self.max_speed / current_speed
-                    self.body.vx *= scale
-                    self.body.vy *= scale
-
-                # защита от дрейфа
-                if current_speed < 2.0:
+                    self.state = "recovery"
+                    self._state_timer = self.post_attack_cooldown
                     self.body.vx = 0.0
                     self.body.vy = 0.0
 
-        elif self.state == 'charge':  # готовится к рывку
-            self.body.vx = 0.0
-            self.body.vy = 0.0
-            self.dash_dir = dir_to_player.copy()
-            # делаем рывок
-            if self._state_timer <= 0:
-                self.state = "dash"
-                self._state_timer = self.dash_duration
-                self.body.vx = self.dash_dir.x * self.dash_speed
-                self.body.vy = self.dash_dir.y * self.dash_speed
+            elif self.state == "recovery": # перерыв после рывка
+                if self._state_timer <= 0:
+                    self.state = "chase"
+                    self._state_timer = self.between_dash_cooldown
 
-        elif self.state == "dash": # рывок
-            # сбрасываем рывок при контакте или по истечению таймера
-            if self.attack_hitbox.colliderect(self._state.player.rect) or self._state_timer <= 0:
-                if self.attack_hitbox.colliderect(self._state.player.rect):
-                    self._state.player.take_damage(self.attack_damage)
-                    self._damage_timer = self.damage_cooldown
-
-                self.state = "recovery"
-                self._state_timer = self.post_attack_cooldown
+            elif self.state == "death": # процесс умирания
+                self._shake_amount = 1 - self._state_timer / self.death_duration
                 self.body.vx = 0.0
                 self.body.vy = 0.0
 
-        elif self.state == "recovery": # перерыв после рывка
+                self._state.camera.shake(self._shake_amount * 10, 0.1)
+
+                if self._state_timer <= 0:
+                    self.is_alive = False
+
+            # контактный урон
+            if self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase":
+                if self._damage_timer <= 0:
+                    self._state.player.take_damage(self.contact_damage)
+                    self._damage_timer = self.damage_cooldown
+
+            # обновляем позицию
+            self.body.rect.x += self.body.vx * dt
+            self.body.rect.y += self.body.vy * dt
+
+            self.attack_hitbox.x = self.body.rect.x - 1
+            self.attack_hitbox.y = self.body.rect.y - 1
+        else:
             if self._state_timer <= 0:
                 self.state = "chase"
-                self._state_timer = self.between_dash_cooldown
-
-        elif self.state == "death": # процесс умирания
-            self._shake_amount = 1 - self._state_timer / self.death_duration
-            self.body.vx = 0.0
-            self.body.vy = 0.0
-
-            self._state.camera.shake(self._shake_amount * 10, 0.1)
-
-            if self._state_timer <= 0:
-                self.is_alive = False
-
-        # контактный урон
-        if self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase":
-            if self._damage_timer <= 0:
-                self._state.player.take_damage(self.contact_damage)
-                self._damage_timer = self.damage_cooldown
-
-        # обновляем позицию
-        self.body.rect.x += self.body.vx * dt
-        self.body.rect.y += self.body.vy * dt
-
-        self.attack_hitbox.x = self.body.rect.x - 1
-        self.attack_hitbox.y = self.body.rect.y - 1
 
     # переопределённый метод получения урона
     def take_damage(self, amount: float) -> bool:
@@ -610,21 +667,73 @@ class BookWormMommy(Enemy):
             self._state.enemy_system.enemies.append(bookworm)
 
         # спавним дроп
-        count = random.randint(int(3 * self.level), int(5 * self.level))
-
-        for _ in range(count):
-            rand_x = random.uniform(-self.rect.width * 1.5, self.rect.width * 1.5)
-            rand_y = random.uniform(-self.rect.width * 1.5, self.rect.width * 1.5)
-
-            self._state.collectable_system.items.append(Scrap(
-                x=self.rect.centerx + rand_x,
-                y=self.rect.centery + rand_y,
-                size=6,
-                lifetime=10,
-                max_speed=300,
-                collect_range=300,
-                sprites=self._state.assets['scrap_sprites']
-            ))
+        self.drop()
 
         # трясём камеру
         self._state.camera.shake(10, 0.15)
+
+    def drop(self):
+        # спавним дроп
+        if self._state.player.hp != self._state.player.max_hp:
+            # спавним хилки
+            count = random.randint(int(2 * self.level), int(3 * self.level))
+            for _ in range(count):
+                self._state.collectable_system.items.append(EnergyCell(
+                    x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                    y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                    size=7,
+                    lifetime=10,
+                    max_speed=600,
+                    collect_range=300
+                ))
+
+            # с шансом 80% спавним скрап
+            if random.randint(1, 100) <= 80:
+                count = random.randint(int(2 * self.level), int(4 * self.level))
+                for _ in range(count):
+                    self._state.collectable_system.items.append(Scrap(
+                        x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                        y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                        size=6,
+                        lifetime=10,
+                        max_speed=300,
+                        collect_range=300,
+                        sprites=self._state.assets['scrap_sprites']
+                    ))
+        # гарантированный скрап если игрок не ранен
+        else:
+            count = random.randint(int(self.level), int(2 * self.level))
+            for _ in range(count):
+                self._state.collectable_system.items.append(Scrap(
+                    x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                    y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                    size=6,
+                    lifetime=10,
+                    max_speed=300,
+                    collect_range=300,
+                    sprites=self._state.assets['scrap_sprites']
+                ))
+        # доп дроп при добивании слешером
+        if self.slash_killed:
+            count = random.randint(int(self.level), int(2 * self.level))
+            for _ in range(count):
+                self._state.collectable_system.items.append(Scrap(
+                    x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                    y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                    size=6,
+                    lifetime=10,
+                    max_speed=300,
+                    collect_range=300,
+                    sprites=self._state.assets['scrap_sprites']
+                ))
+
+            count = int(self.level)
+            for _ in range(count):
+                self._state.collectable_system.items.append(EnergyCell(
+                    x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+                    y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+                    size=7,
+                    lifetime=10,
+                    max_speed=600,
+                    collect_range=300
+                ))

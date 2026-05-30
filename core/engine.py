@@ -57,13 +57,10 @@ class GameEngine:
         # инструменты и системы
         self._state.clock = pygame.time.Clock()
         self._input = InputHandler(self._state)
-        self._state.collision_system = CollisionSystem()
+        self._state.collision_system = CollisionSystem(self._state)
         self._weapon_system = WeaponSystem(self._state)
 
-
-        self._state.projectile_system = ProjectileSystem(on_wall_impact=self._on_wall_impact,
-                                                         on_enemy_impact=self._on_enemy_impact,
-                                                         state=self._state)
+        self._state.projectile_system = ProjectileSystem(self._state)
         self._state.particle_system = ParticleSystem()
         self._state.collectable_system = CollectableSystem(self._state)
         self._state.enemy_system = EnemySystem()
@@ -114,21 +111,6 @@ class GameEngine:
         self._ui_renderer = UIRenderer(self._screen, self._state)
         self._ui_renderer._map_renderer = self._map_renderer
         self._renderer = Renderer(self._state, self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
-
-        # начальный спавн (2 bookworm в стартовой комнате)
-        # if self._room_manager.active_room:
-        #     enemies = self._spawner.spawn_in_room(self._room_manager.active_room, self._state)
-        #     self._enemy_system.enemies.extend(enemies)
-            # center = self._room_manager.start_room.bounds.center
-            # spawn_area = pygame.Rect(center[0] - 120, center[1] - 120, 500, 300)
-            # initial_enemies = []
-            #
-            # for _ in range(3):
-            #     x = random.uniform(spawn_area.x + 52, spawn_area.right - 52)
-            #     y = random.uniform(spawn_area.y + 52, spawn_area.bottom - 52)
-            #     initial_enemies.append(self._spawner.spawn_bookworm(x, y))
-            # self._enemy_system.enemies.extend(initial_enemies)
-
 
     def run(self) -> None:
         while self._state.is_running:
@@ -187,11 +169,10 @@ class GameEngine:
                 if self._state.hit_pause_frames > 0:
                     self._state.hit_pause_frames -= 1
                 else:
-                    dash_input = self._input.is_dash_requested()  # Отработка рывка
                     direction = self._input.get_move_direction()  # Вектор направления игрока
 
                     #  обновляем игрока
-                    self._state.player.update(dx=direction[0], dy=direction[1], dt=dt, dash_requested=dash_input)
+                    self._state.player.update(dx=direction[0], dy=direction[1], dt=dt)
 
                     # общий список сущностей
                     entities = ([enemy.body for enemy in self._state.enemy_system.enemies] +
@@ -267,6 +248,13 @@ class GameEngine:
                                                                 self._input.is_reload_requested())
                         if shot_fired:
                             self._state.weapon.fire(self._state.projectile_system, self._state)
+
+                    # обработка скиллов
+                    if self._input.is_first_skill_used() and self._state.player.second_skill.is_ready:
+                        self._state.player.first_skill.use(pygame.mouse.get_pos())
+
+                    if self._input.is_second_skill_used() and self._state.player.second_skill.is_ready:
+                        self._state.player.second_skill.use(pygame.mouse.get_pos())
 
                     # проверяем взаимодействие с объектами
                     if self._input.is_interactive_requested():
@@ -413,19 +401,6 @@ class GameEngine:
         self._state.assets['scrap_sprites'] = [assets_manager.load_sprite(f"scrap_{i}.png",
                                                                           (28, 28)) for i in range(1, 6)]
         self._state.assets['scrap_ico'] = assets_manager.load_sprite("scrap_ico.png", (32, 32))
-
-    def _on_wall_impact(self, pos: tuple[float, float]) -> None:
-        distance = Vector2((self._state.player.rect.centerx - pos[0],
-                            self._state.player.rect.centery - pos[1])).magnitude()
-        ratio = (1200 - distance) * 0.0015
-        if ratio <= 0:
-            ratio = 0
-
-        self._state.particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
-        self._state.camera.shake(config.IMPACT_SHAKE_AMOUNT * ratio, config.IMPACT_SHAKE_DURATION)
-
-    def _on_enemy_impact(self, pos: tuple[float, float], enemy) -> None:
-        self._state.particle_system.spawn_enemy_impact(pos, color=enemy.impact_color)
 
     def _on_player_impact(self, pos: tuple[float, float]) -> None:
         self._state.particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])

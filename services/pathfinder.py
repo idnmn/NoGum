@@ -10,7 +10,7 @@ class Pathfinder():
         self.path_points = []
 
     def search_path(self, enemy_pos: Vector2, player_pos: Vector2, room: Room,
-                    search_index: int = 0, len_limit: int = 50) -> None:
+                    search_index: int = 0, len_limit: int = 50) -> bool:
         self.path_points = []
         layout = [list(line) for line in room.layout]
         offset = room.offset
@@ -24,8 +24,11 @@ class Pathfinder():
         enemy_layout = Vector2(int(enemy_layout.x), int(enemy_layout.y))
         player_layout = Vector2(int(player_layout.x), int(player_layout.y))
 
-        layout[int(player_layout.y)][int(player_layout.x)] = 'P'
-        layout[int(enemy_layout.y)][int(enemy_layout.x)] = 'E'
+        try:
+            layout[int(player_layout.y)][int(player_layout.x)] = 'P'
+            layout[int(enemy_layout.y)][int(enemy_layout.x)] = 'E'
+        except IndexError:
+            return True
 
         cells_list = []
         closed_set = set()
@@ -86,7 +89,7 @@ class Pathfinder():
                     else:
                         break
                 self.path_points = path[::-1]  # разворачиваем путь
-                return
+                return False
 
             # соседи
             neighbors_cords = [
@@ -124,6 +127,7 @@ class Pathfinder():
                 )
                 cells_list.append(cell)
                 cells_dict[(cell.x, cell.y)] = cell  # сохраняем для реконструкции маршрута
+        return True
 
 
 class Cell():

@@ -1,4 +1,6 @@
 import pygame
+import config
+from pygame import Vector2
 from typing import Callable, List
 from models.enemies import Enemy
 from models.game_state import GameState
@@ -6,12 +8,9 @@ from models.projectile import Projectile
 
 
 class ProjectileSystem:
-    def __init__(self, on_wall_impact: Callable[[tuple[float, float]], None],
-                 on_enemy_impact: Callable[[tuple[float, float]], None], state: GameState) -> None:
+    def __init__(self, state: GameState) -> None:
         self._state = state
         self.projectiles: list[Projectile] = []
-        self._on_wall_impact = on_wall_impact
-        self._on_enemy_impact = on_enemy_impact
 
         self._limit = 100
 
@@ -66,3 +65,16 @@ class ProjectileSystem:
 
         while len(self.projectiles) > self._limit:
             self.projectiles.pop(0)
+
+    def _on_wall_impact(self, pos: tuple[float, float]) -> None:
+        distance = Vector2((self._state.player.rect.centerx - pos[0],
+                            self._state.player.rect.centery - pos[1])).magnitude()
+        ratio = (1200 - distance) * 0.0015
+        if ratio <= 0:
+            ratio = 0
+
+        self._state.particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
+        self._state.camera.shake(config.IMPACT_SHAKE_AMOUNT * ratio, config.IMPACT_SHAKE_DURATION)
+
+    def _on_enemy_impact(self, pos: tuple[float, float], enemy) -> None:
+        self._state.particle_system.spawn_enemy_impact(pos, color=enemy.impact_color)

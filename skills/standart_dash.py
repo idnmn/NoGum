@@ -1,0 +1,54 @@
+from pygame import Vector2
+import config
+from models.game_state import GameState
+from skills.skill import Skill
+
+
+# стандартный рывок
+class StandardDash(Skill):
+    def __init__(self, state: GameState) -> None:
+        super().__init__(state)
+
+        self.speed = config.STANDARD_DASH_SPEED
+        self.cool_down = config.STANDARD_DASH_COOLDOWN
+        self.duration = config.STANDARD_DASH_DURATION
+        self._ui_timer: float = 0.0
+
+        # констранты для рендера индикатора
+        self.indicator_background_color = config.UI_DASH_BG_COLOR
+        self.indicator_fill_color = config.UI_DASH_COLOR
+
+    def update(self, dt: float) -> None:
+        super().update(dt)
+
+        if self.is_using:
+            self._state.particle_system.spawn_while_dash(self._state.player.rect.center, Vector2(self._state.player.body.dx,
+                                                                                           self._state.player.body.dy),
+                                                         config.UI_DASH_COLOR, config.PLAYER_SIZE)
+
+    def reload(self) -> None:
+        super().reload()
+        self._state.particle_system.spawn_dash_reloaded(self._state.player.rect.center)
+
+    def ended(self) -> None:
+        super().ended()
+
+        # сбрасываем ускорение
+        self._state.player.acceleration *= 10
+        self._state.player.current_max_speed = self._state.player.max_speed
+        self._state.player.ignore_enemy = False
+
+    def use(self, mouse_pos: Vector2) -> None:
+        super().use(mouse_pos)
+
+        self._timer = self.duration
+
+        self._state.particle_system.spawn_dashed(self._state.player.rect.center)
+
+        # ускоряем игрока
+        self._state.player.current_acceleration *= 10
+        self._state.player.current_max_speed = self.speed
+        self._state.player.ignore_enemy = True
+
+
+

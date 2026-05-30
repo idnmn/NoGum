@@ -6,6 +6,20 @@ class Spawner:
     def __init__(self, state: GameState):
         self._state = state
 
+    def _spawn_bookworm_stupid(self, x: float, y: float, level: float, state: GameState) -> BookWorm:
+        size = int(random.uniform(30, 50))
+        bookworm = BookWorm(
+            x=x,
+            y=y,
+            size_x=size,
+            size_y=int(size*0.75),
+            level=level,
+            sprite=self._state.assets['bookworm_sprite'],
+            state=state,
+            search_index=4
+        )
+        return bookworm
+
     def _spawn_bookworm(self, x: float, y: float, level: float, state: GameState) -> BookWorm:
         size = int(random.uniform(30, 50))
         bookworm = BookWorm(
@@ -15,7 +29,8 @@ class Spawner:
             size_y=int(size*0.75),
             level=level,
             sprite=self._state.assets['bookworm_sprite'],
-            state=state
+            state=state,
+            search_index=2
         )
         return bookworm
 
@@ -28,7 +43,8 @@ class Spawner:
             size_y=int(size * 0.75),
             level=level,
             sprite=self._state.assets['bookworm_sprite'],
-            state=state
+            state=state,
+            search_index=0
         )
         return mommy
 
@@ -36,7 +52,7 @@ class Spawner:
         enemies = []
 
         # разделяем мобов по "очкам спавна"
-        score_1_enemy = [self._spawn_bookworm]
+        score_1_enemy = [self._spawn_bookworm_stupid]
         score_2_enemy = [self._spawn_bookworm]
         score_3_enemy = [self._spawn_bookworm_mommy]
 
