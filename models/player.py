@@ -8,7 +8,7 @@ from models.game_state import GameState
 from models.weapons import Weapon
 from models.decal import Decal
 from skills.slash import Slash
-from skills.standart_dash import StandardDash
+from skills.standard_dash import StandardDash
 
 
 class Player():
@@ -30,10 +30,11 @@ class Player():
         self.max_speed = config.PLAYER_MAX_SPEED
         self.current_max_speed = config.PLAYER_MAX_SPEED
         self.acceleration = config.PLAYER_ACCELERATION
-        self.current_acceleration = config.PLAYER_ACCELERATION
         self.friction = config.FRICTION
-        self.hp = config.UI_HP_MAX
-        self.max_hp = config.UI_HP_MAX
+        self.hp = config.PLAYER_MAX_HP
+        self.max_hp = config.PLAYER_MAX_HP
+        self.tick_damage = config.PLAYER_TICK_DAMAGE
+        self.tick_damage_coef = config.PLAYER_TICK_DAMAGE_COEF
 
         self.is_alive = True
         self.ignore_enemy = False
@@ -52,11 +53,15 @@ class Player():
         self._visual_damage_cooldown = 0.2
         self._visual_damage_timer = -1.0
 
-        self._self_damage_timer = 0.0
-        self._self_damage_cooldown = 3
+        self._tick_damage_timer = 0.0
+        self._tick_damage_cooldown = 3
 
         # счетчик обломков в кармане
         self.scrap = 0
+
+        # другие предметы
+        self.inventory = dict()
+        # name: [count, sprite]
 
     def set_mouse_pos(self, pos: tuple[float, float]) -> None:
         self.mouse_world_pos.update(pos)
@@ -99,7 +104,6 @@ class Player():
         if self.second_skill.is_using:
             self.second_skill.render(surface)
 
-
     # Отрисовка шагов
     def _draw_step(self) -> None:
         offset_x, offset_y = 0, 0
@@ -134,7 +138,6 @@ class Player():
         """
         dx, dy: Направление ввода
         dt: Delta time в секундах
-        dash_requested - флаг отработки рывка
         """
         self.body.dx = dx
         self.body.dy = dy
@@ -148,12 +151,12 @@ class Player():
             self._step_timer -= dt
 
         # таймер утекающего здоровья
-        if self._self_damage_timer > 0:
-            self._self_damage_timer -= dt
+        if self._tick_damage_timer > 0:
+            self._tick_damage_timer -= dt
 
-        if self._self_damage_timer <= 0:
-            self._self_damage_timer = self._self_damage_cooldown
-            self.take_damage(3)
+        if self._tick_damage_timer <= 0:
+            self._tick_damage_timer = self._tick_damage_cooldown
+            self.take_damage(self.tick_damage * self.tick_damage_coef)
 
         # обновляем таймер визуализации урона
         if self._visual_damage_timer > 0:
@@ -166,22 +169,22 @@ class Player():
         # вычисляем ускорение из ввода
         if dx != 0.0 or dy != 0.0:
             length = math.hypot(dx, dy)
-            ax = (dx / length) * self.current_acceleration
-            ay = (dy / length) * self.current_acceleration
+            self.body.ax = (dx / length) * self.acceleration
+            self.body.ay = (dy / length) * self.acceleration
         else:
-            ax = ay = 0.0
+            self.body.ax = self.body.ay = 0.0
             # применяем трение
             damping = math.exp(-self.friction * dt)
             self.body.vx *= damping
             self.body.vy *= damping
 
         # интегрируем ускорение в скорость
-        self.body.vx += ax * dt
-        self.body.vy += ay * dt
+        self.body.vx += self.body.ax * dt
+        self.body.vy += self.body.ay * dt
 
         # ограничиваем максимальную скорость
         current_speed = self.body.velocity.magnitude()
-        if current_speed > self.max_speed:
+        if current_speed > self.current_max_speed:
             scale = self.current_max_speed / current_speed
             self.body.vx *= scale
             self.body.vy *= scale

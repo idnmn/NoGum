@@ -10,13 +10,15 @@ class StandardDash(Skill):
         super().__init__(state)
 
         self.speed = config.STANDARD_DASH_SPEED
-        self.cool_down = config.STANDARD_DASH_COOLDOWN
+        self._cool_down = config.STANDARD_DASH_COOLDOWN
         self.duration = config.STANDARD_DASH_DURATION
         self._ui_timer: float = 0.0
 
         # констранты для рендера индикатора
         self.indicator_background_color = config.UI_DASH_BG_COLOR
         self.indicator_fill_color = config.UI_DASH_COLOR
+        self.indicator_sprite = self._state.assets['dash_ico']
+
 
     def update(self, dt: float) -> None:
         super().update(dt)
@@ -34,21 +36,22 @@ class StandardDash(Skill):
         super().ended()
 
         # сбрасываем ускорение
-        self._state.player.acceleration *= 10
+        self._state.player.acceleration //= 100
         self._state.player.current_max_speed = self._state.player.max_speed
         self._state.player.ignore_enemy = False
 
     def use(self, mouse_pos: Vector2) -> None:
-        super().use(mouse_pos)
+        if self._state.player.body.dx != 0 or self._state.player.body.dy != 0:
+            super().use(mouse_pos)
 
-        self._timer = self.duration
+            self._timer = self.duration
 
-        self._state.particle_system.spawn_dashed(self._state.player.rect.center)
+            self._state.particle_system.spawn_dashed(self._state.player.rect.center)
 
-        # ускоряем игрока
-        self._state.player.current_acceleration *= 10
-        self._state.player.current_max_speed = self.speed
-        self._state.player.ignore_enemy = True
+            # ускоряем игрока
+            self._state.player.acceleration *= 100
+            self._state.player.current_max_speed = self.speed
+            self._state.player.ignore_enemy = True
 
 
 

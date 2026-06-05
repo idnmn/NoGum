@@ -9,11 +9,12 @@ class Skill():
     def __init__(self, state: GameState) -> None:
         self._state = state
 
-        self.cool_down = 0.0
+        self._cool_down = 0.0
+        self.cool_down_coef = 1.0
         self._timer = 0.0
 
         self.is_using = False
-        self.is_ready = False
+        self.is_ready = True
 
         # констранты для рендера индикатора
         self.indicator_background_color = (30, 30, 30)
@@ -43,5 +44,9 @@ class Skill():
         self.is_using = True
 
     @property
+    def cool_down(self) -> float:
+        return self._cool_down * self.cool_down_coef
+
+    @property
     def cooldown_ratio(self):
-        return max(0.0, min(1.0, 1.0 - (self._timer / self.cool_down)))
+        return max(0.0, min(1.0, 1.0 - (self._timer / (self.cool_down))))

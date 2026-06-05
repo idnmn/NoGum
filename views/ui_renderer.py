@@ -3,6 +3,7 @@ from models.game_state import GameState
 from skills.skill import Skill
 from ui_elements.button import Button
 from ui_elements.slider import Slider
+from ui_elements.skill_hud_indicator import SkillIndicator
 from models.weapons import *
 from views.map_renderer import MinimapRenderer
 
@@ -69,6 +70,20 @@ class UIRenderer:
         )
         self._state.buttons.append(self.upgrade_button)
 
+        # индикаторы скилов
+        self.first_skill_indicator = SkillIndicator(
+            x=self._screen.get_width() / 4 - 50,
+            y=self._screen.get_height() - 80,
+            skill=self._state.player.first_skill
+        )
+
+        self.second_skill_indicator = SkillIndicator(
+            x=self._screen.get_width() / 4 + 50,
+            y=self._screen.get_height() - 80,
+            skill=self._state.player.second_skill
+        )
+
+
     def _upgrade_weapon(self):
         weapon = self._state.weapon
         self._state.player.scrap -= weapon.upgrade_cost
@@ -127,7 +142,7 @@ class UIRenderer:
                 self._dragging_slider[1](self._dragging_slider[0].value)
 
     # балансируем значения слайдеров
-    def _balance_slider_value(self):
+    def _balance_slider_value(self) -> None:
         weapon = self._state.weapon
 
         self._sliders[0][0]._value = weapon.bullet_size
@@ -146,6 +161,9 @@ class UIRenderer:
         self._draw_hp_bar()
 
         self._draw_scrap_counter()
+
+        self.first_skill_indicator.render(self._screen)
+        self.second_skill_indicator.render(self._screen)
 
         if self._state.is_minimap_visible:
             self._map_renderer.render()
@@ -286,8 +304,6 @@ class UIRenderer:
         else:
             color = (110, 255, 60)
         self._screen.blit(self._micro_font.render(str(fps), True, color), (x + 1, y + 1))
-
-
 
     # прицел
     def _draw_crosshair(self, sprite: pygame.Surface) -> None:

@@ -16,9 +16,23 @@ FULLSCREEN: bool = False
 PRINT_FPS: bool = True # выводит счетчик FPS в реальном времени на экран
 
 # --- ГЕЙМПЛЕЙНЫЕ КОНСТАНТЫ ---
-# Физика движения
+# статы игрока
 PLAYER_MAX_SPEED: float = 600.0  # Пикселей в секунду
-PLAYER_ACCELERATION: float = 3000.0
+PLAYER_MAX_HP: int = 100
+DAMAGE_COEF: float = 1.0
+PLAYER_TICK_DAMAGE: int = 3
+PLAYER_TICK_DAMAGE_COEF: float = 1.0
+SKILLS_COOLDOWN_COEF_LIMIT: float = 0.75
+
+# ограничители стат
+PLAYER_MAX_SPEED_LIMIT: float = 900.0
+PLAYER_MAX_HP_LIMIT: int = 300
+DAMAGE_COEF_LIMIT: float = 3.0
+PLAYER_TICK_DAMAGE_LIMIT: int = 50
+PLAYER_TICK_DAMAGE_COEF_LIMIT: float = 0.5
+
+# Физика движения
+PLAYER_ACCELERATION: float = 4000.0
 FRICTION: float = 20.0
 PLAYER_TILT_MAX_ANGLE: float = 20.0   # Максимальный угол наклона в градусах
 PLAYER_TILT_SMOOTHING: float = 40.0    # Скорость плавного перехода к целевому углу
@@ -26,7 +40,7 @@ PLAYER_TILT_SMOOTHING: float = 40.0    # Скорость плавного пе�
 # Рывок
 STANDARD_DASH_SPEED: float = 2000.0  # Скорость во время рывка
 STANDARD_DASH_DURATION: float = 0.15  # Длительность
-STANDARD_DASH_COOLDOWN: float = 5.0  # Кд между рывками
+STANDARD_DASH_COOLDOWN: float = 3.0  # Кд между рывками
 
 # Слэш
 SLASH_RADIUS: float = 150.0
@@ -34,14 +48,14 @@ SLASH_ANGLE_SPAN: int = 120
 SLASH_DAMAGE: float = 10.0
 SLASH_STUN_TIME: float = 0.3
 SLASH_ATTACK_TIME: float = 0.06
-SLASH_COOLDOWN: float = 3.0
+SLASH_COOLDOWN: float = 5.0
 
 
 # переход между этажами
 TRANSITION_TIME: float = 0.5
 
 # баланс
-LEVEL_COEF: float = 1.02 # коэффициент увеличения стат мобов в зависимости от уровня
+LEVEL_COEF: float = 1.07 # коэффициент увеличения стат мобов в зависимости от уровня
 MAX_POWER_LIMIT: int = 1000
 
 # --- ЦВЕТА ---
@@ -94,8 +108,14 @@ BUTTON_SELECTED_COLOR_OUTSIDE: tuple[int, int, int] = (100, 130, 125)
 BUTTON_CLICKED_COLOR_INSIDE: tuple[int, int, int] = (35, 150, 105)
 BUTTON_CLICKED_COLOR_OUTSIDE: tuple[int, int, int] = (65, 205, 130)
 
+# индикаторы скилов
+INDICATOR_ACTIVE_COLOR_INSIDE: tuple[int, int, int] = (60, 60, 85)
+INDICATOR_ACTIVE_COLOR_OUTSIDE: tuple[int, int, int] = (100, 100, 125)
 
+INDICATOR_INACTIVE_COLOR_INSIDE: tuple[int, int, int] = (30, 30, 45)
+INDICATOR_INACTIVE_COLOR_OUTSIDE: tuple[int, int, int] = (65, 65, 80)
 
+INDICATOR_FILL_COLOR: tuple[int, int, int] = (65, 65, 80)
 
 # --- РАЗМЕРЫ (в пикселях ВНУТРЕННЕГО разрешения) ---
 PLAYER_SIZE: int = 40
@@ -113,11 +133,13 @@ TERMINAL_CHANCE: int = 50 # шанс спавна терминала в комн
 
 # Генерация
 # лимиты количества комнат
-MAX_ROOMS: int = 17
-MIN_ROOMS: int = 13
+MAX_ROOMS: int = 1
+MIN_ROOMS: int = 1
 # лимиты волн врагов в комнатах
-MAX_WAVES: int = 2
-MIN_WAVES: int = 1
+MAX_WAVES: int = 0
+MIN_WAVES: int = 0
+
+EXIT_COUNT = 3
 
 # --- UI КОНСТАНТЫ ---
 UI_HP_MAX: int = 100

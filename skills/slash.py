@@ -16,7 +16,7 @@ class Slash(Skill):
         self.damage =  config.SLASH_DAMAGE
         self.stun_time = config.SLASH_STUN_TIME
         self.attack_time = config.SLASH_ATTACK_TIME
-        self.cool_down = config.SLASH_COOLDOWN
+        self._cool_down = config.SLASH_COOLDOWN
 
         size = self.radius * 2 + 10
         self.surface = pygame.Surface((size, size), pygame.SRCALPHA)
@@ -48,6 +48,7 @@ class Slash(Skill):
         # констранты для рендера индикатора
         self.indicator_background_color = config.UI_SLASH_BG_COLOR
         self.indicator_fill_color = config.UI_SLASH_COLOR
+        self.indicator_sprite = self._state.assets['slash_ico']
 
     def render(self, surface: pygame.Surface) -> None:
         origin = Vector2(self._state.player.rect.center)
@@ -123,6 +124,9 @@ class Slash(Skill):
                 if enemy.hp > 0:
                     enemy.state = 'stun'
                     enemy._state_timer = self.stun_time
+
+                else:
+                    enemy.slash_killed = True
 
                 self._state.particle_system.spawn_dashed(enemy.rect.center)
 

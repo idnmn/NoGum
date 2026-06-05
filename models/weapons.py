@@ -55,7 +55,7 @@ class Pointer(Weapon):
         self._speed_coef = 200.0
 
         self.power = 25
-        self._damage_coef = 1.0
+        self.damage_coef = config.DAMAGE_COEF
         self._calculate_max()
 
         self.clip_size = 5
@@ -73,7 +73,7 @@ class Pointer(Weapon):
             
         if self.level % 4 == 0:
             self.clip_size += 5
-            self._damage_coef += 0.05
+            self.damage_coef += 0.05
 
         self._calculate_max()
 
@@ -170,7 +170,7 @@ class Pointer(Weapon):
 
     @property
     def damage(self) -> float:
-        return self.bullet_speed * self.bullet_size * self._damage_coef
+        return self.bullet_speed * self.bullet_size * self.damage_coef
 
     def fire(self, projectile_system, state) -> None:
         offset_coef = self.offset_x + (self.bullet_size * self._size_coef) / 2

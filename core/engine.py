@@ -7,6 +7,7 @@ from models.player import Player
 from services.room_manager import RoomManager
 from models.camera import Camera
 from models.weapons import *
+from models.collectable import *
 from services.collectable_system import CollectableSystem
 from services.collision_system import CollisionSystem
 from services.decal_system import DecalSystem
@@ -111,6 +112,19 @@ class GameEngine:
         self._ui_renderer = UIRenderer(self._screen, self._state)
         self._ui_renderer._map_renderer = self._map_renderer
         self._renderer = Renderer(self._state, self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
+
+        # пул предметов для дропа
+        self._state.drop_pool = [
+            (Cassette, 'cassette'),
+            (Floppy, 'floppy'),
+            (Monster, 'monster'),
+            (MonsterWhite, 'monsterwhite'),
+            (Clock, 'clock')
+        ]
+
+        # заполняем инвентарь пустышками
+        for item_name in [item[1] for item in self._state.drop_pool]:
+            self._state.player.inventory[item_name.capitalize()] = [0, self._state.assets[item_name]]
 
     def run(self) -> None:
         while self._state.is_running:
@@ -250,7 +264,7 @@ class GameEngine:
                             self._state.weapon.fire(self._state.projectile_system, self._state)
 
                     # обработка скиллов
-                    if self._input.is_first_skill_used() and self._state.player.second_skill.is_ready:
+                    if self._input.is_first_skill_used() and self._state.player.first_skill.is_ready:
                         self._state.player.first_skill.use(pygame.mouse.get_pos())
 
                     if self._input.is_second_skill_used() and self._state.player.second_skill.is_ready:
@@ -296,11 +310,28 @@ class GameEngine:
 
             if self._input.spawn:
                 cords = self._input.spawn_pos + self._state.room_manager.active_room.offset
-                self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number, self._state))
+                # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number, self._state))
                 # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
 
-                print(self._state.stattracker)
+                # print(self._state.stattracker)
                 self._input.spawn = False
+
+                drop_item = random.choice(self._state.drop_pool)
+                sprite_name = drop_item[1]
+                self._state.collectable_system.items.append(drop_item[0](
+                    x=cords.x,
+                    y=cords.y,
+                    size=35,
+                    lifetime=15,
+                    max_speed=600,
+                    vx=900,
+                    vy=0,
+                    acceleration=-1000,
+                    magnet=False,
+                    collect_range=300,
+                    sprite=self._state.assets[sprite_name],
+
+                ))
 
         pygame.quit()
 
@@ -350,6 +381,12 @@ class GameEngine:
         # добавляем +1 к номеру уровня (этажа)
         self._state.level_number += 1
         self._state.stattracker.levels_completed += 1
+
+        # увеличиваем тикающий урон по игроку
+        if self._state.player.tick_damage <= config.PLAYER_TICK_DAMAGE_LIMIT:
+            self._state.player.tick_damage += 3
+        else:
+            self._state.player.tick_damage = config.PLAYER_TICK_DAMAGE_LIMIT
 
     def _load_sprites(self, assets_manager: AssetManager) -> None:
         # Уровень
@@ -401,6 +438,17 @@ class GameEngine:
         self._state.assets['scrap_sprites'] = [assets_manager.load_sprite(f"scrap_{i}.png",
                                                                           (28, 28)) for i in range(1, 6)]
         self._state.assets['scrap_ico'] = assets_manager.load_sprite("scrap_ico.png", (32, 32))
+
+        self._state.assets['dash_ico'] = assets_manager.load_sprite("dash_ico.png", (48, 32))
+        self._state.assets['slash_ico'] = assets_manager.load_sprite("slash_ico.png", (48, 32))
+
+        # Бонусы
+        self._state.assets['cassette'] = assets_manager.load_sprite("cassette.png", (35, 30))
+        self._state.assets['floppy'] = assets_manager.load_sprite("floppy.png", (35, 35))
+        self._state.assets['monster'] = assets_manager.load_sprite("monster.png", (21, 45))
+        self._state.assets['monsterwhite'] = assets_manager.load_sprite("monsterwhite.png", (21, 45))
+        self._state.assets['clock'] = assets_manager.load_sprite("clock.png", (47, 35))
+
 
     def _on_player_impact(self, pos: tuple[float, float]) -> None:
         self._state.particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])

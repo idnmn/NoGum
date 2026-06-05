@@ -78,6 +78,7 @@ class Enemy():
     def take_damage(self, amount: float) -> bool:
         damage = max(0, amount - self.defence)
         self.hp -= damage
+
         if self.hp <= 0:
             self.is_alive = False
             self._state.stattracker.kills += 1
@@ -331,9 +332,9 @@ class BookWorm(Enemy):
                     collect_range=300
                 ))
 
-            # с шансом 80% спавним скрап
-            if random.randint(1, 100) <= 80:
-                count = random.randint(int(2 * self.level), int(4 * self.level))
+            # с шансом 50% спавним скрап
+            if random.randint(1, 100) <= 50:
+                count = random.randint(int(2 * self.level), int(3 * self.level))
                 for _ in range(count):
                     self._state.collectable_system.items.append(Scrap(
                         x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
@@ -346,7 +347,7 @@ class BookWorm(Enemy):
                     ))
         # гарантированный скрап если игрок не ранен
         else:
-            count = random.randint(int(self.level), int(2 * self.level))
+            count = random.randint(int(2 * self.level), int(3 * self.level))
             for _ in range(count):
                 self._state.collectable_system.items.append(Scrap(
                     x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
@@ -714,6 +715,21 @@ class BookWormMommy(Enemy):
                     sprites=self._state.assets['scrap_sprites']
                 ))
         # доп дроп при добивании слешером
+        self._state.collectable_system.items.append(Clock(
+            x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
+            y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
+            size=35,
+            lifetime=15,
+            max_speed=600,
+            vx=900,
+            vy=0,
+            acceleration=-1000,
+            magnet=False,
+            collect_range=300,
+            sprite=self._state.assets['clock'],
+
+        ))
+
         if self.slash_killed:
             count = random.randint(int(self.level), int(2 * self.level))
             for _ in range(count):

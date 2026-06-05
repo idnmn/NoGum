@@ -149,14 +149,15 @@ class LevelGenerator:
 
         # генерируем выход в одной из комнат с максимальной глубиной
         max_depth_rooms = [room for room in self.rooms if room.depth == max_depth]
-        exit_room = random.choice(max_depth_rooms)
-        exit_room.load_layout_from_txt("room_layouts/L0.txt")
-        exit_room.waves_count = 0
-        exit_room.terminal = None
-        exit_room.exit = Exit(exit_room.offset.x + config.TILE_SIZE * 11.5,
-                              exit_room.offset.y + config.TILE_SIZE * 5.5,
-                              config.EXIT_SIZE, self.exit_sprite, self._state.assets['exit_arrow'])
-        # exit_room.is_explored = True
+        exit_rooms = random.choices(max_depth_rooms, k=config.EXIT_COUNT)
+        for exit_room in exit_rooms:
+            exit_room.load_layout_from_txt("room_layouts/L0.txt")
+            exit_room.waves_count = 0
+            exit_room.terminal = None
+            exit_room.exit = Exit(exit_room.offset.x + config.TILE_SIZE * 11.5,
+                                  exit_room.offset.y + config.TILE_SIZE * 5.5,
+                                  config.EXIT_SIZE, self.exit_sprite, self._state.assets['exit_arrow'])
+            # exit_room.is_explored = True
 
         return self.rooms, start_room_ref
 

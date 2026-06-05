@@ -40,3 +40,6 @@ class GameState:
     assets = dict()
     camera = None
     stattracker = None
+
+    # дроп пул
+    drop_pool = None
