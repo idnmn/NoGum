@@ -101,13 +101,15 @@ class MinimapRenderer:
                         color = config.TERMINAL_ACTIVE_COLOR
                     else:
                         color = config.TERMINAL_INACTIVE_COLOR
-
                     self._draw_object(terminal.body.rect, color, 2.0)
 
                 if room.exit:
                     exit = room.exit
-
                     self._draw_object(exit.body.rect, config.EXIT_COLOR)
+
+                if room.chest:
+                    chest = room.chest
+                    self._draw_object(chest.body.rect, config.CHEST_COLOR, 1.5)
 
     def _draw_object(self, obj_rect: pygame.Rect, color: tuple[int, int, int], size_coef: float = 1.0) -> None:
         mw = obj_rect.width * self._scale * size_coef

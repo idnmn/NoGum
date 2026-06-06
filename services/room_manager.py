@@ -58,6 +58,7 @@ class RoomManager:
     def update_interactives(self, state: GameState, dt):
         terminal = self.active_room.terminal
         exit = self.active_room.exit
+        chest = self.active_room.chest
 
         # меняем состояние терминала если роядом игрок
         if terminal:
@@ -74,6 +75,17 @@ class RoomManager:
                 exit.is_near_player = True
             else:
                 exit.is_near_player = False
+
+        # аналогично для сундуков
+        if chest:
+            if chest.is_closed:
+                if chest.interactive_hitbox.rect.colliderect(state.player.rect) and not chest.is_near_player:
+                    chest.is_near_player = True
+
+                elif not chest.interactive_hitbox.rect.colliderect(state.player.rect) and chest.is_near_player:
+                    chest.is_near_player = False
+
+            chest.update(dt, state)
 
     # активная - та комната, в которой находится игрок (в угоду оптимизации)
     def update_active_room(self, player: Player) -> Room | None:

@@ -61,6 +61,7 @@ class TerminalSystem:
 
         if self._dark_timer < 0 and self._is_teleporting and not self.post_teleport_flag:
             self.post_teleport_flag = True
+            self._state.player.current_tilt = 0
             self._dark_timer = self._max_dark_time
 
             # определяем терминал к которому телепортируемся
@@ -73,6 +74,8 @@ class TerminalSystem:
             # перемещаем игрока
             self._state.player.body.rect.x = selected_terminal.body.rect.x
             self._state.player.body.rect.y = selected_terminal.body.rect.y + config.TILE_SIZE
+            self._state.player.body.vx = 0
+            self._state.player.body.vy = 0
 
             # обновляем room manager и камеру
             self._room_manager.active_room = self._room_manager.update_active_room(self._state.player)
@@ -196,6 +199,15 @@ class TerminalSystem:
                     mw = exit.body.rect.width * self._scale
                     mh = exit.body.rect.height * self._scale
                     pygame.draw.rect(self._static_cache, config.EXIT_COLOR, (mx, my, mw, mh))
+
+                if room.chest:
+                    chest = room.chest
+
+                    mx = self._offset[0] + (chest.body.rect.x - self._world_bounds.x) * self._scale
+                    my = self._offset[1] + (chest.body.rect.y - self._world_bounds.y) * self._scale
+                    mw = chest.body.rect.width * self._scale
+                    mh = chest.body.rect.height * self._scale
+                    pygame.draw.rect(self._static_cache, config.CHEST_COLOR, (mx, my, mw, mh))
 
     # Отрисовываем терминалы
     def _draw_layer(self):

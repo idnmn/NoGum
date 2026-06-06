@@ -22,11 +22,15 @@ class Particle:
     def render(self, surface: pygame.Surface) -> None:
         alpha = int(255 * (self.lifetime / self.max_lifetime))
         color = (self.color[0], self.color[1], self.color[2], alpha)
+
+        draw_surface = pygame.Surface((self.size * 2, self.size * 2), pygame.SRCALPHA)
+
         if not self.is_square:
-            pygame.draw.circle(surface, color, (int(self.x), int(self.y)), int(self.size))
+            pygame.draw.circle(draw_surface, color, (self.size, self.size), int(self.size))
         else:
-            pygame.draw.rect(surface, color, (self.x - self.size, self.y - self.size,
-                                              self.size * 2, self.size * 2))
+            pygame.draw.rect(draw_surface, color, (0, 0, self.size * 2, self.size * 2))
+
+        surface.blit(draw_surface, self.rect)
 
 class ParticleSystem:
     def __init__(self) -> None:
@@ -167,6 +171,22 @@ class ParticleSystem:
                 size=1 + size_range,
             ))
 
+    def spawn_open_chest(self, pos: tuple[float, float]) -> None:
+        for _ in range(108):
+            angle = math.radians(7.5 * _)
+            speed = random.uniform(300, 1000)
+            lifetime = random.uniform(0.3, 0.8)
+            vx, vy = pygame.Vector2(speed, 0).rotate_rad(angle)
+
+            self.particles.append(Particle(
+                x=pos[0], y=pos[1],
+                vx=vx, vy=vy,
+                lifetime=lifetime,
+                max_lifetime=lifetime,
+                color=(175, 60, 60),
+                size=5
+            ))
+
     def update(self, dt: float) -> None:
         for p in self.particles:
             p.x += p.vx * dt
@@ -179,3 +199,5 @@ class ParticleSystem:
 
         while len(self.particles) > self._limit:
             self.particles.pop(0)
+
+

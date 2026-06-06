@@ -81,6 +81,7 @@ TERMINAL_MAP_COLOR: tuple[int, int, int] = (80, 220, 170)
 TERMINAL_ACTIVE_COLOR: tuple[int, int, int] = (220, 255, 25)
 TERMINAL_INACTIVE_COLOR: tuple[int, int, int] = (40, 110, 80)
 EXIT_COLOR: tuple[int, int, int] = (255, 120, 100)
+CHEST_COLOR: tuple[int, int, int] = (255, 235, 155)
 
 MINIMAP_WALL_COLOR_LIST: list[tuple[int, int, int]] = [
                                             (150, 80, 50),  # 1 seed
@@ -133,13 +134,14 @@ TERMINAL_CHANCE: int = 50 # шанс спавна терминала в комн
 
 # Генерация
 # лимиты количества комнат
-MAX_ROOMS: int = 1
-MIN_ROOMS: int = 1
+MAX_ROOMS: int = 5
+MIN_ROOMS: int = 5
 # лимиты волн врагов в комнатах
 MAX_WAVES: int = 0
 MIN_WAVES: int = 0
 
 EXIT_COUNT = 3
+MAX_CHEST_COUNT = 4
 
 # --- UI КОНСТАНТЫ ---
 UI_HP_MAX: int = 100

@@ -52,6 +52,12 @@ class ProjectileSystem:
                     self._on_wall_impact((p.rect.centerx, p.rect.centery))
                     break
 
+                chest = active_room.chest
+                if chest and p.rect.colliderect(chest.body.rect):
+                    p.is_active = False
+                    self._on_wall_impact((p.rect.centerx, p.rect.centery))
+                    break
+
             # коллизия с врагами
             for enemy in enemies:
                 if p.rect.colliderect(enemy.body.rect):

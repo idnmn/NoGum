@@ -1,5 +1,6 @@
 import random
 import pygame
+import math
 from pygame import Vector2
 
 import config
@@ -20,6 +21,7 @@ class Collectable():
             vx=vx,
             vy=vy
         )
+        self.name = ''
 
         self.lifetime = lifetime
         self.is_active = True
@@ -56,9 +58,15 @@ class Collectable():
         self.body.vx = direction.x
         self.body.vy = direction.y
 
-        acceleration = self._acceleration * dir_to_player
-        self.body.vx += acceleration.x * dt
-        self.body.vy += acceleration.y * dt
+        if not self.magnet:
+            if self._acceleration > 0:
+                acceleration = self._acceleration * dir_to_player
+                self.body.vx += acceleration.x * dt
+                self.body.vy += acceleration.y * dt
+            else:
+                damping = math.exp(self._acceleration * dt)
+                self.body.vx *= damping
+                self.body.vy *= damping
 
         # защита от дрейфа
         if current_speed < 1.0:
@@ -81,12 +89,12 @@ class Collectable():
 class EnergyCell(Collectable):
     def __init__(self, x: float, y: float, size: int, lifetime: float, max_speed: float, collect_range: float,
                  acceleration: float = 0.0, magnet: bool = True, vx: float = 0.0, vy: float = 0.0) -> None:
-        super().__init__(x, y, size, lifetime, max_speed, collect_range, acceleration, magnet, vx, vy)
+        super().__init__(x, y, size * 2, lifetime, max_speed, collect_range, acceleration, magnet, vx, vy)
         self._scale = random.randint(3, 8)
 
     def render(self, surface: pygame.Surface) -> None:
         pygame.draw.circle(surface, (255, 215, 80), self.rect.center,
-                           int((self.rect.width//2) * (self._scale / 4)), 0)
+                           int((self.rect.width//4) * (self._scale / 4)), 0)
 
     def collect(self, state: GameState) -> None:
         state.player.hp += self._scale

@@ -146,10 +146,10 @@ class GameEngine:
                 if self._transition_timer < 0 and not self._state.is_post_transition:
                     self._goto_new_level()
                     self._state.is_post_transition = True
+                    self._state.is_paused = False
                     self._transition_timer = config.TRANSITION_TIME
 
                 if self._transition_timer < 0 and self._state.is_post_transition:
-                    self._state.is_paused = False
                     self._state.is_transition = False
                     self._state.is_post_transition = False
 
@@ -193,6 +193,8 @@ class GameEngine:
                                 [self._state.player.body])
                     if self._state.room_manager.active_room.terminal:
                         entities.append(self._state.room_manager.active_room.terminal.body)
+                    if self._state.room_manager.active_room.chest:
+                        entities.append(self._state.room_manager.active_room.chest.body)
 
                     # обновляем интерактивные объекты в комнате
                     self._state.room_manager.update_interactives(self._state, dt)
@@ -246,6 +248,9 @@ class GameEngine:
                         if self._state.room_manager.active_room.exit:
                             self._state.collision_system.resolve_obstacles(self._state.player.body,
                                                                     [self._state.room_manager.active_room.exit.body])
+                        if self._state.room_manager.active_room.chest:
+                            self._state.collision_system.resolve_obstacles(self._state.player.body,
+                                                                    [self._state.room_manager.active_room.chest.body])
 
                         for enemy in self._state.enemy_system.enemies:
                             self._state.collision_system.resolve_obstacles(enemy, self._state.room_manager.active_room.walls)
@@ -283,11 +288,17 @@ class GameEngine:
                                 self._state.is_minimap_visible = False
 
                         # взаимодействие с выходом
-                        if self._state.room_manager.active_room.exit and self._state.room_manager.active_room.exit.is_near_player:
+                        if (self._state.room_manager.active_room.exit and
+                                self._state.room_manager.active_room.exit.is_near_player):
                             self._state.is_transition = True
                             self._state.is_paused = True
 
                             self._transition_timer = config.TRANSITION_TIME
+
+                        # открытие сундука
+                        if (self._state.room_manager.active_room.chest and
+                            self._state.room_manager.active_room.chest.is_closed):
+                            self._state.room_manager.active_room.chest.open(self._state)
 
             # на паузе
             else:
@@ -297,6 +308,16 @@ class GameEngine:
             # отрисовка (раскидываем рендереры)
             # при post_tp вызываем оба рендерера
             if self._state.is_terminal_ui_open and self._state.terminal_system.post_teleport_flag:
+                # общий список сущностей
+                entities = ([enemy.body for enemy in self._state.enemy_system.enemies] +
+                            [self._state.player.body])
+                if self._state.room_manager.active_room.terminal:
+                    entities.append(self._state.room_manager.active_room.terminal.body)
+                if self._state.room_manager.active_room.chest:
+                    entities.append(self._state.room_manager.active_room.chest.body)
+
+                self._state.decals_system.update_shadows(entities)
+
                 self._renderer.render(False) # не обновляет кадр
                 self._state.terminal_system.render()
 
@@ -311,27 +332,27 @@ class GameEngine:
             if self._input.spawn:
                 cords = self._input.spawn_pos + self._state.room_manager.active_room.offset
                 # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number, self._state))
-                # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
+                self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
 
                 # print(self._state.stattracker)
                 self._input.spawn = False
 
-                drop_item = random.choice(self._state.drop_pool)
-                sprite_name = drop_item[1]
-                self._state.collectable_system.items.append(drop_item[0](
-                    x=cords.x,
-                    y=cords.y,
-                    size=35,
-                    lifetime=15,
-                    max_speed=600,
-                    vx=900,
-                    vy=0,
-                    acceleration=-1000,
-                    magnet=False,
-                    collect_range=300,
-                    sprite=self._state.assets[sprite_name],
-
-                ))
+                # drop_item = random.choice(self._state.drop_pool)
+                # sprite_name = drop_item[1]
+                # self._state.collectable_system.items.append(drop_item[0](
+                #     x=cords.x,
+                #     y=cords.y,
+                #     size=35,
+                #     lifetime=15,
+                #     max_speed=600,
+                #     vx=900,
+                #     vy=0,
+                #     acceleration=-1000,
+                #     magnet=False,
+                #     collect_range=300,
+                #     sprite=self._state.assets[sprite_name],
+                #
+                # ))
 
         pygame.quit()
 
@@ -398,6 +419,11 @@ class GameEngine:
         self._state.assets['exit_sprite'] = assets_manager.load_sprite(f"exit{self._state.level_seed}.png",
                                                   (config.EXIT_SIZE, config.EXIT_SIZE))
         self._state.assets['exit_arrow'] = assets_manager.load_sprite(f"exit_arrow.png", (48, 48))
+
+        self._state.assets['chest_opened'] = assets_manager.load_sprite(f"chest_opened.png",
+                                                                        (113, 85))
+        self._state.assets['chest_closed'] = assets_manager.load_sprite(f"chest_closed.png",
+                                                                        (113, 75))
 
         self._state.assets['player_sprite'] = assets_manager.load_sprite("player.png",
                                                                          (config.PLAYER_SIZE,

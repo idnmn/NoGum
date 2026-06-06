@@ -29,7 +29,7 @@ class Renderer:
         room_manager = self._state.room_manager
 
         # очищаем экран
-        self.world_surface.fill(config.BACKGROUND_COLOR)
+        self.world_surface.fill((*config.BACKGROUND_COLOR, 255))
         self.shadow_surface.fill((0, 0, 0, 0))
 
         # очередь рендера
@@ -65,11 +65,13 @@ class Renderer:
             if room.exit:
                 room.exit.render(self.world_surface)
 
-        # добавляем стены и терминалы в очередь
+        # добавляем стены и интерактивные объедки в очередь
         for room in rooms_to_draw:
             render_queue.extend(room.walls)
             if room.terminal:
                 render_queue.append(room.terminal)
+            if room.chest:
+                render_queue.append(room.chest)
 
         # добавляем игрока в очередь
         if self._state.player:

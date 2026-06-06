@@ -6,6 +6,7 @@ from collections import deque
 from models.game_state import GameState
 from models.room import Room
 from models.exit import Exit
+from models.chest import Chest
 
 
 class LevelGenerator:
@@ -124,28 +125,28 @@ class LevelGenerator:
 
             #  запоминаем стартовую комнату по исходным координатам
             if col == start_col and row == start_row:
-                room = Room("room_layouts/L0.txt", offset_x, offset_y, depth, connections,
+                chest_room = Room("room_layouts/L0.txt", offset_x, offset_y, depth, connections,
                             wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite,
                             terminal_sprites=self.terminal_sprites, waves_count=0)
-                room.is_explored = True
-                start_room_ref = room
+                chest_room.is_explored = True
+                start_room_ref = chest_room
 
-                new_layout = self._generate_terminal(room.layout)
-                room.load_layout_from_matrix(new_layout)
-                room.terminal.is_active = True
+                new_layout = self._generate_terminal(chest_room.layout)
+                chest_room.load_layout_from_matrix(new_layout)
+                chest_room.terminal.is_active = True
             else:
                 layout_path = random.choice(self.layout_pool)
-                room = Room(layout_path, offset_x, offset_y, depth, connections,
+                chest_room = Room(layout_path, offset_x, offset_y, depth, connections,
                             wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite,
                             terminal_sprites=self.terminal_sprites, waves_count=random.randint(config.MIN_WAVES,
                                                                                                config.MAX_WAVES))
 
                 # с n-м шансом генерируем терминал
-                if random.randint(0, 100) <= config.TERMINAL_CHANCE * min(1, (room.depth / max_depth) ** 2):
-                    new_layout = self._generate_terminal(room.layout)
-                    room.load_layout_from_matrix(new_layout)
+                if random.randint(0, 100) <= config.TERMINAL_CHANCE * min(1, (chest_room.depth / max_depth) ** 2):
+                    new_layout = self._generate_terminal(chest_room.layout)
+                    chest_room.load_layout_from_matrix(new_layout)
 
-            self.rooms.append(room)
+            self.rooms.append(chest_room)
 
         # генерируем выход в одной из комнат с максимальной глубиной
         max_depth_rooms = [room for room in self.rooms if room.depth == max_depth]
@@ -153,11 +154,25 @@ class LevelGenerator:
         for exit_room in exit_rooms:
             exit_room.load_layout_from_txt("room_layouts/L0.txt")
             exit_room.waves_count = 0
-            exit_room.terminal = None
             exit_room.exit = Exit(exit_room.offset.x + config.TILE_SIZE * 11.5,
                                   exit_room.offset.y + config.TILE_SIZE * 5.5,
                                   config.EXIT_SIZE, self.exit_sprite, self._state.assets['exit_arrow'])
             # exit_room.is_explored = True
+
+        # удаляем комнаты с выходами из потенциальных комнат для спавна
+        # for room in exit_rooms:
+        #     max_depth_rooms.remove(room)
+
+        almost_max_depth_rooms = [room for room in self.rooms if max_depth - room.depth <= 2 and not room.exit]
+        chest_count = random.randint(1, config.MAX_CHEST_COUNT)
+        chest_rooms = random.choices(almost_max_depth_rooms, k=chest_count)
+        for chest_room in chest_rooms:
+            chest_room.load_layout_from_txt("room_layouts/L0.txt")
+            chest_room.waves_count = 0
+            # chest_room.terminal = None
+            chest_room.chest = Chest(chest_room.offset.x + (chest_room.bounds.width - 75) / 2,
+                                  chest_room.offset.y + (chest_room.bounds.height - 75) / 2,
+                                  75, self._state.assets['chest_closed'], self._state.assets['chest_opened'])
 
         return self.rooms, start_room_ref
 
@@ -166,8 +181,15 @@ class LevelGenerator:
         new_layout = []
 
         # ищем потенциальные места спавна
-        for y in range(1, len(layout) - 3):
-            for x in range(2, len(layout[0]) - 2):
+        def in_non_spawnable_area(x, y) -> bool:
+             return (((11 <= x <= 14) and (6 <= y <= 8)) or
+                     (x >= 23) or (x <= 2) or (y > 10))
+
+        for y in range(len(layout)):
+            for x in range(len(layout[0])):
+                if in_non_spawnable_area(x, y):
+                    continue
+
                 if layout[y][x] == '0' and layout[y+1][x] == '0':
                     neighbors_cords = [
                         (-1, -1), (0, -1), (1, -1),
