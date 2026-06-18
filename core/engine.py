@@ -25,8 +25,8 @@ class GameEngine:
         pygame.init()
 
         # 📐 Настройки окна
-        self.min_window_width = 960
-        self.min_window_height = 540
+        self.min_window_width = 1000
+        self.min_window_height = 600
         self.last_win_w = 0
         self.last_win_h = 0
         self.target_aspect = config.INTERNAL_WIDTH / config.INTERNAL_HEIGHT
@@ -117,6 +117,8 @@ class GameEngine:
 
         # resizable объекты (требуют изменений при изменении размеров окна)
         self._state.resizable_elements.append(self._ui_renderer)
+        self._state.resizable_elements.append(self._state.terminal_system)
+        self._state.resizable_elements.append(self._map_renderer)
 
         # пул предметов для дропа
         self._state.drop_pool = [
@@ -521,16 +523,17 @@ class GameEngine:
             w = h * self.target_aspect
 
         w, h = int(w), int(h)
-        # self.last_win_h = h
-        # self.last_win_w = w
 
         # пересоздаём поверхность с новыми размерами
         flags = pygame.FULLSCREEN if self.is_fullscreen else pygame.RESIZABLE
         self._screen = pygame.display.set_mode((w, h), flags)
 
-        # обновляем ссылку в рендерере
+        # обновляем ссылки
         self._renderer._screen = self._screen
+        self._renderer.fx_surface = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
         self._ui_renderer._screen = self._screen
+        self._state.terminal_system._screen = self._screen
+        self._map_renderer._screen = self._screen
 
     # переключает между оконным и полноэкранным режимом
     def _toggle_fullscreen(self) -> None:
@@ -538,7 +541,13 @@ class GameEngine:
         flags = pygame.FULLSCREEN if self.is_fullscreen else pygame.RESIZABLE
         size = (0, 0) if self.is_fullscreen else self._screen.get_size()
 
+        # обновляем ссылки
         self._screen = pygame.display.set_mode(size, flags)
         self._renderer._screen = self._screen
+        self._renderer.fx_surface = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
         self._ui_renderer._screen = self._screen
+        self._state.terminal_system._screen = self._screen
+        self._map_renderer._screen = self._screen
+
+
 

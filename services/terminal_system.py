@@ -41,6 +41,17 @@ class TerminalSystem:
 
         self.set_world_bounds(self._room_manager.world_bounds)
 
+    def resize(self) -> None:
+        self._hud_rect = pygame.Rect(
+            int((self._screen.get_width() - config.TERMINAL_HUD_WIDTH) / 2),
+            int((self._screen.get_height() - config.TERMINAL_HUD_HEIGHT) / 2),
+            config.TERMINAL_HUD_WIDTH,
+            config.TERMINAL_HUD_HEIGHT
+        )
+
+        self._dark_layer = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
+        self._dark_layer.fill((0, 0, 0))
+
     # вычисляет масштаб и смещение для центрирования уровня на карте
     def set_world_bounds(self, bounds: pygame.Rect) -> None:
         self._world_bounds = bounds

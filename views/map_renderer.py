@@ -32,6 +32,14 @@ class MinimapRenderer:
 
         self._player = state.player
 
+    def resize(self) -> None:
+        self._map_rect = pygame.Rect(
+            int((self._screen.get_width() - config.MINIMAP_WIDTH) / 2),
+            int((self._screen.get_height() - config.MINIMAP_HEIGHT) / 2),
+            config.MINIMAP_WIDTH,
+            config.MINIMAP_HEIGHT
+        )
+
     def initialize_room_data(self, room_manager: RoomManager, state: GameState) -> None:
         self._room_manager = room_manager
         self._set_world_bounds(self._room_manager.world_bounds)
