@@ -1,4 +1,5 @@
 import pygame
+from pygame import Vector2
 
 import config
 
@@ -24,8 +25,19 @@ class Button:
 
         self._clicked_timer = 0.0
 
-    # обновляем таймер
-    def update(self, dt: float) -> None:
+    def change_position(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+        self.interactive_hitbox = pygame.rect.Rect(x, y, self.width, self.height)
+
+    # обновляем состояние
+    def update(self, dt: float, mouse_pos: Vector2) -> None:
+        if not self.state == 'clicked':
+            if self.interactive_hitbox.collidepoint(mouse_pos) and self.is_active:
+                self.state = 'selected'
+            else:
+                self.state = 'active' if self.is_active else 'inactive'
+
         if self.state == 'clicked':
             self._clicked_timer -= dt
 

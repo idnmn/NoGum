@@ -1,9 +1,6 @@
-from pygame import Vector2
 from random import randint
 from core.asset_manager import AssetManager
-from models.game_state import GameState
 from controllers.input_handler import InputHandler
-from models.player import Player
 from services.room_manager import RoomManager
 from models.camera import Camera
 from models.weapons import *
@@ -27,19 +24,24 @@ class GameEngine:
     def __init__(self) -> None:
         pygame.init()
 
-        if config.FULLSCREEN:
-            # Полный экран: (0, 0) автоматически использует разрешение монитора
-            display_flags = pygame.FULLSCREEN
-            screen_size = (0, 0)
-        else:
-            # Оконный режим: используем внутреннее разрешение
-            display_flags = 0
-            screen_size = (config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT)
+        # 📐 Настройки окна
+        self.min_window_width = 960
+        self.min_window_height = 540
+        self.last_win_w = 0
+        self.last_win_h = 0
+        self.target_aspect = config.INTERNAL_WIDTH / config.INTERNAL_HEIGHT
+        self.is_fullscreen = False
 
-        self._transition_timer = 0.0
+        # Инициализация окна
+        self._screen = pygame.display.set_mode(
+            (config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT),
+            pygame.RESIZABLE
+        )
 
-        self._screen = pygame.display.set_mode(screen_size, display_flags)
         pygame.display.set_caption(config.WINDOW_TITLE)
+
+        # внутренний таймер перехода между сценами
+        self._transition_timer = 0.0
 
         # инициализируем игру
         self._state = GameState()
@@ -113,6 +115,9 @@ class GameEngine:
         self._ui_renderer._map_renderer = self._map_renderer
         self._renderer = Renderer(self._state, self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
 
+        # resizable объекты (требуют изменений при изменении размеров окна)
+        self._state.resizable_elements.append(self._ui_renderer)
+
         # пул предметов для дропа
         self._state.drop_pool = [
             (Cassette, 'cassette'),
@@ -159,6 +164,24 @@ class GameEngine:
 
             events = pygame.event.get()
 
+            for event in events:
+                # обработка изменения размера
+                if event.type == pygame.VIDEORESIZE and ((event.w != self.last_win_w) or (event.h != self.last_win_h)):
+                    if event.w != self.last_win_w:
+                        self._constrain_window(event.w, event.h, True)
+                    elif event.h != self.last_win_h:
+                        self._constrain_window(event.w, event.h, False)
+
+                    self.last_win_h = event.h
+                    self.last_win_w = event.w
+
+                    for element in self._state.resizable_elements:
+                        element.resize()
+
+                # переключение полноэкранного режима (F11)
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                    self._toggle_fullscreen()
+
             # перераспределяем хэндлеры
             if self._state.is_upgrade_ui_open:
                 self._ui_renderer.handle_input(events)
@@ -167,15 +190,11 @@ class GameEngine:
             else:
                 self._input.process_events(events)
 
+            # обновляем кнопки
             if self._state.buttons:
                 mouse_pos = pygame.mouse.get_pos()
                 for button in self._state.buttons:
-                    if not button.state == 'clicked':
-                        if button.interactive_hitbox.collidepoint(mouse_pos) and button.is_active:
-                            button.state = 'selected'
-                        else:
-                            button.state = 'active' if button.is_active else 'inactive'
-                    button.update(dt)
+                    button.update(dt, mouse_pos)
 
             # не на паузе
             if not self._state.is_paused:
@@ -185,7 +204,7 @@ class GameEngine:
                 else:
                     direction = self._input.get_move_direction()  # Вектор направления игрока
 
-                    #  обновляем игрока
+                    # обновляем игрока
                     self._state.player.update(dx=direction[0], dy=direction[1], dt=dt)
 
                     # общий список сущностей
@@ -208,10 +227,25 @@ class GameEngine:
                     self._state.decals_system.update_shadows(entities)
 
                     # вычисляем координаты мыши для игрока
-                    cam_off_x = self._state.camera.position.x - config.INTERNAL_WIDTH / 2
-                    cam_off_y = self._state.camera.position.y - config.INTERNAL_HEIGHT / 2
+                    win_w, win_h = self._screen.get_size()
+                    int_w, int_h = config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT
+
+                    # коэффициент масштабирования окна относительно внутренней поверхности игры
+                    scale_x = win_w / int_w
+                    scale_y = win_h / int_h
+
                     mouse_screen = pygame.mouse.get_pos()
-                    world_mouse = (mouse_screen[0] + cam_off_x, mouse_screen[1] + cam_off_y)
+
+                    # переводим курсор из оконных координат во внутренние
+                    mouse_int_x = mouse_screen[0] / scale_x
+                    mouse_int_y = mouse_screen[1] / scale_y
+
+                    # смещение камеры относительно внутреннего центра
+                    cam_off_x = self._state.camera.position.x - int_w / 2
+                    cam_off_y = self._state.camera.position.y - int_h / 2
+
+                    # итоговые мировые координаты
+                    world_mouse = (mouse_int_x + cam_off_x, mouse_int_y + cam_off_y)
                     self._state.player.set_mouse_pos(world_mouse)
 
                     # обновляем активную комнату
@@ -331,6 +365,7 @@ class GameEngine:
 
             if self._input.spawn:
                 cords = self._input.spawn_pos + self._state.room_manager.active_room.offset
+
                 # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number, self._state))
                 self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
 
@@ -475,8 +510,35 @@ class GameEngine:
         self._state.assets['monsterwhite'] = assets_manager.load_sprite("monsterwhite.png", (21, 45))
         self._state.assets['clock'] = assets_manager.load_sprite("clock.png", (47, 35))
 
+    def _constrain_window(self, req_w: int, req_h: int, width_changed: bool) -> None:
+        # минимальный размер
+        w = max(req_w, self.min_window_width)
+        h = max(req_h, self.min_window_height)
 
-    def _on_player_impact(self, pos: tuple[float, float]) -> None:
-        self._state.particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
-        self._state.camera.shake(config.IMPACT_SHAKE_AMOUNT, config.IMPACT_SHAKE_DURATION)
-        self._hit_pause_frames = config.IMPACT_HIT_PAUSE_FRAMES
+        if width_changed:
+            h = w / self.target_aspect
+        else:
+            w = h * self.target_aspect
+
+        w, h = int(w), int(h)
+        # self.last_win_h = h
+        # self.last_win_w = w
+
+        # пересоздаём поверхность с новыми размерами
+        flags = pygame.FULLSCREEN if self.is_fullscreen else pygame.RESIZABLE
+        self._screen = pygame.display.set_mode((w, h), flags)
+
+        # обновляем ссылку в рендерере
+        self._renderer._screen = self._screen
+        self._ui_renderer._screen = self._screen
+
+    # переключает между оконным и полноэкранным режимом
+    def _toggle_fullscreen(self) -> None:
+        self.is_fullscreen = not self.is_fullscreen
+        flags = pygame.FULLSCREEN if self.is_fullscreen else pygame.RESIZABLE
+        size = (0, 0) if self.is_fullscreen else self._screen.get_size()
+
+        self._screen = pygame.display.set_mode(size, flags)
+        self._renderer._screen = self._screen
+        self._ui_renderer._screen = self._screen
+

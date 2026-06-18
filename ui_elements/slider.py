@@ -20,6 +20,11 @@ class Slider():
         self._stepped = stepped
         self._step = step
 
+    def change_position(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+        self.interactive_hitbox = pygame.Rect(x, y - 5, self.width, 25)
+
     def render(self, surface: pygame.Surface) -> None:
         # подпись
         title_offset = 20 if not self._stepped else 25

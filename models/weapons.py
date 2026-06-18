@@ -97,6 +97,11 @@ class Pointer(Weapon):
 
             if self.bullet_size < self.max_bullet_size:
                 self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
+
+                if self.bullet_size > self.max_bullet_size:
+                    self.bullet_size = self.max_bullet_size
+                    self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
+
             else:
                 self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
 
@@ -108,6 +113,11 @@ class Pointer(Weapon):
 
             if self.fire_rate > self.min_fire_rate:
                 self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
+
+                if self.fire_rate < self.min_fire_rate:
+                    self.fire_rate = self.min_fire_rate
+                    self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
+
             else:
                 self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
 
@@ -121,6 +131,11 @@ class Pointer(Weapon):
 
             if self.fire_rate < self.max_fire_rate:
                 self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
+
+                if self.fire_rate > self.max_fire_rate:
+                    self.fire_rate = self.max_fire_rate
+                    self.bullet_speed = self.power / (self.bullet_size * self.fire_rate)
+
             else:
                 self.bullet_speed = self.power / (self.bullet_size * self.fire_rate)
 
@@ -132,6 +147,11 @@ class Pointer(Weapon):
 
             if self.bullet_speed > self.min_bullet_speed:
                 self.bullet_speed = self.power / (self.fire_rate * self.bullet_size)
+
+                if self.bullet_speed < self.min_bullet_speed:
+                    self.bullet_speed = self.min_bullet_speed
+                    self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
+
             else:
                 self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
 
@@ -145,6 +165,11 @@ class Pointer(Weapon):
 
             if self.bullet_speed < self.max_bullet_speed:
                 self.bullet_speed = self.power / (self.fire_rate * self.bullet_size)
+
+                if self.bullet_speed > self.max_bullet_speed:
+                    self.bullet_speed = self.max_bullet_speed
+                    self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
+
             else:
                 self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
 
@@ -156,6 +181,11 @@ class Pointer(Weapon):
 
             if self.bullet_size > self.min_bullet_size:
                 self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
+
+                if self.bullet_size < self.min_bullet_size:
+                    self.bullet_size = self.min_bullet_size
+                    self.bullet_speed = self.power / (self.fire_rate * self.bullet_size)
+
             else:
                 self.bullet_speed = self.power / (self.fire_rate * self.bullet_size)
 
@@ -179,7 +209,7 @@ class Pointer(Weapon):
         direction = state.player.mouse_world_pos - origin
 
         angle = random.randint(-3, 3)
-        spawn_pos = origin + direction.rotate(angle).normalize() * offset_coef
+        spawn_pos = origin + direction.normalize() * offset_coef
 
         projectile_system.spawn(PointerProjectile, spawn_pos, direction.rotate(angle))
 

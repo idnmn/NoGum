@@ -83,7 +83,6 @@ class UIRenderer:
             skill=self._state.player.second_skill
         )
 
-
     def _upgrade_weapon(self):
         weapon = self._state.weapon
         self._state.player.scrap -= weapon.upgrade_cost
@@ -145,9 +144,9 @@ class UIRenderer:
     def _balance_slider_value(self) -> None:
         weapon = self._state.weapon
 
-        self._sliders[0][0]._value = weapon.bullet_size
-        self._sliders[1][0]._value = weapon.bullet_speed
-        self._sliders[2][0]._value = weapon.fire_rate
+        self._sliders[0][0].value = weapon.bullet_size
+        self._sliders[1][0].value = weapon.bullet_speed
+        self._sliders[2][0].value = weapon.fire_rate
 
     # отрисовщик in-world составляющей
     def render_in_world(self, world_surface: pygame.Surface) -> None:
@@ -370,3 +369,28 @@ class UIRenderer:
             stats_y += 30
 
         self._screen.blit(self._small_font.render("Press I to close", True, (90, 90, 110)), (px + 20, py + ph - 35))
+
+    # изменения элементов при масштабировании окна
+    def resize(self) -> None:
+        # меняем положение индикаторов скиллов
+        self.first_skill_indicator.x = self._screen.get_width() / 4 - 50
+        self.first_skill_indicator.y = self._screen.get_height() - 80
+
+        self.second_skill_indicator.x = self._screen.get_width() / 4 + 50
+        self.second_skill_indicator.y = self._screen.get_height() - 80
+
+        # пересчитываем лайаут
+        self._layout = self._get_panel_layout()
+
+        # сдвигаем кнопки и слайдеры
+        self._bullet_size_slider.change_position(self._layout['px'] + 20,
+                                                 self._layout['start_y'])
+        self._bullet_speed_slider.change_position(self._layout['px'] + 20,
+                                                  self._layout['start_y'] + self._layout['gap'])
+        self._fire_rate_slider.change_position(self._layout['px'] + 20,
+                                                  self._layout['start_y'] + self._layout['gap'] * 2)
+
+        self.upgrade_button.change_position(self._layout['px'] + 240,
+                                            self._layout['start_y'] + self._layout['gap'] * 2 + 40)
+
+
