@@ -161,6 +161,8 @@ class UIRenderer:
 
         self._draw_scrap_counter()
 
+        self._draw_inventory()
+
         self.first_skill_indicator.render(self._screen)
         self.second_skill_indicator.render(self._screen)
 
@@ -285,6 +287,28 @@ class UIRenderer:
         self._screen.blit(indicator_sprite, (width - 170 + indicator_sprite_x, height - 100 + indicator_sprite_y))
         self._screen.blit(surf, (surf_x, surf_y))
         self._screen.blit(clip, (width - 170 + clip_x, height - 100 + clip_y))
+
+    # худ для собранных предметов
+    def _draw_inventory(self) -> None:
+        start_y = self._screen.get_height() - 300
+        start_x = 20
+
+        # подложка
+        hud_background = pygame.Surface((70, 285), pygame.SRCALPHA)
+        hud_background.fill((30, 30, 30, 120))
+
+        self._screen.blit(hud_background, (start_x, start_y - 10))
+
+        for i, item in enumerate(self._state.drop_pool):
+            # спрайт
+            w, h = self._state.assets[item[1]].get_size()
+            sprite = pygame.transform.scale(self._state.assets[item[1]], (w * 0.7, h * 0.7))
+            self._screen.blit(sprite, (start_x + 10, start_y + (60 * i)))
+
+            # количество
+            counter = self._font.render(f"{self._state.player.inventory[item[1].capitalize()][0]}",
+                                          True, config.UI_TEXT_COLOR)
+            self._screen.blit(counter, (start_x + 40, start_y + (60 * i)))
 
     # счетчик FPS
     def _draw_fps_counter(self) -> None:

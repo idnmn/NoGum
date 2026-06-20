@@ -510,7 +510,7 @@ class GameEngine:
         self._state.assets['floppy'] = assets_manager.load_sprite("floppy.png", (35, 35))
         self._state.assets['monster'] = assets_manager.load_sprite("monster.png", (21, 45))
         self._state.assets['monsterwhite'] = assets_manager.load_sprite("monsterwhite.png", (21, 45))
-        self._state.assets['clock'] = assets_manager.load_sprite("clock.png", (47, 35))
+        self._state.assets['clock'] = assets_manager.load_sprite("clock.png", (35, 22))
 
     def _constrain_window(self, req_w: int, req_h: int, width_changed: bool) -> None:
         # минимальный размер
