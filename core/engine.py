@@ -462,7 +462,7 @@ class GameEngine:
         self._state.assets['chest_closed'] = assets_manager.load_sprite(f"chest_closed.png",
                                                                         (113, 75))
 
-        self._state.assets['player_sprite'] = assets_manager.load_sprite("player.png",
+        self._state.assets['slasher_sprite'] = assets_manager.load_sprite("characters/slasher.png",
                                                                          (config.PLAYER_SIZE,
                                                                           config.PLAYER_SIZE + 20))
 

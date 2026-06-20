@@ -13,6 +13,9 @@ class Skill():
         self.cool_down_coef = 1.0
         self._timer = 0.0
 
+        self.charges_count = 1
+        self.max_charges = 1
+
         self.is_using = False
         self.is_ready = True
 
@@ -26,8 +29,14 @@ class Skill():
         if self._timer <= 0 and self.is_using:
             self.ended()
 
-        if self._timer <= 0 and not self.is_using and not self.is_ready:
-            self.reload()
+        if self._timer <= 0 and not self.is_using and self.charges_count < self.max_charges:
+            self.charges_count += 1
+            self.is_ready = True
+
+            if self.charges_count == self.max_charges:
+                self.reload()
+            else:
+                self._timer = self.cool_down
 
     def render(self, surface: pygame.Surface) -> None:
         pass
@@ -37,11 +46,13 @@ class Skill():
 
     def ended(self) -> None:
         self.is_using = False
-        self.is_ready = False
+        if self.charges_count == 0:
+            self.is_ready = False
         self._timer = self.cool_down
 
     def use(self, mouse_pos: Vector2) -> None:
         self.is_using = True
+        self.charges_count -= 1
 
     @property
     def cool_down(self) -> float:

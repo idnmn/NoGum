@@ -14,6 +14,10 @@ class StandardDash(Skill):
         self.duration = config.STANDARD_DASH_DURATION
         self._ui_timer: float = 0.0
 
+        # фиксируем направление игрока в начале рывка
+        self.dx = 0.0
+        self.dy = 0.0
+
         # констранты для рендера индикатора
         self.indicator_background_color = config.UI_DASH_BG_COLOR
         self.indicator_fill_color = config.UI_DASH_COLOR
@@ -27,6 +31,8 @@ class StandardDash(Skill):
             self._state.particle_system.spawn_while_dash(self._state.player.rect.center, Vector2(self._state.player.body.dx,
                                                                                            self._state.player.body.dy),
                                                          config.UI_DASH_COLOR, config.PLAYER_SIZE)
+            # фиксируем направление игрока
+            self._state.player.body.dx, self._state.player.body.dy = self.dx, self.dy
 
     def reload(self) -> None:
         super().reload()
@@ -42,6 +48,7 @@ class StandardDash(Skill):
 
     def use(self, mouse_pos: Vector2) -> None:
         if self._state.player.body.dx != 0 or self._state.player.body.dy != 0:
+            self.dx, self.dy = self._state.player.body.dx, self._state.player.body.dy
             super().use(mouse_pos)
 
             self._timer = self.duration

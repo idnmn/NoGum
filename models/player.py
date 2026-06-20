@@ -22,7 +22,7 @@ class Player():
         self.first_skill = StandardDash(state)
         self.second_skill = Slash(state)
 
-        self._source_sprite = state.assets['player_sprite']
+        self._source_sprite = state.assets['slasher_sprite']
         self.sprite = self._source_sprite.copy()
         self.step_sprite = state.assets['player_step_sprite']
 
@@ -166,11 +166,11 @@ class Player():
         if self._visual_damage_timer <= 0:
             self.sprite = self._source_sprite.copy()
 
-        # вычисляем ускорение из ввода
-        if dx != 0.0 or dy != 0.0:
-            length = math.hypot(dx, dy)
-            self.body.ax = (dx / length) * self.acceleration
-            self.body.ay = (dy / length) * self.acceleration
+        # вычисляем ускорение по направлению
+        if self.body.dx != 0.0 or self.body.dy != 0.0:
+            length = math.hypot(self.body.dx, self.body.dy)
+            self.body.ax = (self.body.dx / length) * self.acceleration
+            self.body.ay = (self.body.dy / length) * self.acceleration
         else:
             self.body.ax = self.body.ay = 0.0
             # применяем трение

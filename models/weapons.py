@@ -241,7 +241,7 @@ class Pointer(Weapon):
             weapon_sprite = self.reload_sprite
             offset_x = self.offset_x
             if not self.facing_right:
-                weapon_sprite = pygame.transform.flip(self.sprite, False, True)
+                weapon_sprite = pygame.transform.flip(self.reload_sprite, False, True)
                 offset_x = -offset_x
 
             # вращаем спрайт оружия
