@@ -105,6 +105,12 @@ BUTTON_SELECTED_COLOR_OUTSIDE: tuple[int, int, int] = (100, 130, 125)
 BUTTON_CLICKED_COLOR_INSIDE: tuple[int, int, int] = (35, 150, 105)
 BUTTON_CLICKED_COLOR_OUTSIDE: tuple[int, int, int] = (65, 205, 130)
 
+MENU_BUTTON_ACTIVE_COLOR: tuple[int, int, int] = (160, 160, 200)
+MENU_BUTTON_SELECTED_COLOR: tuple[int, int, int] = (75, 180, 115)
+MENU_BUTTON_CLICKED_COLOR: tuple[int, int, int] = (105, 255, 160)
+MENU_BUTTON_INACTIVE_COLOR: tuple[int, int, int] = (50, 50, 60)
+
+
 # индикаторы скилов
 INDICATOR_ACTIVE_COLOR_INSIDE: tuple[int, int, int] = (60, 60, 85)
 INDICATOR_ACTIVE_COLOR_OUTSIDE: tuple[int, int, int] = (100, 100, 125)

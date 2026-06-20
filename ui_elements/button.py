@@ -77,3 +77,42 @@ class Button:
         self.state = 'clicked'
         self._clicked_timer = config.BUTTON_CLICKED_TIME
         self._action(*self._args)
+
+
+# особые кнопки для меню
+class MenuButton(Button):
+    def __init__(self, title: str, x: float, y: float, width: float, height: float,
+                 is_active: bool, action: callable, args: list[object] = [], uncentred: bool = False) -> None:
+        super().__init__(title, x, y, width, height, is_active, action, args)
+        self._font = pygame.font.Font("assets/QBF_font.ttf", 34)
+        self._selected_font = pygame.font.Font("assets/QBF_font.ttf", 38)
+
+        self.width = self._selected_font.render(self._title,True, (0, 0, 0)).get_width()
+        self.interactive_hitbox = pygame.rect.Rect(x, y, self.width, height)
+
+        self.uncentred = uncentred
+
+    def render(self, surface: pygame.Surface) -> None:
+        # отрисовываем активную кнопку
+        if self.state == 'active':
+            button_color = config.MENU_BUTTON_ACTIVE_COLOR
+            font = self._font
+        elif self.state == 'selected':
+            button_color = config.MENU_BUTTON_SELECTED_COLOR
+            font = self._selected_font
+        elif self.state == 'clicked':
+            button_color = config.MENU_BUTTON_CLICKED_COLOR
+            font = self._font
+        else:
+            button_color = config.BUTTON_INACTIVE_COLOR_OUTSIDE
+            font = self._font
+
+        title = font.render(self._title,True, button_color)
+        if not self.uncentred:
+            title_x = (self.width - title.get_width()) / 2
+            title_y = (self.height - title.get_height()) / 2
+        else:
+            title_x = 0
+            title_y = 0
+
+        surface.blit(title, (self.x + title_x, self.y + title_y))

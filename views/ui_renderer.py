@@ -29,7 +29,8 @@ class UIRenderer:
             width=self._layout['slider_w'],
             max_value=self._state.weapon.max_bullet_size,
             min_value=self._state.weapon.min_bullet_size,
-            round=1
+            round=1,
+            setter=self._state.weapon.change_size
         )
 
         self._bullet_speed_slider = Slider(
@@ -39,7 +40,8 @@ class UIRenderer:
             width=self._layout['slider_w'],
             max_value=self._state.weapon.max_bullet_speed,
             min_value=self._state.weapon.min_bullet_speed,
-            round=1
+            round=1,
+            setter=self._state.weapon.change_speed
         )
 
         self._fire_rate_slider = Slider(
@@ -49,13 +51,14 @@ class UIRenderer:
             width=self._layout['slider_w'],
             max_value=self._state.weapon.max_fire_rate,
             min_value=self._state.weapon.min_fire_rate,
-            round=1
+            round=1,
+            setter=self._state.weapon.change_fire_rate
         )
 
         self._sliders = [
-            (self._bullet_size_slider, self._state.weapon.change_size),
-            (self._bullet_speed_slider, self._state.weapon.change_speed),
-            (self._fire_rate_slider, self._state.weapon.change_fire_rate),
+            self._bullet_size_slider,
+            self._bullet_speed_slider,
+            self._fire_rate_slider
         ]
 
         # кнопка прокачки оружия
@@ -120,14 +123,11 @@ class UIRenderer:
                     self._state.is_paused = False
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                for item in self._sliders:
-                    slider = item[0]
-                    seter = item[1]
+                for slider in self._sliders:
 
                     if slider.interactive_hitbox.collidepoint(event.pos):
                         slider.handle_click(event.pos)
-                        seter(slider.value)
-                        self._dragging_slider = item
+                        self._dragging_slider = slider
                         break
 
                 if (self.upgrade_button.interactive_hitbox.collidepoint(event.pos)
@@ -137,16 +137,15 @@ class UIRenderer:
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 self._dragging_slider = None
             elif event.type == pygame.MOUSEMOTION and self._dragging_slider:
-                self._dragging_slider[0].handle_click(event.pos)
-                self._dragging_slider[1](self._dragging_slider[0].value)
+                self._dragging_slider.handle_click(event.pos)
 
     # балансируем значения слайдеров
     def _balance_slider_value(self) -> None:
         weapon = self._state.weapon
 
-        self._sliders[0][0].value = weapon.bullet_size
-        self._sliders[1][0].value = weapon.bullet_speed
-        self._sliders[2][0].value = weapon.fire_rate
+        self._sliders[0].value = weapon.bullet_size
+        self._sliders[1].value = weapon.bullet_speed
+        self._sliders[2].value = weapon.fire_rate
 
     # отрисовщик in-world составляющей
     def render_in_world(self, world_surface: pygame.Surface) -> None:
@@ -363,7 +362,7 @@ class UIRenderer:
         self._screen.blit(weapon_sprite, (px + 20, py + 80))
 
         #  отрисовка ползунков
-        for slider in [item[0] for item in self._sliders]:
+        for slider in [item for item in self._sliders]:
             slider.render(self._screen)
 
         # отрисовываем кнопку

@@ -12,6 +12,8 @@ class GameState:
 
     # флаги состояний
     is_running: bool = True
+    in_game: bool = False
+
     weapon_fired: bool = False
 
     is_minimap_visible: bool = False
@@ -41,6 +43,14 @@ class GameState:
     assets = dict()
     camera = None
     stattracker = None
+    menu_manager = None
+    menu_screens = dict()
 
     # дроп пул
     drop_pool = None
+
+    # системные величины
+    master_volume: int = 100
+    ui_volume: int = 100
+    music_volume: int = 100
+

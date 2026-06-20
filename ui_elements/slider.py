@@ -1,10 +1,15 @@
+from collections.abc import Callable
+
 import pygame
+from pygame import Vector2
+
 import config
 
 
 class Slider():
     def __init__(self, title: str, x: float, y: float, width: float, max_value: float, min_value: float,
-                 stepped: bool = False, step: float = 0.0, round: int = 2) -> None:
+                 setter: Callable, stepped: bool = False, step: float = 0.0, round: int = 2,
+                 default_value: float = 0.0) -> None:
         self.interactive_hitbox = pygame.Rect(x, y - 5, width, 25)
         self.title = title
         self.x, self.y = x, y
@@ -12,13 +17,15 @@ class Slider():
         self.height = 25
         self._font = pygame.font.Font("assets/QBF_font.ttf", 20)
 
-        self._value = 0.0
+        self._value = default_value
         self.max_value = max_value
         self._min_value = min_value
         self._round = round
 
         self._stepped = stepped
         self._step = step
+
+        self.setter = setter
 
     def change_position(self, x: float, y: float) -> None:
         self.x = x
@@ -65,6 +72,11 @@ class Slider():
         new_value = self._min_value + (self.max_value - self._min_value) * (mouse_pos[0] - self.x) / self.width
 
         self.value = new_value
+
+        self.setter(self.value)
+
+    def update(self, dt: float, mouse_pos: Vector2) -> None:
+        pass
 
     @property
     def value(self) -> float:
