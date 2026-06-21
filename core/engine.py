@@ -132,6 +132,8 @@ class GameEngine:
 
                 # не на паузе
                 if not self._state.is_paused:
+                    self._state.stattracker._time += dt
+
                     # hit-pause логика
                     if self._state.hit_pause_frames > 0:
                         self._state.hit_pause_frames -= 1
@@ -587,5 +589,7 @@ class GameEngine:
         ]
 
         # заполняем инвентарь пустышками
+        self._state.stattracker.inventory = dict()
         for item_name in [item[1] for item in self._state.drop_pool]:
             self._state.player.inventory[item_name.capitalize()] = [0, self._state.assets[item_name]]
+            self._state.stattracker.inventory[item_name.capitalize()] = 0

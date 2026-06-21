@@ -170,6 +170,7 @@ class BonusItem(Collectable):
 
     def collect(self, state: GameState) -> None:
         state.player.inventory[self.name][0] += 1
+        state.stattracker.inventory[self.name] += 1
 
     def spawn_particles(self, state: GameState) -> None:
         pos = self.body.rect.center

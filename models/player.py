@@ -233,6 +233,8 @@ class Player():
     def death(self) -> None:
         self._state.reset_state()
 
+        self._state.stattracker.save_run(0)
+
     @property
     def hp_ratio(self) -> float:
         return max(0.0, min(1.0, self.hp / self.max_hp))
