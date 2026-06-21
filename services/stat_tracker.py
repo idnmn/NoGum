@@ -1,7 +1,6 @@
 import json
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from datetime import datetime
 
 
 @dataclass
@@ -15,11 +14,6 @@ class StatTracker:
     scrap_collected: int = 0
     inventory: dict[str: int] | None = None
     _time: float = 0.0
-    start_time: str = ""
-
-    def __post_init__(self) -> None:
-        if not self.start_time:
-            self.start_time = datetime.now().strftime("%d%m%y%H%M%S")
 
     @property
     def time(self) -> str:
@@ -61,8 +55,8 @@ class StatTracker:
             return cls()
 
     # сохраняет в runs/run_{id}.json
-    def save_run(self) -> None:
-        path = Path("runs") / f"run_{self.start_time}.json"
+    def save_run(self, run_id: str | int) -> None:
+        path = Path("runs") / f"run_{run_id}.json"
         self.save(path)
 
     # загружает из runs/run_{id}.json
