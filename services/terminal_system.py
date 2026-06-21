@@ -102,6 +102,7 @@ class TerminalSystem:
             self._is_teleporting = False
             self._state.is_terminal_ui_open = False
             self._state.is_paused = False
+            self._state.audio_manager.crossfade_system.set_muted(False)
 
     # обособленный хэндлер
     def handle_input(self, events: list) -> None:

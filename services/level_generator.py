@@ -182,7 +182,7 @@ class LevelGenerator:
 
         # ищем потенциальные места спавна
         def in_non_spawnable_area(x, y) -> bool:
-             return (((11 <= x <= 14) and (6 <= y <= 8)) or
+             return (((11 <= x <= 14) and (4 <= y <= 8)) or
                      (x >= 23) or (x <= 2) or (y > 10))
 
         for y in range(len(layout)):

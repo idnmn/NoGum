@@ -45,14 +45,10 @@ class GameState:
     stattracker = None
     menu_manager = None
     menu_screens = dict()
+    audio_manager = None
 
     # дроп пул
     drop_pool = None
-
-    # системные величины
-    master_volume: int = 100
-    ui_volume: int = 100
-    music_volume: int = 100
 
     def reset_state(self) -> None:
         self.is_running: bool = True

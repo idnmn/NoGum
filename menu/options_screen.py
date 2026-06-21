@@ -20,7 +20,6 @@ class OptionsScreen(MenuScreen):
 
         self._slider_w = 400
 
-        master_volume_setter = lambda vol: setattr(self._state, 'master_volume', vol)
         self._volume_slider = Slider(
             title="Master Volume",
             x=(self._screen_w - self._slider_w) // 2,
@@ -28,29 +27,27 @@ class OptionsScreen(MenuScreen):
             width=self._slider_w,
             max_value=100,
             min_value=0,
-            default_value=100,
+            default_value=self._state.audio_manager.master_volume * 100,
             round=0,
             stepped=True,
             step=5,
-            setter=master_volume_setter
+            setter=self._state.audio_manager.set_master_volume,
         )
 
-        ui_volume_setter = lambda vol: setattr(self._state, 'ui_volume', vol)
-        self._ui_volume_slider = Slider(
-            title="UI sounds Volume",
+        self._sound_volume_slider = Slider(
+            title="Sounds Volume",
             x=(self._screen_w - self._slider_w) // 2,
             y=self._button_start_y + self._button_gap,
             width=self._slider_w,
             max_value=100,
             min_value=0,
-            default_value=100,
+            default_value=self._state.audio_manager.sound_volume * 100,
             round=0,
             stepped=True,
             step=5,
-            setter=ui_volume_setter
+            setter=self._state.audio_manager.set_sound_volume,
         )
 
-        music_volume_setter = lambda vol: setattr(self._state, 'music_volume', vol)
         self._music_volume_slider = Slider(
             title="Music Volume",
             x=(self._screen_w - self._slider_w) // 2,
@@ -58,14 +55,14 @@ class OptionsScreen(MenuScreen):
             width=self._slider_w,
             max_value=100,
             min_value=0,
-            default_value=100,
+            default_value=self._state.audio_manager.music_volume * 100,
             round=0,
             stepped=True,
             step=5,
-            setter=music_volume_setter
+            setter=self._state.audio_manager.set_music_volume,
         )
 
-        self._sliders = [self._volume_slider, self._ui_volume_slider, self._music_volume_slider]
+        self._sliders = [self._volume_slider, self._sound_volume_slider, self._music_volume_slider]
 
         self._back_button = MenuButton(
             title="< Back",
@@ -79,8 +76,8 @@ class OptionsScreen(MenuScreen):
         )
 
         self._buttons = [self._back_button]
-        self.ui_elements.extend(self._buttons)
         self.ui_elements.extend(self._sliders)
+        self.ui_elements.extend(self._buttons)
 
     def resize(self, width: int, height: int) -> None:
         self._screen_w = width
@@ -101,7 +98,15 @@ class OptionsScreen(MenuScreen):
         screen.blit(self._background_art, (0, 0))
         screen.blit(background, (0, 0))
 
+        font = pygame.font.Font("assets/QBF_font.ttf", 48)
+        title = font.render("Options", True, (220, 220, 220))
+        title_x = (self._screen_w - title.get_width()) // 2
+        title_y = 150
+
+        screen.blit(title, (title_x, title_y))
+
         super().render(screen)
 
     def _back(self) -> None:
+        self._state.audio_manager.crossfade_system.set_muted(False)
         self._state.menu_manager.set_active_screen(self._state.menu_screens['main_menu'])

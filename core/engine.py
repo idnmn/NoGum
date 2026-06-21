@@ -1,6 +1,9 @@
 from random import randint
 from core.asset_manager import AssetManager
 from controllers.input_handler import InputHandler
+from core.audio_manager import AudioManager
+from menu.help_window import HelpWindow
+from menu.ingame_pause_screen import PauseScreen
 from menu.main_menu_screen import MainMenuScreen
 from menu.menu_manager import MenuManager
 from menu.options_screen import OptionsScreen
@@ -37,18 +40,23 @@ class GameEngine:
 
         # инициализируем игру
         self._state = GameState()
+        self._renderer = None
         self._state.clock = pygame.time.Clock()
+        self._state.audio_manager = AudioManager(self._state)
+        self._state.audio_manager.play_music('astra')
+        pygame.mixer.set_num_channels(16)
 
         # Инициализация окна
         self._screen = pygame.display.set_mode(
             (config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT),
             pygame.RESIZABLE
         )
+        self._fx_layer = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
 
         pygame.display.set_caption(config.WINDOW_TITLE)
 
         # внутренний таймер перехода между сценами
-        self._transition_timer = 0.0
+        self._transition_timer = config.TRANSITION_TIME
 
         # ГРУЗИМ СПРАЙТЫ
         self._assets_manager = AssetManager()
@@ -58,7 +66,9 @@ class GameEngine:
         self._state.menu_manager = MenuManager(self._state)
         menu_screens = {
             'main_menu': MainMenuScreen(self._state, *self._screen.get_size(), self._start_game),
-            'options': OptionsScreen(self._state, *self._screen.get_size())
+            'options': OptionsScreen(self._state, *self._screen.get_size()),
+            'help': HelpWindow(self._state, *self._screen.get_size()),
+            'pause': PauseScreen(self._state, *self._screen.get_size())
         }
         self._state.menu_screens = menu_screens
 
@@ -68,6 +78,8 @@ class GameEngine:
         while self._state.is_running:
             # Delta time в секундах
             dt = self._state.clock.tick(config.FPS) / 1000.0
+            if self._state.audio_manager.crossfade_system:
+                self._state.audio_manager.crossfade_system.update(dt)
 
             events = pygame.event.get()
 
@@ -92,30 +104,35 @@ class GameEngine:
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
                     self._toggle_fullscreen()
 
+            # Переход между уровнями
+            if self._state.is_transition:
+                self._transition_timer -= dt
+                # затемнение и осветление экрана
+                if not self._state.is_post_transition:
+                    ratio = min(255, int(255 * (1 - (self._transition_timer / (config.TRANSITION_TIME)) ** 3)))
+                else:
+                    ratio = min(255, int(255 * ((self._transition_timer / (config.TRANSITION_TIME)) ** 3)))
+
+                self._renderer.fx_surface.fill((0, 0, 0))
+                self._renderer.fx_surface.set_alpha(ratio)
+
+                if self._transition_timer < 0 and not self._state.is_post_transition:
+                    if self._state.in_game:
+                        self._goto_new_level()
+                    else:
+                        self._state.in_game = True
+                    self._state.is_post_transition = True
+                    self._state.is_paused = False
+                    self._transition_timer = config.TRANSITION_TIME
+
+                    self._state.audio_manager.crossfade_system.set_muted(False)
+
+                if self._transition_timer < 0 and self._state.is_post_transition:
+                    self._state.is_transition = False
+                    self._state.is_post_transition = False
+
             # ИГРОВОЙ ЦИКЛ
             if self._state.in_game:
-                # Переход между уровнями
-                if self._state.is_transition:
-                    self._transition_timer -= dt
-                    # затемнение и осветление экрана
-                    if not self._state.is_post_transition:
-                        ratio = min(255, int(255 * (1 - (self._transition_timer / (config.TRANSITION_TIME)) ** 3)))
-                    else:
-                        ratio = min(255, int(255 * ((self._transition_timer / (config.TRANSITION_TIME)) ** 3)))
-
-                    self._renderer.fx_surface.fill((0, 0, 0))
-                    self._renderer.fx_surface.set_alpha(ratio)
-
-                    if self._transition_timer < 0 and not self._state.is_post_transition:
-                        self._goto_new_level()
-                        self._state.is_post_transition = True
-                        self._state.is_paused = False
-                        self._transition_timer = config.TRANSITION_TIME
-
-                    if self._transition_timer < 0 and self._state.is_post_transition:
-                        self._state.is_transition = False
-                        self._state.is_post_transition = False
-
                 # перераспределяем хэндлеры
                 if self._state.is_upgrade_ui_open:
                     self._ui_renderer.handle_input(events)
@@ -132,6 +149,8 @@ class GameEngine:
 
                 # не на паузе
                 if not self._state.is_paused:
+                    self._state.stattracker._time += dt
+
                     # hit-pause логика
                     if self._state.hit_pause_frames > 0:
                         self._state.hit_pause_frames -= 1
@@ -255,11 +274,15 @@ class GameEngine:
                                     self._state.is_upgrade_ui_open = False
                                     self._state.is_minimap_visible = False
 
+                                    self._state.audio_manager.crossfade_system.set_muted(True)
+
                             # взаимодействие с выходом
                             if (self._state.room_manager.active_room.exit and
                                     self._state.room_manager.active_room.exit.is_near_player):
                                 self._state.is_transition = True
                                 self._state.is_paused = True
+
+                                self._state.audio_manager.crossfade_system.set_muted(True)
 
                                 self._transition_timer = config.TRANSITION_TIME
 
@@ -275,7 +298,14 @@ class GameEngine:
 
                 # отрисовка (раскидываем рендереры)
                 # при post_tp вызываем оба рендерера
-                if self._state.is_terminal_ui_open and self._state.terminal_system.post_teleport_flag:
+                # открытая пауза
+                if (not (self._state.is_upgrade_ui_open or self._state.is_terminal_ui_open or self._state.is_transition)
+                        and self._state.is_paused):
+                    self._renderer.render(False) # не обновляет кадр
+                    self._state.menu_manager.active_screen.update(dt, pygame.mouse.get_pos(), events)
+                    self._state.menu_manager.active_screen.render(self._screen)
+                    pygame.display.flip()
+                elif self._state.is_terminal_ui_open and self._state.terminal_system.post_teleport_flag:
                     # общий список сущностей
                     entities = ([enemy.body for enemy in self._state.enemy_system.enemies] +
                                 [self._state.player.body])
@@ -296,6 +326,7 @@ class GameEngine:
                 # стандартный рендерер
                 elif not self._state.is_terminal_ui_open:
                     self._renderer.render()
+
 
                 if self._input.spawn:
                     cords = self._input.spawn_pos + self._state.room_manager.active_room.offset
@@ -327,6 +358,8 @@ class GameEngine:
             else:
                 self._state.menu_manager.active_screen.update(dt, pygame.mouse.get_pos(), events)
                 self._state.menu_manager.active_screen.render(self._screen)
+                if self._state.is_transition:
+                    self._screen.blit(self._renderer.fx_surface, (0, 0))
 
                 pygame.display.flip()
         pygame.quit()
@@ -386,7 +419,7 @@ class GameEngine:
 
     def _load_sprites(self, assets_manager: AssetManager) -> None:
         # Уровень
-        self._state.level_seed = randint(1, 6)
+        self._state.level_seed = randint(1, 9)
         self._state.assets['wall_sprite'] = assets_manager.load_sprite(f"room/wall{self._state.level_seed}.png",
                                                  (config.TILE_SIZE, config.TILE_SIZE * 2))
         self._state.assets['floor_sprite'] = assets_manager.load_sprite(f"room/floor{self._state.level_seed}.png",
@@ -476,37 +509,42 @@ class GameEngine:
         self._screen = pygame.display.set_mode((w, h), flags)
 
         # в меню
-        if not self._state.in_game:
-            self._state.menu_manager.active_screen.resize(*self._screen.get_size())
-        # не в меню
-        else:
-            # обновляем ссылки
+        for menu_screen in self._state.menu_screens.values():
+            menu_screen.resize(*self._screen.get_size())
+        self._fx_layer = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
+        # обновляем ссылки
+        if self._renderer:
             self._renderer._screen = self._screen
             self._renderer.fx_surface = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
             self._ui_renderer._screen = self._screen
             self._state.terminal_system._screen = self._screen
             self._map_renderer._screen = self._screen
 
+
     # переключает между оконным и полноэкранным режимом
     def _toggle_fullscreen(self) -> None:
-        self.is_fullscreen = not self.is_fullscreen
-        flags = pygame.FULLSCREEN if self.is_fullscreen else pygame.RESIZABLE
-        size = (0, 0) if self.is_fullscreen else self._screen.get_size()
-
-        # обновляем ссылки
-        self._screen = pygame.display.set_mode(size, flags)
-        self._renderer._screen = self._screen
-        self._renderer.fx_surface = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
-        self._ui_renderer._screen = self._screen
-        self._state.terminal_system._screen = self._screen
-        self._map_renderer._screen = self._screen
-
-        if not self._state.in_game:
-            self._state.menu_manager.active_screen.resize(*self._screen.get_size())
+        pass
+        # self.is_fullscreen = not self.is_fullscreen
+        # flags = pygame.FULLSCREEN if self.is_fullscreen else pygame.RESIZABLE
+        # size = (0, 0) if self.is_fullscreen else self._screen.get_size()
+        # self._screen = pygame.display.set_mode(size, flags)
+        #
+        # # в меню
+        # self._state.menu_manager.active_screen.resize(*self._screen.get_size())
+        # self._fx_layer = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
+        # # обновляем ссылки
+        # self._renderer._screen = self._screen
+        # self._renderer.fx_surface = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
+        # self._ui_renderer._screen = self._screen
+        # self._state.terminal_system._screen = self._screen
+        # self._map_renderer._screen = self._screen
 
     def _start_game(self) -> None:
         # инициализируем игру
-        self._state.in_game = True
+        self._state.is_transition = True
+
+        # перезагружаем спрайты
+        self._load_sprites(self._assets_manager)
 
         # инициализируем уровень ДО игрока чтобы взять координаты спавна
         self._state.room_manager = RoomManager(wall_sprite=self._state.assets['wall_sprite'],
@@ -587,5 +625,7 @@ class GameEngine:
         ]
 
         # заполняем инвентарь пустышками
+        self._state.stattracker.inventory = dict()
         for item_name in [item[1] for item in self._state.drop_pool]:
             self._state.player.inventory[item_name.capitalize()] = [0, self._state.assets[item_name]]
+            self._state.stattracker.inventory[item_name.capitalize()] = 0

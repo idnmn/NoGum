@@ -1,4 +1,3 @@
-import config
 from models.game_state import GameState
 from skills.skill import Skill
 from ui_elements.button import Button
@@ -121,6 +120,8 @@ class UIRenderer:
                 if event.key == config.WEAPON_UI_KEY or event.key == pygame.K_ESCAPE:  # выход из меню
                     self._state.is_upgrade_ui_open = False
                     self._state.is_paused = False
+
+                    self._state.audio_manager.crossfade_system.set_muted(False)
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 for slider in self._sliders:
@@ -293,10 +294,10 @@ class UIRenderer:
         start_x = 20
 
         # подложка
-        hud_background = pygame.Surface((70, 285), pygame.SRCALPHA)
-        hud_background.fill((30, 30, 30, 120))
+        # hud_background = pygame.Surface((70, 285), pygame.SRCALPHA)
+        # hud_background.fill((30, 30, 30, 120))
 
-        self._screen.blit(hud_background, (start_x, start_y - 10))
+        # self._screen.blit(hud_background, (start_x, start_y - 10))
 
         for i, item in enumerate(self._state.drop_pool):
             # спрайт

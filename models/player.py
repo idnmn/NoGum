@@ -53,7 +53,7 @@ class Player():
         self._visual_damage_cooldown = 0.2
         self._visual_damage_timer = -1.0
 
-        self._tick_damage_timer = 0.0
+        self._tick_damage_timer = 3
         self._tick_damage_cooldown = 3
 
         # счетчик обломков в кармане
@@ -232,6 +232,10 @@ class Player():
 
     def death(self) -> None:
         self._state.reset_state()
+
+        self._state.menu_manager.set_active_screen(self._state.menu_screens['main_menu'])
+
+        self._state.stattracker.save_run()
 
     @property
     def hp_ratio(self) -> float:
