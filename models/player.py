@@ -53,7 +53,7 @@ class Player():
         self._visual_damage_cooldown = 0.2
         self._visual_damage_timer = -1.0
 
-        self._tick_damage_timer = 0.0
+        self._tick_damage_timer = 3
         self._tick_damage_cooldown = 3
 
         # счетчик обломков в кармане
