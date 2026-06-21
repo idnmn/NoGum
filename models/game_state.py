@@ -54,3 +54,16 @@ class GameState:
     ui_volume: int = 100
     music_volume: int = 100
 
+    def reset_state(self) -> None:
+        self.is_running: bool = True
+        self.in_game: bool = False
+
+        self.weapon_fired: bool = False
+
+        self.is_minimap_visible: bool = False
+        self.is_upgrade_ui_open: bool = False
+        self.is_terminal_ui_open: bool = False
+        self.is_paused: bool = False
+
+        self.is_transition: bool = False  # переход между этажами
+        self.is_post_transition: bool = False

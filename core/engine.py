@@ -71,6 +71,9 @@ class GameEngine:
 
             events = pygame.event.get()
 
+            is_ui_active = (self._state.is_paused or self._state.is_minimap_visible) or not self._state.in_game
+            pygame.mouse.set_visible(is_ui_active)
+
             # обработка изменения размера
             for event in events:
                 if event.type == pygame.VIDEORESIZE and ((event.w != self.last_win_w) or (event.h != self.last_win_h)):
@@ -112,9 +115,6 @@ class GameEngine:
                     if self._transition_timer < 0 and self._state.is_post_transition:
                         self._state.is_transition = False
                         self._state.is_post_transition = False
-
-                is_ui_active = self._state.is_paused or self._state.is_minimap_visible
-                pygame.mouse.set_visible(is_ui_active)
 
                 # перераспределяем хэндлеры
                 if self._state.is_upgrade_ui_open:

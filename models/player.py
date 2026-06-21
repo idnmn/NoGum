@@ -226,8 +226,12 @@ class Player():
         self.sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)
         if self.hp <= 0:
             self.is_alive = False
+            self.death()
 
         self._state.stattracker.damage_taken += int(amount)
+
+    def death(self) -> None:
+        self._state.reset_state()
 
     @property
     def hp_ratio(self) -> float:
