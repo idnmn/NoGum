@@ -57,7 +57,7 @@ class Pointer(Weapon):
         self.max_bullet_speed = 0.0
         self._speed_coef = 200.0
 
-        self.power = 25
+        self.power = 2500
         self.damage_coef = config.DAMAGE_COEF
         self._calculate_max()
 

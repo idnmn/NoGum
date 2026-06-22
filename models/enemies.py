@@ -731,22 +731,24 @@ class BookWormMommy(Enemy):
                     collect_range=300,
                     sprites=self._state.assets['scrap_sprites']
                 ))
+
+        if random.randint(1, 100) <= 80:
+            item = random.choice(self._state.drop_pool)
+            self._state.collectable_system.items.append(item[0](
+                x=self.rect.centerx,
+                y=self.rect.centery,
+                size=35,
+                lifetime=15,
+                max_speed=1000,
+                vx=0,
+                vy=0,
+                acceleration=-5,
+                magnet=False,
+                collect_range=300,
+                sprite=self._state.assets[item[1]],
+            ))
+
         # доп дроп при добивании слешером
-        self._state.collectable_system.items.append(Clock(
-            x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
-            y=random.uniform(self.rect.y, self.rect.y + self.rect.height),
-            size=35,
-            lifetime=15,
-            max_speed=600,
-            vx=900,
-            vy=0,
-            acceleration=-1000,
-            magnet=False,
-            collect_range=300,
-            sprite=self._state.assets['clock'],
-
-        ))
-
         if self.slash_killed:
             count = random.randint(int(self.level), int(2 * self.level))
             for _ in range(count):

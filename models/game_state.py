@@ -49,6 +49,7 @@ class GameState:
 
     # дроп пул
     drop_pool = None
+    items_in_game = None
 
     def reset_state(self) -> None:
         self.is_running: bool = True

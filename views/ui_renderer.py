@@ -300,7 +300,7 @@ class UIRenderer:
 
         # self._screen.blit(hud_background, (start_x, start_y - 10))
 
-        for i, item in enumerate(self._state.drop_pool):
+        for i, item in enumerate(self._state.items_in_game):
             # спрайт
             w, h = self._state.assets[item[1]].get_size()
             sprite = pygame.transform.scale(self._state.assets[item[1]], (w * 0.7, h * 0.7))

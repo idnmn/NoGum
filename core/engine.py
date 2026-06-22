@@ -138,6 +138,11 @@ class GameEngine:
 
             # ИГРОВОЙ ЦИКЛ
             if self._state.in_game:
+                # заглушка дроппула
+                if not self._state.drop_pool:
+                    print('clear')
+                    self._state.drop_pool = [(Nothing, 'nothing')]
+
                 # перераспределяем хэндлеры
                 if self._state.is_upgrade_ui_open:
                     self._ui_renderer.handle_input(events)
@@ -293,6 +298,13 @@ class GameEngine:
                                         self._state.audio_manager.crossfade_system.set_muted(True)
 
                                         self._transition_timer = config.TRANSITION_TIME
+                                else:
+                                    self._state.is_transition = True
+                                    self._state.is_paused = True
+
+                                    self._state.audio_manager.crossfade_system.set_muted(True)
+
+                                    self._transition_timer = config.TRANSITION_TIME
 
                             # открытие сундука
                             if (self._state.room_manager.active_room.chest and
@@ -300,6 +312,8 @@ class GameEngine:
                                 if self._state.room_manager.active_room.terminal:
                                     if not self._state.is_terminal_ui_open:
                                         self._state.room_manager.active_room.chest.open(self._state)
+                                else:
+                                    self._state.room_manager.active_room.chest.open(self._state)
 
                 # на паузе
                 else:
@@ -342,26 +356,26 @@ class GameEngine:
                     cords = self._input.spawn_pos + self._state.room_manager.active_room.offset
 
                     # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number, self._state))
-                    self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
+                    # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
 
                     self._input.spawn = False
 
-                    # drop_item = random.choice(self._state.drop_pool)
-                    # sprite_name = drop_item[1]
-                    # self._state.collectable_system.items.append(drop_item[0](
-                    #     x=cords.x,
-                    #     y=cords.y,
-                    #     size=35,
-                    #     lifetime=15,
-                    #     max_speed=600,
-                    #     vx=900,
-                    #     vy=0,
-                    #     acceleration=-1000,
-                    #     magnet=False,
-                    #     collect_range=300,
-                    #     sprite=self._state.assets[sprite_name],
-                    #
-                    # ))
+                    drop_item = random.choice(self._state.drop_pool)
+                    sprite_name = drop_item[1]
+                    self._state.collectable_system.items.append(drop_item[0](
+                        x=cords.x,
+                        y=cords.y,
+                        size=35,
+                        lifetime=15,
+                        max_speed=600,
+                        vx=900,
+                        vy=0,
+                        acceleration=-1000,
+                        magnet=False,
+                        collect_range=300,
+                        sprite=self._state.assets[sprite_name],
+
+                    ))
 
             # ГЛАВНОЕ МЕНЮ
             else:
@@ -491,6 +505,7 @@ class GameEngine:
         self._state.assets['monster'] = assets_manager.load_sprite("items/monster.png", (21, 45))
         self._state.assets['monsterwhite'] = assets_manager.load_sprite("items/monsterwhite.png", (21, 45))
         self._state.assets['clock'] = assets_manager.load_sprite("items/clock.png", (35, 22))
+        self._state.assets['nothing'] = assets_manager.load_sprite("items/nothing.png", (35, 35))
 
         self._state.assets['main_menu_art'] = assets_manager.load_sprite("menu/main_menu_art.png")
 
@@ -528,7 +543,6 @@ class GameEngine:
             self._ui_renderer._screen = self._screen
             self._state.terminal_system._screen = self._screen
             self._map_renderer._screen = self._screen
-
 
     # переключает между оконным и полноэкранным режимом
     def _toggle_fullscreen(self) -> None:
@@ -632,6 +646,7 @@ class GameEngine:
             (MonsterWhite, 'monsterwhite'),
             (Clock, 'clock')
         ]
+        self._state.items_in_game = self._state.drop_pool.copy()
 
         # заполняем инвентарь пустышками
         self._state.stattracker.inventory = dict()

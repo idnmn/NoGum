@@ -227,7 +227,7 @@ class Floppy(BonusItem):
     def collect(self, state: GameState) -> None:
         super().collect(state)
 
-        state.player.weapon.damage_coef += 0.05
+        state.player.weapon.damage_coef += 0.15
 
         if state.player.weapon.damage_coef >= config.DAMAGE_COEF_LIMIT:
             state.player.weapon.damage_coef = config.DAMAGE_COEF_LIMIT
@@ -352,7 +352,7 @@ class Clock(BonusItem):
 
         self._color_main = (0, 20, 80)
         self._color_secondary = (240, 10, 80)
-        self.name = 'Monster'
+        self.name = 'Clock'
 
     def collect(self, state: GameState) -> None:
         super().collect(state)
@@ -382,6 +382,52 @@ class Clock(BonusItem):
                 max_lifetime=0.3,
                 color=self._color_main,
                 size=random.uniform(3, 5)
+            ))
+
+        for _ in range(random.randint(5, 7)):
+            angle = random.uniform(0, 6.2832)  # 2 * pi
+            speed = random.uniform(400, 600)
+            vx, vy = pygame.Vector2(speed, 0).rotate_rad(angle)
+
+            state.particle_system.particles.append(Particle(
+                x=pos[0], y=pos[1],
+                vx=vx, vy=vy,
+                lifetime=0.3,
+                max_lifetime=0.3,
+                color=self._color_secondary,
+                size=random.uniform(3, 5)
+            ))
+
+# заглушка
+class Nothing(BonusItem):
+    def __init__(self, x: float, y: float, size: int, lifetime: float, max_speed: float, collect_range: float,
+                 sprite: pygame.Surface, acceleration: float = 0.0, magnet: bool = True,
+                 vx: float = 0.0, vy: float = 0.0) -> None:
+        super().__init__(x, y, size, lifetime, max_speed, collect_range, sprite, acceleration, magnet, vx, vy)
+
+        self._color_main = (255, 0, 200)
+        self._color_secondary = (0, 0, 0)
+        self.name = 'Nothing'
+
+    def collect(self, state: GameState) -> None:
+        state.audio_manager.play_sound('bonus_collected', 1.7)
+
+    def spawn_particles(self, state: GameState) -> None:
+        pos = self.body.rect.center
+
+        for _ in range(random.randint(7, 10)):
+            angle = random.uniform(0, 6.2832)  # 2 * pi
+            speed = random.uniform(300, 500)
+            vx, vy = pygame.Vector2(speed, 0).rotate_rad(angle)
+
+            state.particle_system.particles.append(Particle(
+                x=pos[0], y=pos[1],
+                vx=vx, vy=vy,
+                lifetime=0.3,
+                max_lifetime=0.3,
+                color=self._color_main,
+                size=random.uniform(3, 5),
+                is_square=True
             ))
 
         for _ in range(random.randint(5, 7)):
