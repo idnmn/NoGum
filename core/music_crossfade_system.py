@@ -2,7 +2,7 @@ import pygame
 import random
 import config
 import os
-
+from core import utils
 from models.game_state import GameState
 
 
@@ -38,14 +38,14 @@ class CrossfadeMusicSystem:
 
     def update(self, dt: float) -> None:
         self._track_swap_timer += dt
-        if self._track_swap_timer >= self._track_duration:
-            next_track = random.choice(list(set(self._music_list) - set((self._active_track))))
+        if self._track_swap_timer >= 3:
+            next_track = random.choice([track for track in self._music_list if track != self._active_track])
             normal_path, muted_path = self._get_path(next_track)
 
             self.stop()
 
-            self.normal_sound = pygame.mixer.Sound(normal_path)
-            self.muted_sound = pygame.mixer.Sound(muted_path)
+            self.normal_sound = pygame.mixer.Sound(utils.get_resource_path(normal_path))
+            self.muted_sound = pygame.mixer.Sound(utils.get_resource_path(muted_path))
 
             # запускаем обе дорожки на отдельных каналах синхронно
             self.ch_normal = self.normal_sound.play()
