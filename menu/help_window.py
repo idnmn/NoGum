@@ -68,7 +68,7 @@ class HelpWindow(MenuScreen):
         screen.blit(self._background_art, (0, 0))
         screen.blit(background, (0, 0))
 
-        title_font = pygame.font.Font("assets/QBF_font.ttf", 48)
+        title_font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 48)
         title = title_font.render("Help", True, (220, 220, 220))
         title_x = (self._screen_w - title.get_width()) // 2
         title_y = 30

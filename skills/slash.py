@@ -92,7 +92,7 @@ class Slash(Skill):
         super().use(mouse_pos)
 
         self._state.camera.shake(20, self.attack_time)
-        self._timer = self.attack_time
+        self._use_timer = self.attack_time
 
         mouse_pos += self._state.room_manager.active_room.offset
         dx = mouse_pos[0] - self._state.player.rect.centerx

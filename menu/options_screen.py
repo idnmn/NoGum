@@ -110,3 +110,8 @@ class OptionsScreen(MenuScreen):
     def _back(self) -> None:
         self._state.audio_manager.crossfade_system.set_muted(False)
         self._state.menu_manager.set_active_screen(self._state.menu_screens['main_menu'])
+
+    def reinit(self):
+        self._volume_slider._value = self._state.audio_manager.master_volume * 100
+        self._sound_volume_slider._value = self._state.audio_manager.sound_volume * 100
+        self._music_volume_slider._value = self._state.audio_manager.music_volume * 100

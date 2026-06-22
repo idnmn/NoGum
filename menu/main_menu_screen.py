@@ -58,7 +58,8 @@ class MainMenuScreen(MenuScreen):
             height=35,
             is_active=True,
             action=lambda: (setattr(self._state.menu_manager, 'active_screen', self._state.menu_screens['options']),
-                            self._state.audio_manager.crossfade_system.set_muted(True)),
+                            self._state.audio_manager.crossfade_system.set_muted(True),
+                            self._state.menu_screens['options'].reinit()),
             uncentred=True
         )
 

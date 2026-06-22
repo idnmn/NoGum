@@ -1,6 +1,4 @@
 import pygame
-from pygame import Vector2
-
 from models.collidable import CollisionBody
 
 # местные телепорты
@@ -22,7 +20,7 @@ class Terminal():
         self.sprite_inactive = sprite_inactive.copy().convert_alpha()
         self.visual_offset_y = -(sprite_active.get_height() - size)
 
-        self.is_active = True
+        self.is_active = False
         self.is_selected = False
         self.is_near_player = False
 

@@ -19,7 +19,7 @@ class Renderer:
         self.world_surface = pygame.Surface((world_bounds.width, world_bounds.height), pygame.SRCALPHA)
 
         # поверхность для отрисовки теней
-        self.shadow_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        self.shadow_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA).convert_alpha()
 
         # буфер для финального кадра перед масштабированием
         self._viewport_buffer = pygame.Surface((config.INTERNAL_WIDTH, config.INTERNAL_HEIGHT))

@@ -158,11 +158,7 @@ class LevelGenerator:
             exit_room.exit = Exit(exit_room.offset.x + config.TILE_SIZE * 11.5,
                                   exit_room.offset.y + config.TILE_SIZE * 5.5,
                                   config.EXIT_SIZE, self.exit_sprite, self._state.assets['exit_arrow'])
-            # exit_room.is_explored = True
 
-        # удаляем комнаты с выходами из потенциальных комнат для спавна
-        # for room in exit_rooms:
-        #     max_depth_rooms.remove(room)
 
         almost_max_depth_rooms = [room for room in self.rooms if max_depth - room.depth <= 2 and not room.exit]
         chest_count = random.randint(1, config.MAX_CHEST_COUNT)

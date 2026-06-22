@@ -1,6 +1,7 @@
 import os
 
 import pygame
+from pygame import Vector2
 
 import config
 from models.game_state import GameState
@@ -86,6 +87,16 @@ class RoomManager:
                     chest.is_near_player = False
 
             chest.update(dt, state)
+
+        # invis для стен
+        offset = self.active_room.offset
+        px, py = self._state.player.rect.center - offset
+        for wall in self.active_room.walls:
+            dist_to_player = (Vector2(wall.rect.center) - Vector2(self._state.player.rect.center)).magnitude()
+            if dist_to_player > 150 or wall.rect.y - offset.y < py:
+                wall.invis_ratio = 255
+            elif wall.rect.y - offset.y >= py and (config.TILE_SIZE * 24 >= wall.rect.x - offset.x >= config.TILE_SIZE):
+                wall.invis_ratio = min(255.0, 70 + (dist_to_player / 200) ** 2 * 255)
 
     # активная - та комната, в которой находится игрок (в угоду оптимизации)
     def update_active_room(self, player: Player) -> Room | None:

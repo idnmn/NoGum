@@ -1,9 +1,7 @@
 import math
 import random
-
 import pygame
 from pygame import Vector2
-
 import config
 from models.collidable import CollisionBody
 from models.game_state import GameState
@@ -63,7 +61,6 @@ class Player():
 
         # другие предметы
         self.inventory = dict()
-        # name: [count, sprite]
 
     def set_mouse_pos(self, pos: tuple[float, float]) -> None:
         self.mouse_world_pos.update(pos)
@@ -237,6 +234,7 @@ class Player():
 
     def death(self) -> None:
         self._state.reset_state()
+        self._state.menu_manager.set_active_screen(self._state.menu_screens['main_menu'])
 
         self._state.stattracker.save_run()
 

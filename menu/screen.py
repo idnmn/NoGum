@@ -54,3 +54,6 @@ class MenuScreen:
 
     def _back(self) -> None:
         pass
+
+    def reinit(self):
+        pass

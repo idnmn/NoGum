@@ -124,6 +124,10 @@ class PauseScreen(MenuScreen):
                             button.click()
                             break
 
+                # вернуться
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    self._exit_dialogue_active = False
+
     def resize(self, width: int, height: int) -> None:
         self._screen_w = width
         self._screen_h = height
@@ -185,3 +189,7 @@ class PauseScreen(MenuScreen):
 
         self._exit_dialogue_active = False
 
+    def reinit(self):
+        self._volume_slider._value = self._state.audio_manager.master_volume * 100
+        self._sound_volume_slider._value = self._state.audio_manager.sound_volume * 100
+        self._music_volume_slider._value = self._state.audio_manager.music_volume * 100

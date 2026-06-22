@@ -273,7 +273,7 @@ class GameEngine:
                             # взаимодействие с терминалом
                             if self._state.room_manager.active_room.terminal and not self._state.is_terminal_ui_open:
                                 terminal = self._state.room_manager.active_room.terminal
-                                if terminal.is_near_player and terminal.is_active :
+                                if terminal.is_near_player and terminal.is_active:
                                     self._state.is_paused = True
                                     self._state.is_terminal_ui_open = True
                                     self._state.is_upgrade_ui_open = False
@@ -285,17 +285,21 @@ class GameEngine:
                             # взаимодействие с выходом
                             if (self._state.room_manager.active_room.exit and
                                     self._state.room_manager.active_room.exit.is_near_player):
-                                self._state.is_transition = True
-                                self._state.is_paused = True
+                                if self._state.room_manager.active_room.terminal:
+                                    if not self._state.is_terminal_ui_open:
+                                        self._state.is_transition = True
+                                        self._state.is_paused = True
 
-                                self._state.audio_manager.crossfade_system.set_muted(True)
+                                        self._state.audio_manager.crossfade_system.set_muted(True)
 
-                                self._transition_timer = config.TRANSITION_TIME
+                                        self._transition_timer = config.TRANSITION_TIME
 
                             # открытие сундука
                             if (self._state.room_manager.active_room.chest and
                                 self._state.room_manager.active_room.chest.is_closed):
-                                self._state.room_manager.active_room.chest.open(self._state)
+                                if self._state.room_manager.active_room.terminal:
+                                    if not self._state.is_terminal_ui_open:
+                                        self._state.room_manager.active_room.chest.open(self._state)
 
                 # на паузе
                 else:
@@ -340,7 +344,6 @@ class GameEngine:
                     # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number, self._state))
                     self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
 
-                    # print(self._state.stattracker)
                     self._input.spawn = False
 
                     # drop_item = random.choice(self._state.drop_pool)
@@ -419,7 +422,7 @@ class GameEngine:
 
         # увеличиваем тикающий урон по игроку
         if self._state.player.tick_damage <= config.PLAYER_TICK_DAMAGE_LIMIT:
-            self._state.player.tick_damage += 3
+            self._state.player.tick_damage += 1.5
         else:
             self._state.player.tick_damage = config.PLAYER_TICK_DAMAGE_LIMIT
 

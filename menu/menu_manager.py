@@ -10,3 +10,4 @@ class MenuManager:
 
     def set_active_screen(self, screen: MenuScreen) -> None:
         self.active_screen = screen
+        screen.reinit()

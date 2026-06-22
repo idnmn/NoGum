@@ -48,10 +48,10 @@ class StandardDash(Skill):
 
     def use(self, mouse_pos: Vector2) -> None:
         if self._state.player.body.dx != 0 or self._state.player.body.dy != 0:
-            self.dx, self.dy = self._state.player.body.dx, self._state.player.body.dy
+            self.dx, self.dy = Vector2(self._state.player.body.ax, self._state.player.body.ay).normalize()
             super().use(mouse_pos)
 
-            self._timer = self.duration
+            self._use_timer = self.duration
 
             self._state.particle_system.spawn_dashed(self._state.player.rect.center)
 
