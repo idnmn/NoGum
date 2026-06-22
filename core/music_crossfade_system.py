@@ -38,7 +38,7 @@ class CrossfadeMusicSystem:
 
     def update(self, dt: float) -> None:
         self._track_swap_timer += dt
-        if self._track_swap_timer >= 3:
+        if self._track_swap_timer >= self._track_duration:
             next_track = random.choice([track for track in self._music_list if track != self._active_track])
             normal_path, muted_path = self._get_path(next_track)
 
