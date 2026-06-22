@@ -1,5 +1,5 @@
 from core import utils
-from skills.skill import Skill
+from skills.skills import Skill
 from ui_elements.button import Button
 from ui_elements.slider import Slider
 from ui_elements.skill_hud_indicator import SkillIndicator
@@ -17,48 +17,12 @@ class UIRenderer:
         self._micro_font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 16)
         self._dragging_slider: Slider | None = None
         self._layout = self._get_panel_layout()
+        self._sliders = []
 
         self._map_renderer: MinimapRenderer | None = None
 
         # создаём слайдеры
-        self._bullet_size_slider = Slider(
-            title="Bullet Size",
-            x=self._layout['px'] + 20,
-            y=self._layout['start_y'],
-            width=self._layout['slider_w'],
-            max_value=self._state.weapon.max_bullet_size,
-            min_value=self._state.weapon.min_bullet_size,
-            round=1,
-            setter=self._state.weapon.change_size
-        )
-
-        self._bullet_speed_slider = Slider(
-            title="Bullet Speed",
-            x=self._layout['px'] + 20,
-            y=self._layout['start_y'] + self._layout['gap'],
-            width=self._layout['slider_w'],
-            max_value=self._state.weapon.max_bullet_speed,
-            min_value=self._state.weapon.min_bullet_speed,
-            round=1,
-            setter=self._state.weapon.change_speed
-        )
-
-        self._fire_rate_slider = Slider(
-            title="Fire Rate",
-            x=self._layout['px'] + 20,
-            y=self._layout['start_y'] + self._layout['gap'] * 2,
-            width=self._layout['slider_w'],
-            max_value=self._state.weapon.max_fire_rate,
-            min_value=self._state.weapon.min_fire_rate,
-            round=1,
-            setter=self._state.weapon.change_fire_rate
-        )
-
-        self._sliders = [
-            self._bullet_size_slider,
-            self._bullet_speed_slider,
-            self._fire_rate_slider
-        ]
+        self.init_sliders()
 
         # кнопка прокачки оружия
         self.upgrade_button = Button(
@@ -85,14 +49,67 @@ class UIRenderer:
             skill=self._state.player.second_skill
         )
 
+    def setter_1(self, value):
+        self._state.weapon.param_1 = value
+
+    def setter_2(self, value):
+        self._state.weapon.param_2 = value
+
+    def setter_3(self, value):
+        self._state.weapon.param_3 = value
+
+    def init_sliders(self):
+        self._sliders.clear()
+
+        weapon = self._state.weapon
+
+        self._slider_param_1 = Slider(
+            title=weapon.name_param_1,
+            x=self._layout['px'] + 20,
+            y=self._layout['start_y'],
+            width=self._layout['slider_w'],
+            max_value=self._state.weapon.max_param_1,
+            min_value=self._state.weapon.min_param_1,
+            round=1,
+            setter=self.setter_1
+        )
+
+        self._slider_param_2 = Slider(
+            title=weapon.name_param_2,
+            x=self._layout['px'] + 20,
+            y=self._layout['start_y'] + self._layout['gap'] * 2,
+            width=self._layout['slider_w'],
+            max_value=self._state.weapon.max_param_2,
+            min_value=self._state.weapon.min_param_2,
+            round=1,
+            setter=self.setter_2
+        )
+
+        self._slider_param_3 = Slider(
+            title=weapon.name_param_3,
+            x=self._layout['px'] + 20,
+            y=self._layout['start_y'] + self._layout['gap'],
+            width=self._layout['slider_w'],
+            max_value=self._state.weapon.max_param_3,
+            min_value=self._state.weapon.min_param_3,
+            round=1,
+            setter=self.setter_3
+        )
+
+        self._sliders = [
+            self._slider_param_1,
+            self._slider_param_2,
+            self._slider_param_3
+        ]
+
     def _upgrade_weapon(self):
         weapon = self._state.weapon
         self._state.player.scrap -= weapon.upgrade_cost
         weapon.upgrade()
 
-        self._bullet_size_slider.max_value = weapon.max_bullet_size
-        self._bullet_speed_slider.max_value = weapon.max_bullet_speed
-        self._fire_rate_slider.max_value = weapon.max_fire_rate
+        self._slider_param_1.max_value = weapon.max_param_1
+        self._slider_param_2.max_value = weapon.max_param_3
+        self._slider_param_2.max_value = weapon.max_param_2
 
     # единый расчёт геометрии панели
     def _get_panel_layout(self) -> dict:
@@ -145,9 +162,9 @@ class UIRenderer:
     def _balance_slider_value(self) -> None:
         weapon = self._state.weapon
 
-        self._sliders[0].value = weapon.bullet_size
-        self._sliders[1].value = weapon.bullet_speed
-        self._sliders[2].value = weapon.fire_rate
+        self._sliders[0].value = weapon._param_1
+        self._sliders[1].value = weapon._param_2
+        self._sliders[2].value = weapon._param_3
 
     # отрисовщик in-world составляющей
     def render_in_world(self, world_surface: pygame.Surface) -> None:
@@ -408,12 +425,12 @@ class UIRenderer:
         self._layout = self._get_panel_layout()
 
         # сдвигаем кнопки и слайдеры
-        self._bullet_size_slider.change_position(self._layout['px'] + 20,
-                                                 self._layout['start_y'])
-        self._bullet_speed_slider.change_position(self._layout['px'] + 20,
-                                                  self._layout['start_y'] + self._layout['gap'])
-        self._fire_rate_slider.change_position(self._layout['px'] + 20,
-                                                  self._layout['start_y'] + self._layout['gap'] * 2)
+        self._slider_param_1.change_position(self._layout['px'] + 20,
+                                             self._layout['start_y'])
+        self._slider_param_2.change_position(self._layout['px'] + 20,
+                                             self._layout['start_y'] + self._layout['gap'])
+        self._slider_param_3.change_position(self._layout['px'] + 20,
+                                             self._layout['start_y'] + self._layout['gap'] * 2)
 
         self.upgrade_button.change_position(self._layout['px'] + 240,
                                             self._layout['start_y'] + self._layout['gap'] * 2 + 40)

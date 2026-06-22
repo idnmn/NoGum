@@ -12,24 +12,6 @@ WINDOW_TITLE: str = "NoGum!"
 PRINT_FPS: bool = True # выводит счетчик FPS в реальном времени на экран
 
 # --- ГЕЙМПЛЕЙНЫЕ КОНСТАНТЫ ---
-# статы игрока
-PLAYER_MAX_SPEED: float = 600.0  # Пикселей в секунду
-PLAYER_MAX_HP: int = 100
-DAMAGE_COEF: float = 1.0
-PLAYER_TICK_DAMAGE: int = 3
-PLAYER_TICK_DAMAGE_COEF: float = 1.0
-SKILLS_COOLDOWN_COEF_LIMIT: float = 0.75
-
-# ограничители стат
-PLAYER_MAX_SPEED_LIMIT: float = 900.0
-PLAYER_MAX_HP_LIMIT: int = 300
-DAMAGE_COEF_LIMIT: float = 3.0
-PLAYER_TICK_DAMAGE_LIMIT: int = 50
-PLAYER_TICK_DAMAGE_COEF_LIMIT: float = 0.5
-
-# Физика движения
-PLAYER_ACCELERATION: float = 4000.0
-FRICTION: float = 20.0
 PLAYER_TILT_MAX_ANGLE: float = 20.0   # Максимальный угол наклона в градусах
 PLAYER_TILT_SMOOTHING: float = 40.0    # Скорость плавного перехода к целевому углу
 
@@ -51,7 +33,7 @@ SLASH_COOLDOWN: float = 5.0
 TRANSITION_TIME: float = 0.5
 
 # баланс
-LEVEL_COEF: float = 1.1 # коэффициент увеличения стат мобов в зависимости от уровня
+LEVEL_COEF: float = 1.15 # коэффициент увеличения стат мобов в зависимости от уровня
 MAX_POWER_LIMIT: int = 1000
 
 # --- ЦВЕТА ---

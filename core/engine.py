@@ -12,6 +12,7 @@ from services.room_manager import RoomManager
 from models.camera import Camera
 from models.weapons import *
 from models.collectable import *
+from models.characters import *
 from services.collectable_system import CollectableSystem
 from services.collision_system import CollisionSystem
 from services.decal_system import DecalSystem
@@ -22,6 +23,7 @@ from services.terminal_system import TerminalSystem
 from services.weapon_system import WeaponSystem
 from services.projectile_system import ProjectileSystem
 from services.particle_system import ParticleSystem
+from skills.skills import StandardDash, Slash
 from views.renderer import Renderer
 from views.ui_renderer import UIRenderer
 from views.map_renderer import MinimapRenderer
@@ -76,6 +78,22 @@ class GameEngine:
             'pause': PauseScreen(self._state, *self._screen.get_size())
         }
         self._state.menu_screens = menu_screens
+
+        # заполняем пулы
+        self._state.skills_pool = {
+            'standart_dash': StandardDash,
+            'slash': Slash,
+        }
+        self._state.character_pool = {
+            'slasher': Slasher,
+            'electron': Electron,
+            'tank': Tank
+        }
+        self._state.weapon_pool = {
+            'pointer': Pointer,
+            'tazer': Tazer,
+            'bulldog': Bulldog
+        }
 
         self._state.menu_manager.set_active_screen(menu_screens['main_menu'])
 
@@ -263,7 +281,7 @@ class GameEngine:
                             shot_fired = self._weapon_system.update(dt, self._input.is_shooting_requested(),
                                                                     self._input.is_reload_requested())
                             if shot_fired:
-                                self._state.weapon.fire(self._state.projectile_system, self._state)
+                                self._state.weapon.fire()
 
                         # обработка скиллов
                         if self._input.is_first_skill_used() and self._state.player.first_skill.is_ready:
@@ -456,22 +474,37 @@ class GameEngine:
         self._state.assets['chest_closed'] = assets_manager.load_sprite(f"room/chest_closed.png",
                                                                         (113, 75))
 
-        self._state.assets['slasher_sprite'] = assets_manager.load_sprite("characters/slasher.png",
+        self._state.assets['slasher'] = assets_manager.load_sprite("characters/slasher.png",
                                                                          (config.PLAYER_SIZE,
                                                                           config.PLAYER_SIZE + 20))
+        self._state.assets['electron'] = assets_manager.load_sprite("characters/electron.png",
+                                                                   (config.PLAYER_SIZE,
+                                                                    config.PLAYER_SIZE + 20))
+        self._state.assets['tank'] = assets_manager.load_sprite("characters/tank.png",
+                                                                   (config.PLAYER_SIZE,
+                                                                    config.PLAYER_SIZE + 20))
 
-        self._state.assets['pointer_sprite'] = assets_manager.load_sprite("weapons/pointer.png",
+        self._state.assets['pointer'] = assets_manager.load_sprite("weapons/pointer.png",
                                                                           (90, 60))
         self._state.assets['pointer_reload'] = assets_manager.load_sprite("weapons/pointer_reload.png",
                                                                           (90, 60))
         self._state.assets['pointer_crosshair'] = assets_manager.load_sprite("hud/pointer_crosshair.png",
                                                                              (20, 20))
+
+        self._state.assets['tazer'] = assets_manager.load_sprite("weapons/tazer.png",
+                                                                   (90, 60))
+        self._state.assets['tazer_reload'] = assets_manager.load_sprite("weapons/tazer_reload.png",
+                                                                          (90, 60))
+        self._state.assets['tazer_crosshair'] = assets_manager.load_sprite("hud/tazer_crosshair.png",
+                                                                             (20, 20))
+
+
         self._state.assets['bullet_indicator'] = assets_manager.load_sprite("hud/bullet_indicator.png",
                                                                             (40, 40))
 
         self._state.assets['hit_decal'] = assets_manager.load_sprite("decals/splash.png",
                                                                      (75, 75))
-        self._state.assets['player_step_sprite'] = assets_manager.load_sprite("decals/step.png",
+        self._state.assets['player_step'] = assets_manager.load_sprite("decals/step.png",
                                                                               (10, 10))
         self._state.assets['bookworm_step_sprite'] = assets_manager.load_sprite("decals/bookworm_step.png",
                                                                               (10, 10))
@@ -597,33 +630,27 @@ class GameEngine:
         self._state.camera.prev_center = self._state.camera.position.copy()
 
         # определяем точку спавна
-        if self._state.room_manager.start_room:
-            spawn_center = self._state.room_manager.start_room.bounds.center
+        spawn_center = self._state.room_manager.start_room.bounds.center
 
-            self._state.player = Player(
-                x=spawn_center[0] - config.PLAYER_SIZE / 2,
-                y=spawn_center[1] - config.PLAYER_SIZE / 2,
-                state=self._state
-            )
+        self._state.player = self._state.character_pool[self._state.character](
+            x=spawn_center[0] - config.PLAYER_SIZE / 2,
+            y=spawn_center[1] - config.PLAYER_SIZE / 2,
+            state=self._state
+        )
 
-            # kамера тоже стартует с центра стартовой комнаты
-            self._state.camera.position = pygame.Vector2(spawn_center) + Vector2(0, -20)
-            self._state.camera.curr_center = self._state.camera.position.copy() + Vector2(0, -20)
-            self._state.camera.prev_center = self._state.camera.position.copy() + Vector2(0, -20)
-        else:
-            # Fallback на случай ошибки генерации
-            self._state.player = Player(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2,
-                                        self._state.assets['player_sprite'])
-            self._state.camera.position = pygame.Vector2(config.INTERNAL_WIDTH / 2, config.INTERNAL_HEIGHT / 2 - 20)
-            self._state.camera.curr_center = self._state.camera.position.copy()
-            self._state.camera.prev_center = self._state.camera.position.copy()
+        # kамера тоже стартует с центра стартовой комнаты
+        self._state.camera.position = pygame.Vector2(spawn_center) + Vector2(0, -20)
+        self._state.camera.curr_center = self._state.camera.position.copy() + Vector2(0, -20)
+        self._state.camera.prev_center = self._state.camera.position.copy() + Vector2(0, -20)
 
-        # инициализируем стартовое оружие
-        self._state.weapon = Pointer(sprite=self._state.assets['pointer_sprite'],
-                                     reload_sprite=self._state.assets['pointer_reload'],
-                                     crosshair=self._state.assets['pointer_crosshair'], state=self._state)
-        if self._state.player:
-            self._state.player.weapon = self._state.weapon
+        # инициализируем стартовое оружие и скиллы
+        self._state.weapon = self._state.weapon_pool[self._state.player.character_config['weapon']](self._state)
+        self._state.player.weapon = self._state.weapon
+
+        self._state.player.first_skill =\
+            self._state.skills_pool[self._state.player.character_config['first_skill']](self._state)
+        self._state.player.second_skill =\
+            self._state.skills_pool[self._state.player.character_config['second_skill']](self._state)
 
         self._state.room_manager.update_active_room(self._state.player)
 

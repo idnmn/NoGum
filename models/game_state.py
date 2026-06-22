@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 
-
 # Модель игры
 @dataclass
 class GameState:
@@ -28,6 +27,7 @@ class GameState:
 
     # системы и объедки
     player = None
+    character = 'electron'
     weapon = None
     clock = None
     room_manager = None
@@ -46,6 +46,11 @@ class GameState:
     menu_manager = None
     menu_screens = dict()
     audio_manager = None
+
+    # словари с персонажами и скиллами
+    skills_pool = dict()
+    character_pool = dict()
+    weapon_pool = dict()
 
     # дроп пул
     drop_pool = None

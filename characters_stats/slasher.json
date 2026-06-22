@@ -1,0 +1,18 @@
+{
+  "max_speed": 600,
+  "max_hp": 100,
+  "tick_damage": 3,
+  "tick_damage_time": 3,
+  "acceleration": 4000,
+  "friction": 20,
+
+  "max_speed_limit": 900,
+  "max_hp_limit": 300,
+  "damage_coef_limit": 3.0,
+  "tick_damage_limit": 50,
+  "tick_damage_coef_limit": 0.75,
+
+  "first_skill": "standart_dash",
+  "second_skill": "slash",
+  "weapon": "pointer"
+}

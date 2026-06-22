@@ -15,25 +15,9 @@ class ProjectileSystem:
 
         self._limit = 100
 
-    def spawn(self, projectile, origin: pygame.Vector2, direction: pygame.Vector2) -> None:
-        if direction.length() == 0:
-            direction = pygame.Vector2(1, 0)
-
-        weapon = self._state.weapon
-
-        size = weapon.get_size()
-        speed = weapon.get_speed()
-
-        vel = direction.normalize() * speed
-
-        self.projectiles.append(projectile(x=origin.x, y=origin.y, size=size,
-                                           velocity=vel, damage=weapon.damage, lifetime=10.0))
-
     def update(self, dt: float, enemies: List[Enemy]) -> None:
         for p in self.projectiles:
-            p.rect.x += p.velocity.x * dt
-            p.rect.y += p.velocity.y * dt
-            p.lifetime -= dt
+            p.update(dt)
 
             if p.lifetime <= 0:
                 p.is_active = False
@@ -84,7 +68,6 @@ class ProjectileSystem:
         self._state.camera.shake(config.IMPACT_SHAKE_AMOUNT * ratio, config.IMPACT_SHAKE_DURATION)
 
         self._state.audio_manager.play_sound(f'wall_impact_{random.randint(1, 4)}', ratio)
-
 
     def _on_enemy_impact(self, pos: tuple[float, float], enemy) -> None:
         self._state.particle_system.spawn_enemy_impact(pos, color=enemy.impact_color)

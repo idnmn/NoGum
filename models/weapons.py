@@ -1,223 +1,182 @@
 import math
 import random
 import config
-from dataclasses import dataclass
-
 from models.game_state import GameState
 from models.projectile import *
 
 
-@dataclass
+# общий класс
 class Weapon:
-    name: str = ''
-    sprite: pygame.Surface | None = None
-    reload_sprite: pygame.Surface | None = None
-    crosshair: pygame.Surface | None = None
-    # Сдвиги для рендера
-    offset_x: float = 0
-    offset_y: float = 0
-    facing_right: bool = True
-    angle: float = 0
-
-    is_reloading: bool = False
-    reload_timer = 0.0
-    reload_cooldown = 1.0
-
-    is_autofired: bool = True
-
-class Pointer(Weapon):
-    def __init__(self, sprite: pygame.Surface, reload_sprite: pygame.Surface,
-                 crosshair: pygame.Surface, state: GameState) -> None:
-        super().__init__()
+    def __init__(self, state: GameState, name: str) -> None:
         self._state = state
-        self.sprite = sprite
-        self.reload_sprite = reload_sprite
-        self.crosshair = crosshair
-        self.name = 'Pointer'
-        self.offset_x = 15
+        self.signature_color = state.player.signature_color
 
-        # балансировочные переменные
-        """балансировочная формула:
-            power = const; power = damage * fire_rate; damage = size * speed
-            +speed = -fire_rate
-            +size = -speed
-            +fire_rate = -size"""
-        self.bullet_size = 2.0 # px
-        self.min_bullet_size = 2.0
-        self.max_bullet_size = 0.0
-        self._size_coef = 5.0
+        self.name = name
+        self.sprite = state.assets[self.name]
+        self.reload_sprite = state.assets[f'{self.name}_reload']
+        self.crosshair = state.assets[f'{self.name}_crosshair']
 
-        self.fire_rate = 3.0
-        self.min_fire_rate = 3.0
-        self.max_fire_rate = 0.0
-        self._fire_rate_coef = 1.0
+        self.offset_x: float = 0
+        self.offset_y: float = 0
+        self.facing_right = True
+        self.angle = 0
 
-        self.bullet_speed = 2.0
-        self.min_bullet_speed = 2.0
-        self.max_bullet_speed = 0.0
-        self._speed_coef = 200.0
+        self.is_reloading = False
+        self.reload_timer = 0.0
+        self.reload_cooldown = 1.0
+
+        self.is_autofired: bool = True
 
         self.power = 25
-        self.damage_coef = config.DAMAGE_COEF
-        self._calculate_max()
-
-        self.clip_size = 5
-        self.clip = 5
+        self.damage_coef = 1.0
 
         self.level = 1
         self.upgrade_cost = 10
         self.can_upgrade = True
 
-    def upgrade(self):
-        self.level += 1
-        if self.level % 2 == 0:
-            self.upgrade_cost += 10
-            self.power += 5
-            
-        if self.level % 4 == 0:
-            self.clip_size += 5
-            self.damage_coef += 0.05
+        # ключевые параметры из трех переменных
+        self.name_param_1 = ''
+        self._param_1 = 0.0
+        self.min_param_1 = 0.0
+        self.max_param_1 = 0.0
+        self.coef_param_1 = 0.0
 
-        self._calculate_max()
 
-        if self.power >= config.MAX_POWER_LIMIT:
-            self.can_upgrade = False
+        self.name_param_2 = ''
+        self._param_2 = 0.0
+        self.min_param_2 = 0.0
+        self.max_param_1 = 0.0
+        self.coef_param_2 = 0.0
 
-        self._state.audio_manager.play_sound('weapon_upgrade')
-
-    def _calculate_max(self) -> None:
-        self.max_bullet_speed = round(self.power / (self.min_bullet_size * self.min_fire_rate), 0)
-        self.max_bullet_size = round(self.power / (self.min_bullet_speed * self.min_fire_rate), 0)
-        self.max_fire_rate = round(self.power / (self.min_bullet_size * self.min_bullet_speed), 1)
-
-        self.fire_rate = round(self.power / (self.bullet_size * self.bullet_speed), 1)
-
-    def change_speed(self, new_speed: float) -> None:
-        delta = self.bullet_speed - new_speed
-        if delta > 0: # уменьшение
-            if new_speed < self.min_bullet_speed:
-                self.bullet_speed = self.min_bullet_speed
-            else:
-                self.bullet_speed = new_speed
-
-            if self.bullet_size < self.max_bullet_size:
-                self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
-
-                if self.bullet_size > self.max_bullet_size:
-                    self.bullet_size = self.max_bullet_size
-                    self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
-
-            else:
-                self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
-
-        else: # увеличение
-            if new_speed > self.max_bullet_speed:
-                self.bullet_speed = self.max_bullet_speed
-            else:
-                self.bullet_speed = new_speed
-
-            if self.fire_rate > self.min_fire_rate:
-                self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
-
-                if self.fire_rate < self.min_fire_rate:
-                    self.fire_rate = self.min_fire_rate
-                    self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
-
-            else:
-                self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
-
-    def change_size(self, new_size: float) -> None:
-        delta = self.bullet_size - new_size
-        if delta > 0:  # уменьшение
-            if new_size < self.min_bullet_size:
-                self.bullet_size = self.min_bullet_size
-            else:
-                self.bullet_size = new_size
-
-            if self.fire_rate < self.max_fire_rate:
-                self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
-
-                if self.fire_rate > self.max_fire_rate:
-                    self.fire_rate = self.max_fire_rate
-                    self.bullet_speed = self.power / (self.bullet_size * self.fire_rate)
-
-            else:
-                self.bullet_speed = self.power / (self.bullet_size * self.fire_rate)
-
-        else:  # увеличение
-            if new_size > self.max_bullet_size:
-                self.bullet_size = self.max_bullet_size
-            else:
-                self.bullet_size = new_size
-
-            if self.bullet_speed > self.min_bullet_speed:
-                self.bullet_speed = self.power / (self.fire_rate * self.bullet_size)
-
-                if self.bullet_speed < self.min_bullet_speed:
-                    self.bullet_speed = self.min_bullet_speed
-                    self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
-
-            else:
-                self.fire_rate = self.power / (self.bullet_speed * self.bullet_size)
-
-    def change_fire_rate(self, new_fire_rate: float) -> None:
-        delta = self.fire_rate - new_fire_rate
-        if delta > 0:  # уменьшение
-            if new_fire_rate < self.min_fire_rate:
-                self.fire_rate = self.min_fire_rate
-            else:
-                self.fire_rate = new_fire_rate
-
-            if self.bullet_speed < self.max_bullet_speed:
-                self.bullet_speed = self.power / (self.fire_rate * self.bullet_size)
-
-                if self.bullet_speed > self.max_bullet_speed:
-                    self.bullet_speed = self.max_bullet_speed
-                    self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
-
-            else:
-                self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
-
-        else:  # увеличение
-            if new_fire_rate > self.max_fire_rate:
-                self.fire_rate = self.max_fire_rate
-            else:
-                self.fire_rate = new_fire_rate
-
-            if self.bullet_size > self.min_bullet_size:
-                self.bullet_size = self.power / (self.bullet_speed * self.fire_rate)
-
-                if self.bullet_size < self.min_bullet_size:
-                    self.bullet_size = self.min_bullet_size
-                    self.bullet_speed = self.power / (self.fire_rate * self.bullet_size)
-
-            else:
-                self.bullet_speed = self.power / (self.fire_rate * self.bullet_size)
-
-    def get_speed(self) -> float:
-        return self.bullet_speed * self._speed_coef
-
-    def get_size(self) -> float:
-        return self.bullet_size * self._size_coef
-
-    def get_fire_rate(self) -> float:
-        return self.fire_rate * self._fire_rate_coef
+        self.name_param_3 = ''
+        self._param_3 = 0.0
+        self.min_param_3 = 0.0
+        self.max_param_3 = 0.0
+        self.coef_param_3 = 0.0
 
     @property
-    def damage(self) -> float:
-        return self.bullet_speed * self.bullet_size * self.damage_coef
+    def param_1(self) -> float:
+        return self._param_1 * self.coef_param_1
 
-    def fire(self, projectile_system, state) -> None:
-        offset_coef = self.offset_x + (self.bullet_size * self._size_coef) / 2
+    @param_1.setter
+    def param_1(self, value: float) -> None:
+        delta = self._param_1 - value
+        if delta > 0:  # уменьшение
+            if value < self.min_param_1:
+                self._param_1 = self.min_param_1
+            else:
+                self._param_1 = value
 
-        origin = pygame.Vector2(state.player.rect.centerx, state.player.rect.centery)
-        direction = state.player.mouse_world_pos - origin
+            if self._param_2 < self.max_param_2:
+                self._param_2 = self.power / (self._param_3 * self._param_1)
 
-        angle = random.randint(-3, 3)
-        spawn_pos = origin + direction.normalize() * offset_coef
+                if self._param_2 > self.max_param_2:
+                    self._param_2 = self.max_param_2
+                    self._param_3 = self.power / (self._param_1 * self._param_2)
 
-        projectile_system.spawn(PointerProjectile, spawn_pos, direction.rotate(angle))
-        self._state.audio_manager.play_sound('pointer_shot')
+            else:
+                self._param_3 = self.power / (self._param_1 * self._param_2)
+
+        else:  # увеличение
+            if value > self.max_param_1:
+                self._param_1 = self.max_param_1
+            else:
+                self._param_1 = value
+
+            if self._param_3 > self.min_param_3:
+                self._param_3 = self.power / (self._param_2 * self._param_1)
+
+                if self._param_3 < self.min_param_3:
+                    self._param_3 = self.min_param_3
+                    self._param_2 = self.power / (self._param_3 * self._param_1)
+
+            else:
+                self._param_2 = self.power / (self._param_3 * self._param_1)
+
+    @property
+    def param_2(self) -> float:
+        return self._param_2 * self.coef_param_2
+
+    @param_2.setter
+    def param_2(self, value: float) -> None:
+        delta = self._param_2 - value
+        if delta > 0:  # уменьшение
+            if value < self.min_param_2:
+                self._param_2 = self.min_param_2
+            else:
+                self._param_2 = value
+
+            if self._param_3 < self.max_param_3:
+                self._param_3 = self.power / (self._param_2 * self._param_1)
+
+                if self._param_3 > self.max_param_3:
+                    self._param_3 = self.max_param_3
+                    self._param_1 = self.power / (self._param_3 * self._param_2)
+
+            else:
+                self._param_1 = self.power / (self._param_3 * self._param_2)
+
+        else:  # увеличение
+            if value > self.max_param_2:
+                self._param_2 = self.max_param_2
+            else:
+                self._param_2 = value
+
+            if self._param_1 > self.min_param_1:
+                self._param_1 = self.power / (self._param_3 * self._param_2)
+
+                if self._param_1 < self.min_param_1:
+                    self._param_1 = self.min_param_1
+                    self._param_3 = self.power / (self._param_2 * self._param_1)
+
+            else:
+                self._param_3 = self.power / (self._param_2 * self._param_1)
+
+    @property
+    def param_3(self) -> float:
+        return self._param_3 * self.coef_param_3
+
+    @param_3.setter
+    def param_3(self, value: float) -> None:
+        delta = self._param_3 - value
+        if delta > 0:  # уменьшение
+            if value < self.min_param_3:
+                self._param_3 = self.min_param_3
+            else:
+                self._param_3 = value
+
+            if self._param_1 < self.max_param_1:
+                self._param_1 = self.power / (self._param_3 * self._param_2)
+
+                if self._param_1 > self.max_param_1:
+                    self._param_1 = self.max_param_1
+                    self._param_2 = self.power / (self._param_3 * self._param_1)
+
+            else:
+                self._param_2 = self.power / (self._param_3 * self._param_1)
+
+        else:  # увеличение
+            if value > self.max_param_3:
+                self._param_3 = self.max_param_3
+            else:
+                self._param_3 = value
+
+            if self._param_2 > self.min_param_2:
+                self._param_2 = self.power / (self._param_3 * self._param_1)
+
+                if self._param_2 < self.min_param_2:
+                    self._param_2 = self.min_param_2
+                    self._param_1 = self.power / (self._param_3 * self._param_2)
+
+            else:
+                self._param_1 = self.power / (self._param_3 * self._param_2)
+
+    def calculate_max(self) -> None:
+        self.max_param_1 = round(self.power / (self.min_param_2 * self.min_param_3), 0)
+        self.max_param_2 = round(self.power / (self.min_param_1 * self.min_param_3), 0)
+        self.max_param_3 = round(self.power / (self.min_param_1 * self.min_param_2), 1)
+
+        self._param_2 = round(self.power / (self._param_1 * self._param_3), 1)
 
     # отрисовка
     def render(self, surface: pygame.Surface,
@@ -258,3 +217,192 @@ class Pointer(Weapon):
         wy = player_pos.y - rotated.get_height() / 2 + self.offset_y
 
         surface.blit(rotated, (wx, wy))
+
+
+# slasher
+class Pointer(Weapon):
+    def __init__(self, state: GameState) -> None:
+        super().__init__(state, 'pointer')
+        self._state = state
+        self.offset_x = 15
+
+        # балансировочные переменные
+        """балансировочная формула:
+            power = const; power = damage * fire_rate; damage = size * speed
+            +speed = -fire_rate
+            +size = -speed
+            +fire_rate = -size"""
+        # ключевые параметры из трех переменных
+        self.name_param_1 = 'Bullet size'
+        self._param_1 = 2.0 # px
+        self.min_param_1 = 2.0
+        self.max_param_1 = 0.0
+        self.coef_param_1 = 5.0
+
+        self.name_param_2 = 'Fire rate'
+        self._param_2 = 3.0
+        self.min_param_2 = 3.0
+        self.max_param_2 = 0.0
+        self.coef_param_2 = 1.0
+
+        self.name_param_3 = 'Bullet speed'
+        self._param_3 = 2.0
+        self.min_param_3 = 2.0
+        self.max_param_3 = 0.0
+        self.coef_param_3 = 200.0
+
+        self.power = 25
+        self.damage_coef = 1.0
+        self.calculate_max()
+
+        self.clip_size = 5
+        self.clip = 5
+
+        self.level = 1
+        self.upgrade_cost = 10
+        self.can_upgrade = True
+
+    def upgrade(self):
+        self.level += 1
+        if self.level % 2 == 0:
+            self.upgrade_cost += 10
+            self.power += 5
+            
+        if self.level % 4 == 0:
+            self.clip_size += 5
+            self.damage_coef += 0.05
+
+        self.calculate_max()
+
+        if self.power >= config.MAX_POWER_LIMIT:
+            self.can_upgrade = False
+
+        self._state.audio_manager.play_sound('weapon_upgrade')
+
+    @property
+    def damage(self) -> float:
+        return self._param_3 * self._param_1 * self.damage_coef
+
+    def fire(self, state) -> None:
+        offset_coef = self.offset_x + (self._param_1 * self.coef_param_1) / 2
+
+        origin = pygame.Vector2(state.player.rect.centerx, state.player.rect.centery)
+        direction = state.player.mouse_world_pos - origin
+        angle = random.randint(-3, 3)
+        spawn_pos = origin + direction.normalize() * offset_coef
+        direction = direction.rotate(angle)
+
+        if direction.length() == 0:
+            direction = pygame.Vector2(1, 0)
+
+        speed = self.param_3
+        vel = direction.normalize() * speed
+
+        projectile = PointerProjectile(
+            x=spawn_pos.x, y=spawn_pos.y,
+            size=self.param_1,
+            velocity=vel,
+            damage=self.damage,
+            lifetime=10.0
+        )
+        self._state.projectile_system.projectiles.append(projectile)
+        self._state.audio_manager.play_sound('pointer_shot')
+
+
+# electron
+class Tazer(Weapon):
+    def __init__(self, state: GameState) -> None:
+        super().__init__(state, 'tazer')
+        self._state = state
+        self.offset_x = 15
+
+        # балансировочные переменные
+        """балансировочная формула:
+            power = const; power = shock * fire_rate * speed; damage = shock * speed
+            +shock = -fire_rate
+            +speed = -shock
+            +fire_rate = -speed"""
+        # ключевые параметры из трех переменных
+        self.name_param_1 = 'Shock'
+        self._param_1 = 2.0  # ms
+        self.min_param_1 = 2.0
+        self.max_param_1 = 0.0
+        self.coef_param_1 = 0.003
+
+        self.name_param_2 = 'Fire rate'
+        self._param_2 = 1.0
+        self.min_param_2 = 1.0
+        self.max_param_2 = 0.0
+        self.coef_param_2 = 1.0
+
+        self.name_param_3 = 'Bullet speed'
+        self._param_3 = 3.0
+        self.min_param_3 = 3.0
+        self.max_param_3 = 0.0
+        self.coef_param_3 = 100.0
+
+        self.power = 25
+        self.damage_coef = 1.0
+        self.calculate_max()
+
+        self.clip_size = 12
+        self.clip = 12
+
+        self.level = 1
+        self.upgrade_cost = 10
+        self.can_upgrade = True
+
+        self.is_autofired: bool = True
+
+    def upgrade(self):
+        self.level += 1
+        if self.level % 2 == 0:
+            self.upgrade_cost += 10
+            self.power += 5
+
+        if self.level % 3 == 0:
+            self.clip_size += 3
+            self.damage_coef += 0.05
+
+        self.calculate_max()
+
+        if self.power >= config.MAX_POWER_LIMIT:
+            self.can_upgrade = False
+
+        self._state.audio_manager.play_sound('weapon_upgrade')
+
+    def fire(self) -> None:
+        offset_coef = self.offset_x + (self._param_1 * self.coef_param_1) / 2
+
+        origin = pygame.Vector2(self._state.player.rect.centerx, self._state.player.rect.centery)
+        direction = self._state.player.mouse_world_pos - origin
+        angle = random.randint(-3, 3)
+        spawn_pos = origin + direction.normalize() * offset_coef
+        direction = direction.rotate(angle)
+
+        if direction.length() == 0:
+            direction = pygame.Vector2(1, 0)
+
+        speed = self.param_3
+        vel = direction.normalize() * speed
+
+        projectile = TazerProjectile(
+            x=spawn_pos.x, y=spawn_pos.y,
+            size=15,
+            velocity=vel,
+            damage=self.damage,
+            lifetime=10.0
+        )
+        self._state.projectile_system.projectiles.append(projectile)
+        self._state.audio_manager.play_sound('pointer_shot')
+
+    @property
+    def damage(self) -> float:
+        return self._param_3 * self._param_1 * self.damage_coef
+
+
+# tank
+class Bulldog(Weapon):
+    def __init__(self, sprite: pygame.Surface, reload_sprite: pygame.Surface,
+                 crosshair: pygame.Surface, state: GameState) -> None:
+        super().__init__(state, 'bulldog')

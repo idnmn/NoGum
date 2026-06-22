@@ -1,9 +1,73 @@
-import math
 import pygame
+import math
 from pygame import Vector2
 import config
 from models.game_state import GameState
-from skills.skill import Skill
+
+
+# общий шаблон класса для способностей
+class Skill():
+    def __init__(self, state: GameState) -> None:
+        self._state = state
+
+        self._cool_down = 0.0
+        self.cool_down_coef = 1.0
+        self._cooldown_timer = 0.0
+        self._use_timer = 0.0
+
+        self.charges_count = 1
+        self.max_charges = 1
+
+        self.is_using = False
+        self.is_ready = True
+
+        # констранты для рендера индикатора
+        self.indicator_background_color = (30, 30, 30)
+        self.indicator_fill_color = (220, 220, 220)
+
+    def update(self, dt: float) -> None:
+        self._cooldown_timer -= dt
+        self._use_timer -= dt
+
+        if self._use_timer <= 0 and self.is_using:
+            self.ended()
+
+        if self._cooldown_timer <= 0 and not self.is_using and self.charges_count < self.max_charges:
+            self.charges_count += 1
+            self.is_ready = True
+            if self.max_charges != 1:
+                self._state.audio_manager.play_sound('skill_get_charge')
+                self._cooldown_timer = self._cool_down
+
+            if self.charges_count == self.max_charges:
+                self.reload()
+            else:
+                self._cooldown_timer = self.cool_down
+
+    def render(self, surface: pygame.Surface) -> None:
+        pass
+
+    def reload(self) -> None:
+        self._state.audio_manager.play_sound('skill_reloaded')
+
+    def ended(self) -> None:
+        self.is_using = False
+        if self.charges_count == 0:
+            self.is_ready = False
+        if self._cooldown_timer <= 0:
+            self._cooldown_timer = self.cool_down
+
+    def use(self, mouse_pos: Vector2) -> None:
+        self.is_using = True
+        self.charges_count -= 1
+
+    @property
+    def cool_down(self) -> float:
+        return self._cool_down * self.cool_down_coef
+
+    @property
+    def cooldown_ratio(self):
+        return max(0.0, min(1.0, 1.0 - (self._cooldown_timer / (self.cool_down))))
 
 
 # ближняя атака (аля добивание) для игрока
@@ -139,3 +203,61 @@ class Slash(Skill):
                 self._state.audio_manager.play_sound('slash_hit', 1.2)
         self._state.audio_manager.play_sound('slash', 2)
 
+
+# стандартный рывок
+class StandardDash(Skill):
+    def __init__(self, state: GameState) -> None:
+        super().__init__(state)
+
+        self.speed = config.STANDARD_DASH_SPEED
+        self._cool_down = config.STANDARD_DASH_COOLDOWN
+        self.duration = config.STANDARD_DASH_DURATION
+        self._ui_timer: float = 0.0
+
+        # фиксируем направление игрока в начале рывка
+        self.dx = 0.0
+        self.dy = 0.0
+
+        # констранты для рендера индикатора
+        self.indicator_background_color = config.UI_DASH_BG_COLOR
+        self.indicator_fill_color = config.UI_DASH_COLOR
+        self.indicator_sprite = self._state.assets['dash_ico']
+
+
+    def update(self, dt: float) -> None:
+        super().update(dt)
+
+        if self.is_using:
+            self._state.particle_system.spawn_while_dash(self._state.player.rect.center, Vector2(self._state.player.body.dx,
+                                                                                           self._state.player.body.dy),
+                                                         config.UI_DASH_COLOR, config.PLAYER_SIZE)
+            # фиксируем направление игрока
+            self._state.player.body.dx, self._state.player.body.dy = self.dx, self.dy
+
+    def reload(self) -> None:
+        super().reload()
+        self._state.particle_system.spawn_dash_reloaded(self._state.player.rect.center)
+
+    def ended(self) -> None:
+        super().ended()
+
+        # сбрасываем ускорение
+        self._state.player.acceleration //= 100
+        self._state.player.current_max_speed = self._state.player.max_speed
+        self._state.player.ignore_enemy = False
+
+    def use(self, mouse_pos: Vector2) -> None:
+        if self._state.player.body.dx != 0 or self._state.player.body.dy != 0:
+            self.dx, self.dy = Vector2(self._state.player.body.ax, self._state.player.body.ay).normalize()
+            super().use(mouse_pos)
+
+            self._use_timer = self.duration
+
+            self._state.particle_system.spawn_dashed(self._state.player.rect.center)
+
+            # ускоряем игрока
+            self._state.player.acceleration *= 100
+            self._state.player.current_max_speed = self.speed
+            self._state.player.ignore_enemy = True
+
+            self._state.audio_manager.play_sound('dash')

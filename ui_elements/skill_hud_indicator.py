@@ -1,7 +1,7 @@
 import pygame
 
 import config
-from skills.skill import Skill
+from skills.skills import Skill
 
 
 class SkillIndicator:

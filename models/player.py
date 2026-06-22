@@ -1,40 +1,52 @@
 import math
 import random
 import pygame
-from pygame import Vector2
 import config
+import json
+from pygame import Vector2
+from core import utils
 from models.collidable import CollisionBody
 from models.game_state import GameState
-from models.weapons import Weapon
 from models.decal import Decal
-from skills.slash import Slash
-from skills.standard_dash import StandardDash
 
 
 class Player():
-    def __init__(self, x: float, y: float, state: GameState) -> None:
+    def __init__(self, x: float, y: float, state: GameState, character_name: str) -> None:
         self.body = CollisionBody(
             rect=pygame.Rect(x, y, config.PLAYER_SIZE, config.PLAYER_SIZE),
             layer="dynamic",
             tags={"player"}
         )
+        self.character_name = character_name
         self._state = state
-        self.first_skill = StandardDash(state)
-        self.second_skill = Slash(state)
 
-        self._source_sprite = state.assets['slasher_sprite']
-        self.sprite = self._source_sprite.copy()
-        self.step_sprite = state.assets['player_step_sprite']
+        self._source_sprite = state.assets[self.character_name]
+        self.step_sprite = state.assets['player_step']
 
-        # подтягиваем статы из конфига
-        self.max_speed = config.PLAYER_MAX_SPEED
-        self.current_max_speed = config.PLAYER_MAX_SPEED
-        self.acceleration = config.PLAYER_ACCELERATION
-        self.friction = config.FRICTION
-        self.hp = config.PLAYER_MAX_HP
-        self.max_hp = config.PLAYER_MAX_HP
-        self.tick_damage = config.PLAYER_TICK_DAMAGE
-        self.tick_damage_coef = config.PLAYER_TICK_DAMAGE_COEF
+        file = utils.get_resource_path(f"characters_stats\\{self.character_name}.json")
+        with open(file, "r", encoding="utf-8") as f:
+            self.character_config = json.load(f)
+
+        self.weapon = None
+        self.first_skill = None
+        self.second_skill = None
+
+        self.max_speed = self.character_config["max_speed"]
+        self.max_hp = self.character_config["max_hp"]
+        self.tick_damage = self.character_config["tick_damage"]
+        self.tick_damage_coef = 1.0
+        self._tick_damage_cooldown = self.character_config["tick_damage_time"]
+        self.acceleration = self.character_config["acceleration"]
+        self.friction = self.character_config["friction"]
+
+        self.current_max_speed = self.max_speed
+        self.hp = self.max_hp
+
+        self.max_speed_limit = self.character_config["max_speed_limit"]
+        self.max_hp_limit = self.character_config["max_hp_limit"]
+        self.damage_coef_limit = self.character_config["damage_coef_limit"]
+        self.tick_damage_limit = self.character_config["tick_damage_limit"]
+        self.tick_damage_coef_limit = self.character_config["tick_damage_coef_limit"]
 
         self.is_alive = True
         self.ignore_enemy = False
@@ -46,15 +58,12 @@ class Player():
         self.step_cooldown = 0.07
         self._step_timer = 0.0
 
-        self.weapon: Weapon | None = None
         self.mouse_world_pos = pygame.Vector2(x, y)
         self.facing_right = True
 
         self._visual_damage_cooldown = 0.2
         self._visual_damage_timer = -1.0
-
-        self._tick_damage_timer = 3
-        self._tick_damage_cooldown = 3
+        self._tick_damage_timer = self._tick_damage_cooldown
 
         # счетчик обломков в кармане
         self.scrap = 0
@@ -204,7 +213,7 @@ class Player():
             self._step_timer = self.step_cooldown
 
         # нормализуем vx к диапазону [-1, 1] и умножаем на макс. угол
-        tilt_ratio = self.body.vx / config.PLAYER_MAX_SPEED
+        tilt_ratio = self.body.vx / self.max_speed
         target_tilt = tilt_ratio * config.PLAYER_TILT_MAX_ANGLE
 
         # плавная интерполяция

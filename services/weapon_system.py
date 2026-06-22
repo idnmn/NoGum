@@ -29,7 +29,7 @@ class WeaponSystem:
 
         # пробуем выстрелить если есть флаг от input_handler
         if is_shooting_requested and self._fire_cooldown_timer <= 0 < weapon.clip:
-            self._fire_cooldown_timer = 1.0 / weapon.fire_rate
+            self._fire_cooldown_timer = 1.0 / weapon._param_2
             weapon.clip -= 1
             return True
 

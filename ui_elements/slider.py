@@ -9,13 +9,14 @@ from models.game_state import GameState
 class Slider():
     def __init__(self, title: str, x: float, y: float, width: float, max_value: float, min_value: float,
                  setter: Callable, stepped: bool = False, step: float = 0.0, round: int = 2,
-                 default_value: float = 0.0) -> None:
+                 default_value: float = 0.0, signature_color: tuple[int, int, int] = config.SLIDER_FILL_COLOR) -> None:
         self.interactive_hitbox = pygame.Rect(x, y - 5, width, 25)
         self.title = title
         self.x, self.y = x, y
         self.width = width
         self.height = 25
         self._font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 20)
+        self.signature_color = signature_color
 
         self._value = default_value
         self.max_value = max_value
@@ -45,7 +46,7 @@ class Slider():
 
         # заполнение
         fill_width = self.width * ((self._value - self._min_value) / (self.max_value - self._min_value))
-        pygame.draw.rect(surface, config.SLIDER_FILL_COLOR,
+        pygame.draw.rect(surface, self.signature_color,
                          (self.x, self.y + 5, fill_width, self.height - 10), border_radius=10)
 
         # насечки для ступенчатого слайдера
