@@ -355,27 +355,27 @@ class GameEngine:
                 if self._input.spawn:
                     cords = self._input.spawn_pos + self._state.room_manager.active_room.offset
 
-                    # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number, self._state))
+                    self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm_mommy(*cords, 1.05 ** self._state.level_number, self._state))
                     # self._state.enemy_system.enemies.append(self._spawner._spawn_bookworm(*cords, 1.05 ** self._state.level_number, self._state))
 
                     self._input.spawn = False
 
-                    drop_item = random.choice(self._state.drop_pool)
-                    sprite_name = drop_item[1]
-                    self._state.collectable_system.items.append(drop_item[0](
-                        x=cords.x,
-                        y=cords.y,
-                        size=35,
-                        lifetime=15,
-                        max_speed=600,
-                        vx=900,
-                        vy=0,
-                        acceleration=-1000,
-                        magnet=False,
-                        collect_range=300,
-                        sprite=self._state.assets[sprite_name],
-
-                    ))
+                    # drop_item = random.choice(self._state.drop_pool)
+                    # sprite_name = drop_item[1]
+                    # self._state.collectable_system.items.append(drop_item[0](
+                    #     x=cords.x,
+                    #     y=cords.y,
+                    #     size=35,
+                    #     lifetime=15,
+                    #     max_speed=600,
+                    #     vx=900,
+                    #     vy=0,
+                    #     acceleration=-1000,
+                    #     magnet=False,
+                    #     collect_range=300,
+                    #     sprite=self._state.assets[sprite_name],
+                    #
+                    # ))
 
             # ГЛАВНОЕ МЕНЮ
             else:

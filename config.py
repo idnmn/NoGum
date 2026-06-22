@@ -51,7 +51,7 @@ SLASH_COOLDOWN: float = 5.0
 TRANSITION_TIME: float = 0.5
 
 # баланс
-LEVEL_COEF: float = 1.07 # коэффициент увеличения стат мобов в зависимости от уровня
+LEVEL_COEF: float = 1.1 # коэффициент увеличения стат мобов в зависимости от уровня
 MAX_POWER_LIMIT: int = 1000
 
 # --- ЦВЕТА ---
