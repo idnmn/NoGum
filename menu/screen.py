@@ -17,7 +17,7 @@ class MenuScreen:
 
     def update(self, dt: float, mouse_pos: Vector2, events: list[pygame.event.Event]) -> None:
         for element in self.ui_elements:
-            element.update(dt, mouse_pos)
+            element.update(dt, mouse_pos, self._state)
 
         self._handle_events(events)
 

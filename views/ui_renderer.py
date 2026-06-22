@@ -122,6 +122,7 @@ class UIRenderer:
                     self._state.is_paused = False
 
                     self._state.audio_manager.crossfade_system.set_muted(False)
+                    self._state.audio_manager.play_sound('ui_close')
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 for slider in self._sliders:

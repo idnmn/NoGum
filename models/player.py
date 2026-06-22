@@ -1,4 +1,6 @@
 import math
+import random
+
 import pygame
 from pygame import Vector2
 
@@ -57,7 +59,7 @@ class Player():
         self._tick_damage_cooldown = 3
 
         # счетчик обломков в кармане
-        self.scrap = 0
+        self.scrap = 100
 
         # другие предметы
         self.inventory = dict()
@@ -133,6 +135,7 @@ class Player():
         )
 
         self._state.decals_system.decals.append(step)
+        self._state.audio_manager.play_sound('player_walk')
 
     def update(self, dx: float, dy: float, dt: float) -> None:
         """
@@ -229,6 +232,8 @@ class Player():
             self.death()
 
         self._state.stattracker.damage_taken += int(amount)
+
+        self._state.audio_manager.play_sound(f'player_damaged_{random.randint(1, 3)}', 1.2)
 
     def death(self) -> None:
         self._state.reset_state()

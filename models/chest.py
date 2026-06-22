@@ -144,3 +144,4 @@ class Chest():
             ))
 
         state.particle_system.spawn_open_chest(self.rect.center)
+        state.audio_manager.play_sound('chest_open', 1.7)

@@ -67,8 +67,8 @@ class Renderer:
                 render_queue.append(room.terminal)
             if room.chest:
                 render_queue.append(room.chest)
-            if room.exit:
-                render_queue.append(room.exit)
+        if room.exit:
+            room.exit.render(self.world_surface)
 
         # добавляем игрока в очередь
         if self._state.player:
@@ -95,6 +95,11 @@ class Renderer:
 
         # рендерим inworld часть ui
         self._ui_renderer.render_in_world(self.world_surface)
+
+        if room.exit:
+            if room.exit.is_near_player:
+                self.world_surface.blit(room.exit.arrow_sprite, (room.exit.body.rect.x + room.exit.body.rect.width / 2 - 24,
+                                                 room.exit.body.rect.y - 30))
 
         # вычисляем координаты вьюпорта
         view_x = int(camera.position.x + camera.shake_offset.x - config.INTERNAL_WIDTH / 2)

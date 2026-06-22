@@ -40,11 +40,15 @@ class InputHandler:
                     self._state.is_paused = not self._state.is_paused
                     self._state.audio_manager.crossfade_system.set_muted(self._state.is_paused)
                     self._state.menu_manager.set_active_screen(self._state.menu_screens['pause'])
+                    if self._state.is_paused: self._state.audio_manager.play_sound('ui_open')
+                    else: self._state.audio_manager.play_sound('ui_close')
+
 
                 elif event.key == config.WEAPON_UI_KEY: # меню оружия
                     self._state.is_upgrade_ui_open = True
                     self._state.is_paused = True
                     self._state.audio_manager.crossfade_system.set_muted(True)
+                    self._state.audio_manager.play_sound('ui_open')
 
                 elif event.key == pygame.K_r and not self._state.is_paused:
                     self._reload_requested = True

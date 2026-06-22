@@ -18,6 +18,9 @@ class Slash(Skill):
         self.attack_time = config.SLASH_ATTACK_TIME
         self._cool_down = config.SLASH_COOLDOWN
 
+        self.max_charges = 2
+        self.charges_count = 2
+
         size = self.radius * 2 + 10
         self.surface = pygame.Surface((size, size), pygame.SRCALPHA)
 
@@ -132,4 +135,7 @@ class Slash(Skill):
 
                 enemy.body.vx = 0
                 enemy.body.vy = 0
+
+                self._state.audio_manager.play_sound('slash_hit', 1.2)
+        self._state.audio_manager.play_sound('slash', 2)
 

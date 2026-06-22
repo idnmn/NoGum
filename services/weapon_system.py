@@ -39,9 +39,11 @@ class WeaponSystem:
                 and not weapon.is_reloading):
             weapon.is_reloading = True
             weapon.reload_timer = weapon.reload_cooldown
+            self._state.audio_manager.play_sound(f'{weapon.name.lower()}_reload', 1.2)
 
         if weapon.reload_timer <= 0 and weapon.is_reloading:
             weapon.is_reloading = False
             weapon.clip = weapon.clip_size
+            self._state.audio_manager.play_sound(f'{weapon.name.lower()}_reload_end', 1.2)
 
         return False

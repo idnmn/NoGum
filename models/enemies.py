@@ -1,4 +1,6 @@
 import math
+import random
+
 import config
 from models.collectable import *
 from models.collidable import CollisionBody
@@ -135,6 +137,11 @@ class BookWorm(Enemy):
 
         self._repath_cooldown = 0.5
 
+    def take_damage(self, amount: float) -> None:
+        super().take_damage(amount)
+
+        self._state.audio_manager.play_sound(f'bookworm_damaged_{random.randint(1, 4)}')
+
     def render(self, surface: pygame.Surface) -> None:
         # цветовая индикация состояния
         if self.state == "charge":
@@ -187,6 +194,8 @@ class BookWorm(Enemy):
 
                 # обновляем данные с pathfinder'а
                 if self._repath_timer <= 0:
+                    self._state.audio_manager.play_sound(f'bookworm_step_{random.randint(1, 4)}')
+
                     self._repath_timer = self._repath_cooldown
                     if self.pathfinder.search_path(Vector2(self.rect.center), Vector2(self._state.player.rect.center), active_room,
                                                 search_index=self.search_index):
@@ -263,6 +272,7 @@ class BookWorm(Enemy):
                     self._state_timer = self.dash_duration
                     self.body.vx = self.dash_dir.x * self.dash_speed
                     self.body.vy = self.dash_dir.y * self.dash_speed
+                    self._state.audio_manager.play_sound(f'bookworm_dash_{random.randint(1, 3)}', 1.3)
 
             elif self.state == "dash":
                 self._state.particle_system.spawn_while_dash(self.rect.center, self.dash_dir,
@@ -314,6 +324,9 @@ class BookWorm(Enemy):
         )
 
         self._state.decals_system.decals.append(decal)
+        self._state.audio_manager.play_sound(f'bookworm_death_{random.randint(1, 4)}', 1.7)
+        self._state.audio_manager.play_sound(f'bookworm_death_{random.randint(1, 4)}', 1.7)
+        self._state.audio_manager.play_sound(f'bookworm_death_{random.randint(1, 4)}', 1.7)
 
         self.drop()
 
@@ -488,6 +501,7 @@ class BookWormMommy(Enemy):
 
                 # обновляем данные с pathfinder'а
                 if self._repath_timer <= 0:
+                    self._state.audio_manager.play_sound(f'bookworm_step_{random.randint(1, 4)}')
                     self._repath_timer = self._repath_cooldown
                     if self.pathfinder.search_path(Vector2(self.rect.center), Vector2(self._state.player.rect.center), active_room,
                                                 search_index=self.search_index):
@@ -564,6 +578,7 @@ class BookWormMommy(Enemy):
                     self._state_timer = self.dash_duration
                     self.body.vx = self.dash_dir.x * self.dash_speed
                     self.body.vy = self.dash_dir.y * self.dash_speed
+                    self._state.audio_manager.play_sound(f'bookworm_dash_{random.randint(1, 3)}', 1.3)
 
             elif self.state == "dash": # рывок
                 self._state.particle_system.spawn_while_dash(self.rect.center, self.dash_dir,
@@ -615,12 +630,11 @@ class BookWormMommy(Enemy):
     def take_damage(self, amount: float) -> bool:
         damage = max(0, amount - self.defence)
         self.hp -= damage
+        self._state.audio_manager.play_sound(f'bookworm_damaged_{random.randint(1, 4)}', 1.2)
         if self.hp <= 0 and self.state != 'death':
             self.state = "death"
             self._state_timer = self.death_duration
-
-        if damage > 0:
-            self._visual_damage_timer = self._visual_damage_cooldown
+            self._state.audio_manager.play_sound('mommy_pre_explode')
 
         return damage
 
@@ -645,6 +659,9 @@ class BookWormMommy(Enemy):
             )
 
             self._state.decals_system.decals.append(decal)
+            self._state.audio_manager.play_sound('mommy_explode', 0.8)
+            self._state.audio_manager.play_sound(f'bookworm_death_{random.randint(1, 4)}', 1.3)
+            self._state.audio_manager.play_sound(f'bookworm_death_{random.randint(1, 4)}', 1.3)
 
         for _ in range(random.randint(3, 7)):
             size = int(random.uniform(15, 25))

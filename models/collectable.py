@@ -101,6 +101,8 @@ class EnergyCell(Collectable):
         if state.player.hp > state.player.max_hp:
             state.player.hp = state.player.max_hp
 
+        state.audio_manager.play_sound(f'energy_cell_collected_{random.randint(1, 4)}', 1.1)
+
     def spawn_particles(self, state: GameState) -> None:
         pos = self.body.rect.center
 
@@ -137,6 +139,7 @@ class Scrap(Collectable):
     def collect(self, state: GameState) -> None:
         state.player.scrap += self._scale
         state.stattracker.scrap_collected += self._scale
+        state.audio_manager.play_sound(f'scrap_collected_{random.randint(1, 4)}', 1.8)
 
     def spawn_particles(self, state: GameState) -> None:
         pos = self.body.rect.center
@@ -171,6 +174,7 @@ class BonusItem(Collectable):
     def collect(self, state: GameState) -> None:
         state.player.inventory[self.name][0] += 1
         state.stattracker.inventory[self.name] += 1
+        state.audio_manager.play_sound('bonus_collected', 1.7)
 
     def spawn_particles(self, state: GameState) -> None:
         pos = self.body.rect.center

@@ -11,6 +11,7 @@ class TerminalSystem:
         self._state = state
         self._room_manager = state.room_manager
         self.terminals: list[Terminal] = self._room_manager.terminals
+        self._new_selected = False
 
         # позиция по центру
         self._hud_rect = pygame.Rect(
@@ -74,6 +75,7 @@ class TerminalSystem:
             self.post_teleport_flag = True
             self._state.player.current_tilt = 0
             self._dark_timer = self._max_dark_time
+            self._state.audio_manager.play_sound('teleported', 2)
 
             # определяем терминал к которому телепортируемся
             selected_terminal = None
@@ -116,6 +118,8 @@ class TerminalSystem:
                     if event.key == pygame.K_ESCAPE:  # выход из меню
                         self._state.is_terminal_ui_open = False
                         self._state.is_paused = False
+                        self._state.audio_manager.crossfade_system.set_muted(False)
+                        self._state.audio_manager.play_sound('terminal_close')
 
                 # выделяем терминал, на который навелись мышью
                 mouse_pos = pygame.mouse.get_pos()
@@ -127,10 +131,12 @@ class TerminalSystem:
                     my = (self._offset[1] + (terminal.body.rect.y - self._world_bounds.y) * self._scale - mh / 2
                           + self._hud_rect.y)
 
-                    rect = pygame.Rect(mx, my, mw, mh)
+                    rect = pygame.Rect(mx, my, mw * 2, mh * 2)
 
                     if rect.collidepoint(mouse_pos):
                         terminal.is_selected = True
+                        self._new_selected = True
+                        break
                     else:
                         terminal.is_selected = False
 

@@ -2,6 +2,8 @@ import math
 import random
 import config
 from dataclasses import dataclass
+
+from models.game_state import GameState
 from models.projectile import *
 
 
@@ -25,8 +27,9 @@ class Weapon:
 
 class Pointer(Weapon):
     def __init__(self, sprite: pygame.Surface, reload_sprite: pygame.Surface,
-                 crosshair: pygame.Surface) -> None:
+                 crosshair: pygame.Surface, state: GameState) -> None:
         super().__init__()
+        self._state = state
         self.sprite = sprite
         self.reload_sprite = reload_sprite
         self.crosshair = crosshair
@@ -79,6 +82,8 @@ class Pointer(Weapon):
 
         if self.power >= config.MAX_POWER_LIMIT:
             self.can_upgrade = False
+
+        self._state.audio_manager.play_sound('weapon_upgrade')
 
     def _calculate_max(self) -> None:
         self.max_bullet_speed = round(self.power / (self.min_bullet_size * self.min_fire_rate), 0)
@@ -212,6 +217,7 @@ class Pointer(Weapon):
         spawn_pos = origin + direction.normalize() * offset_coef
 
         projectile_system.spawn(PointerProjectile, spawn_pos, direction.rotate(angle))
+        self._state.audio_manager.play_sound('pointer_shot')
 
     # отрисовка
     def render(self, surface: pygame.Surface,

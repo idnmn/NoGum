@@ -112,7 +112,7 @@ class PauseScreen(MenuScreen):
             super().update(dt, mouse_pos, events)
         else:
             for element in self._dialogue_ui_elements:
-                element.update(dt, mouse_pos)
+                element.update(dt, mouse_pos, self._state)
 
             for event in events:
                 if event.type == pygame.QUIT:

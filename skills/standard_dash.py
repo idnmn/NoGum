@@ -60,5 +60,7 @@ class StandardDash(Skill):
             self._state.player.current_max_speed = self.speed
             self._state.player.ignore_enemy = True
 
+            self._state.audio_manager.play_sound('dash')
+
 
 

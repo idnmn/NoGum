@@ -23,8 +23,8 @@ class AudioManager:
         pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
 
         self._sounds: dict[str, pygame.mixer.Sound] = {}
-        self.sound_volume = 1.0
-        self.music_volume = 0.0
+        self.sound_volume = 0.8
+        self.music_volume = 0.7
         self.master_volume = 1.0
 
         self.crossfade_system = None
@@ -36,16 +36,62 @@ class AudioManager:
         sounds_dir = os.path.join(config.ASSETS_DIR, "sounds")
 
         sound_mapping = {
-            # "shoot": "shoot.wav",
-            # "reload": "reload.wav",
-            # "hit": "hit.wav",
-            # "enemy_death": "enemy_death.wav",
-            # "step": "step.wav",
-            # "dash": "dash.wav",
-            # "pickup": "pickup.wav",
-            # "menu_click": "menu_click.wav",
-            # "terminal_open": "terminal_open.wav",
-            # "explosion": "explosion.wav"
+            "dash": "skills/dash.wav",
+            'slash_hit': 'skills/slash_hit.wav',
+            'slash': 'skills/slash.wav',
+            'skill_reloaded': 'skills/reloaded.wav',
+            'skill_get_charge': 'skills/get_charge.wav',
+
+            "mommy_explode": "enemies/mommy_explode.wav",
+            "mommy_pre_explode": "enemies/mommy_pre_explode.wav",
+            'bookworm_step_1': 'enemies/bookworm_step_1.wav',
+            'bookworm_step_2': 'enemies/bookworm_step_2.wav',
+            'bookworm_step_3': 'enemies/bookworm_step_3.wav',
+            'bookworm_step_4': 'enemies/bookworm_step_4.wav',
+            'bookworm_death_1': 'enemies/bookworm_death_1.wav',
+            'bookworm_death_2': 'enemies/bookworm_death_2.wav',
+            'bookworm_death_3': 'enemies/bookworm_death_3.wav',
+            'bookworm_death_4': 'enemies/bookworm_death_4.wav',
+            'bookworm_damaged_1': 'enemies/bookworm_damaged_1.wav',
+            'bookworm_damaged_2': 'enemies/bookworm_damaged_2.wav',
+            'bookworm_damaged_3': 'enemies/bookworm_damaged_3.wav',
+            'bookworm_damaged_4': 'enemies/bookworm_damaged_4.wav',
+            'bookworm_dash_1': 'enemies/bookworm_dash_1.wav',
+            'bookworm_dash_2': 'enemies/bookworm_dash_2.wav',
+            'bookworm_dash_3': 'enemies/bookworm_dash_3.wav',
+
+            "energy_cell_collected_1": 'ui/energy_cell_collected_1.wav',
+            "energy_cell_collected_2": 'ui/energy_cell_collected_2.wav',
+            "energy_cell_collected_3": 'ui/energy_cell_collected_3.wav',
+            "energy_cell_collected_4": 'ui/energy_cell_collected_4.wav',
+            "scrap_collected_1": 'ui/scrap_collected_1.wav',
+            "scrap_collected_2": 'ui/scrap_collected_2.wav',
+            "scrap_collected_3": 'ui/scrap_collected_3.wav',
+            "scrap_collected_4": 'ui/scrap_collected_4.wav',
+            'bonus_collected': 'ui/bonus_collected.wav',
+            'terminal_close': 'ui/terminal_close.wav',
+            'terminal_open': 'ui/terminal_open.wav',
+            'terminal_select': 'ui/terminal_selected.wav',
+            'ui_open': 'ui/ui_open.wav',
+            'ui_close': 'ui/ui_close.wav',
+            'ui_selected': 'ui/ui_selected.wav',
+            'teleported': 'ui/teleported.wav',
+            'weapon_upgrade': 'ui/weapon_upgrade.wav',
+            'chest_open': 'ui/chest_open.wav',
+            'wall_impact_1': 'ui/wall_impact_1.wav',
+            'wall_impact_2': 'ui/wall_impact_2.wav',
+            'wall_impact_3': 'ui/wall_impact_3.wav',
+            'wall_impact_4': 'ui/wall_impact_4.wav',
+            'door_close': 'ui/door_close.wav',
+
+            'player_walk': 'player/walk.wav',
+            'player_damaged_1': 'player/damaged_1.wav',
+            'player_damaged_2': 'player/damaged_2.wav',
+            'player_damaged_3': 'player/damaged_3.wav',
+
+            'pointer_shot': 'weapons/pointer/shot.wav',
+            'pointer_reload': 'weapons/pointer/reload.wav',
+            'pointer_reload_end': 'weapons/pointer/reload_end.wav'
         }
 
         for sound, filename in sound_mapping.items():
@@ -62,13 +108,10 @@ class AudioManager:
                 self._sounds[sound] = pygame.mixer.Sound(buffer=bytes(1024))
 
     # воспроизведение звука
-    def play_sound(self, name: str, volume: float, loops: int = 0) -> None:
+    def play_sound(self, name: str, volume: float=1.0, loops: int = 0) -> None:
         if name in self._sounds:
             sound = self._sounds[name]
-            if volume is not None:
-                sound.set_volume(volume)
-            else:
-                sound.set_volume(self.sound_volume)
+            sound.set_volume(min(self.sound_volume * self.master_volume * 0.4 * volume, 1.0))
             sound.play(loops=loops)
 
     # воспроизведение музыки

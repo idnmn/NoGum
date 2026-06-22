@@ -124,12 +124,12 @@ class GameEngine:
                     self._state.is_post_transition = True
                     self._state.is_paused = False
                     self._transition_timer = config.TRANSITION_TIME
-
-                    self._state.audio_manager.crossfade_system.set_muted(False)
+                    self._state.audio_manager.play_sound('teleported', 1.7)
 
                 if self._transition_timer < 0 and self._state.is_post_transition:
                     self._state.is_transition = False
                     self._state.is_post_transition = False
+                    self._state.audio_manager.crossfade_system.set_muted(False)
 
             # ИГРОВОЙ ЦИКЛ
             if self._state.in_game:
@@ -142,10 +142,10 @@ class GameEngine:
                     self._input.process_events(events)
 
                 # обновляем кнопки
-                if self._state.buttons:
+                if self._state.buttons and self._state.is_paused:
                     mouse_pos = pygame.mouse.get_pos()
                     for button in self._state.buttons:
-                        button.update(dt, mouse_pos)
+                        button.update(dt, mouse_pos, self._state)
 
                 # не на паузе
                 if not self._state.is_paused:
@@ -211,7 +211,7 @@ class GameEngine:
                                 self._state.room_manager.active_room.bounds.center + Vector2(0, -20)
                             )
                         self._state.room_manager.active_room.update_room_state(not bool(self._state.enemy_system.enemies),
-                                                                         self._state.camera)
+                                                                         self._state.camera, self._state)
 
                         # респавним мобов при необходимости
                         if self._state.room_manager.active_room.waves_count != 0 and not self._state.enemy_system.enemies:
@@ -275,6 +275,7 @@ class GameEngine:
                                     self._state.is_minimap_visible = False
 
                                     self._state.audio_manager.crossfade_system.set_muted(True)
+                                    self._state.audio_manager.play_sound('terminal_open')
 
                             # взаимодействие с выходом
                             if (self._state.room_manager.active_room.exit and
@@ -598,7 +599,7 @@ class GameEngine:
         # инициализируем стартовое оружие
         self._state.weapon = Pointer(sprite=self._state.assets['pointer_sprite'],
                                      reload_sprite=self._state.assets['pointer_reload'],
-                                     crosshair=self._state.assets['pointer_crosshair'])
+                                     crosshair=self._state.assets['pointer_crosshair'], state=self._state)
         if self._state.player:
             self._state.player.weapon = self._state.weapon
 

@@ -4,6 +4,7 @@ import pygame
 from pygame import Vector2
 
 import config
+from models.game_state import GameState
 
 
 class Slider():
@@ -75,7 +76,7 @@ class Slider():
 
         self.setter(self.value)
 
-    def update(self, dt: float, mouse_pos: Vector2) -> None:
+    def update(self, dt: float, mouse_pos: Vector2, _: GameState) -> None:
         pass
 
     @property

@@ -2,6 +2,7 @@ import pygame
 from pygame import Vector2
 
 import config
+from models.game_state import GameState
 
 
 # кнопка
@@ -25,18 +26,25 @@ class Button:
 
         self._clicked_timer = 0.0
 
+        self._need_sound = True
+
     def change_position(self, x: float, y: float) -> None:
         self.x = x
         self.y = y
         self.interactive_hitbox = pygame.rect.Rect(x, y, self.width, self.height)
 
     # обновляем состояние
-    def update(self, dt: float, mouse_pos: Vector2) -> None:
+    def update(self, dt: float, mouse_pos: Vector2, state: GameState) -> None:
         if not self.state == 'clicked':
             if self.interactive_hitbox.collidepoint(mouse_pos) and self.is_active:
                 self.state = 'selected'
+
+                if self._need_sound:
+                    self._need_sound = False
+                    state.audio_manager.play_sound('ui_selected')
             else:
                 self.state = 'active' if self.is_active else 'inactive'
+                self._need_sound = True
 
         if self.state == 'clicked':
             self._clicked_timer -= dt

@@ -29,7 +29,3 @@ class Exit():
 
     def render(self, surface: pygame.Surface) -> None:
         surface.blit(self._sprite, (self.rect.x, self.rect.y))
-
-        if self.is_near_player:
-            surface.blit(self.arrow_sprite, (self.body.rect.x + self.body.rect.width / 2 - 24,
-                                             self.body.rect.y - 30))

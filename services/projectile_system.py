@@ -1,7 +1,8 @@
 import pygame
 import config
+import random
 from pygame import Vector2
-from typing import Callable, List
+from typing import List
 from models.enemies import Enemy
 from models.game_state import GameState
 from models.projectile import Projectile
@@ -81,6 +82,9 @@ class ProjectileSystem:
 
         self._state.particle_system.spawn_wall_impact(pos, color=config.MINIMAP_WALL_COLOR_LIST[self._state.level_seed - 1])
         self._state.camera.shake(config.IMPACT_SHAKE_AMOUNT * ratio, config.IMPACT_SHAKE_DURATION)
+
+        self._state.audio_manager.play_sound(f'wall_impact_{random.randint(1, 4)}', ratio)
+
 
     def _on_enemy_impact(self, pos: tuple[float, float], enemy) -> None:
         self._state.particle_system.spawn_enemy_impact(pos, color=enemy.impact_color)
