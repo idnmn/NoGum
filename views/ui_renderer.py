@@ -1,4 +1,4 @@
-from models.game_state import GameState
+from core import utils
 from skills.skill import Skill
 from ui_elements.button import Button
 from ui_elements.slider import Slider
@@ -11,10 +11,10 @@ class UIRenderer:
     def __init__(self, screen: pygame.Surface, state: GameState) -> None:
         self._screen = screen
         self._state = state
-        self._font = pygame.font.Font("assets/QBF_font.ttf", 24)
-        self._small_font = pygame.font.Font("assets/QBF_font.ttf", 20)
-        self._title_font = pygame.font.Font("assets/QBF_font.ttf", 34)
-        self._micro_font = pygame.font.Font("assets/QBF_font.ttf", 16)
+        self._font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 24)
+        self._small_font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 20)
+        self._title_font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 34)
+        self._micro_font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 16)
         self._dragging_slider: Slider | None = None
         self._layout = self._get_panel_layout()
 
@@ -319,11 +319,11 @@ class UIRenderer:
         pygame.draw.rect(self._screen, (30, 30, 30), (x, y, 35, 20))
 
         fps = int(self._state.clock.get_fps())
-        if fps < 50:
+        if fps < 40:
             color = (255, 60, 60)
-        elif fps < 80:
+        elif fps < 60:
             color = (255, 125, 75)
-        elif fps < 120:
+        elif fps < 80:
             color = (255, 245, 140)
         else:
             color = (110, 255, 60)

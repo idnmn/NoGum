@@ -1,4 +1,5 @@
 import json
+import datetime
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
@@ -13,12 +14,17 @@ class StatTracker:
     terminal_teleportations: int = 0
     scrap_collected: int = 0
     inventory: dict[str: int] | None = None
-    _time: float = 0.0
+    _play_time: float = 0.0
+    _date_time: str = None
 
     @property
-    def time(self) -> str:
-        mins = int(self._time // 60)
-        secs = int(self._time % 60)
+    def date_time(self) -> str:
+        return datetime.datetime.now().strftime("%d%m%y_%H%M%S")
+
+    @property
+    def play_time(self) -> str:
+        mins = int(self._play_time // 60)
+        secs = int(self._play_time % 60)
         return f"{mins:02d}:{secs:02d}"
 
     # конвертирует все поля dataclass в словарь
@@ -55,8 +61,8 @@ class StatTracker:
             return cls()
 
     # сохраняет в runs/run_{id}.json
-    def save_run(self, run_id: str | int) -> None:
-        path = Path("runs") / f"run_{run_id}.json"
+    def save_run(self) -> None:
+        path = Path("runs") / f"run_{self.date_time}.json"
         self.save(path)
 
     # загружает из runs/run_{id}.json

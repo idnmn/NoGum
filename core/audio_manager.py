@@ -2,6 +2,7 @@ import pygame
 import os
 import config
 from core.music_crossfade_system import CrossfadeMusicSystem
+from core import utils
 from models.game_state import GameState
 
 
@@ -33,7 +34,7 @@ class AudioManager:
 
     # грузим все звуки
     def _load_all_sounds(self) -> None:
-        sounds_dir = os.path.join(config.ASSETS_DIR, "sounds")
+        sounds_dir = utils.get_resource_path(os.path.join(config.ASSETS_DIR, "sounds"))
 
         sound_mapping = {
             "dash": "skills/dash.wav",
@@ -95,7 +96,7 @@ class AudioManager:
         }
 
         for sound, filename in sound_mapping.items():
-            path = os.path.join(sounds_dir, filename)
+            path = utils.get_resource_path(os.path.join(sounds_dir, filename))
 
             if os.path.exists(path):
                 try:
@@ -116,8 +117,8 @@ class AudioManager:
 
     # воспроизведение музыки
     def play_music(self, track_name: str) -> None:
-        music_path = os.path.join(config.ASSETS_DIR, "music", track_name + '.wav')
-        muted_path = os.path.join(config.ASSETS_DIR, "music", track_name + '_muted.wav')
+        music_path = utils.get_resource_path(os.path.join(config.ASSETS_DIR, "music", track_name + '.wav'))
+        muted_path = utils.get_resource_path(os.path.join(config.ASSETS_DIR, "music", track_name + '_muted.wav'))
 
         self.crossfade_system = CrossfadeMusicSystem(self._state, music_path, muted_path, 0.3)
 

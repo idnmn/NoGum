@@ -1,5 +1,5 @@
 import pygame
-
+from core import utils
 from menu.screen import MenuScreen
 from models.game_state import GameState
 from ui_elements.button import MenuButton
@@ -98,7 +98,7 @@ class OptionsScreen(MenuScreen):
         screen.blit(self._background_art, (0, 0))
         screen.blit(background, (0, 0))
 
-        font = pygame.font.Font("assets/QBF_font.ttf", 48)
+        font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 48)
         title = font.render("Options", True, (220, 220, 220))
         title_x = (self._screen_w - title.get_width()) // 2
         title_y = 150

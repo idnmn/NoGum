@@ -1,6 +1,6 @@
 import pygame
-
 import config
+from core import utils
 from menu.screen import MenuScreen
 from models.game_state import GameState
 from ui_elements.button import MenuButton
@@ -31,7 +31,7 @@ class HelpWindow(MenuScreen):
 
         self._keys_color = config.MENU_BUTTON_SELECTED_COLOR
         self._actions_color = config.MENU_BUTTON_ACTIVE_COLOR
-        self._tips_font = pygame.font.Font("assets/QBF_font.ttf", 28)
+        self._tips_font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 28)
         self._keys = [
             'W, A, S, D',
             'Right Shift',

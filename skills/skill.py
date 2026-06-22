@@ -32,7 +32,8 @@ class Skill():
         if self._timer <= 0 and not self.is_using and self.charges_count < self.max_charges:
             self.charges_count += 1
             self.is_ready = True
-            self._state.audio_manager.play_sound('skill_get_charge')
+            if self.max_charges != 1:
+                self._state.audio_manager.play_sound('skill_get_charge')
 
             if self.charges_count == self.max_charges:
                 self.reload()

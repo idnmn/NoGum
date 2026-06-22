@@ -1,9 +1,8 @@
-from collections.abc import Callable
-
 import pygame
-from pygame import Vector2
-
 import config
+from core import utils
+from pygame import Vector2
+from collections.abc import Callable
 from models.game_state import GameState
 
 
@@ -16,7 +15,7 @@ class Slider():
         self.x, self.y = x, y
         self.width = width
         self.height = 25
-        self._font = pygame.font.Font("assets/QBF_font.ttf", 20)
+        self._font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 20)
 
         self._value = default_value
         self.max_value = max_value

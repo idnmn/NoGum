@@ -1,5 +1,6 @@
 import pygame
 from pygame import Vector2
+from core import utils
 
 import config
 from models.game_state import GameState
@@ -22,7 +23,7 @@ class Button:
         self._action = action
         self._args = args
 
-        self._font = pygame.font.Font("assets/QBF_font.ttf", 28)
+        self._font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 28)
 
         self._clicked_timer = 0.0
 
@@ -92,8 +93,8 @@ class MenuButton(Button):
     def __init__(self, title: str, x: float, y: float, width: float, height: float,
                  is_active: bool, action: callable, args: list[object] = [], uncentred: bool = False) -> None:
         super().__init__(title, x, y, width, height, is_active, action, args)
-        self._font = pygame.font.Font("assets/QBF_font.ttf", 34)
-        self._selected_font = pygame.font.Font("assets/QBF_font.ttf", 38)
+        self._font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 34)
+        self._selected_font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 38)
 
         self.width = self._selected_font.render(self._title,True, (0, 0, 0)).get_width()
         self.interactive_hitbox = pygame.rect.Rect(x, y, self.width, height)

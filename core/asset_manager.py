@@ -1,6 +1,7 @@
 import pygame
 import os
 import config
+from core import utils
 
 # подгрузчик спрайтов
 class AssetManager:
@@ -13,7 +14,7 @@ class AssetManager:
         return cls._instance
 
     def load_sprite(self, filename: str, target_size: tuple[int, int] | None = None) -> pygame.Surface:
-        path = os.path.join(config.ASSETS_DIR, filename)
+        path = utils.get_resource_path(os.path.join("assets", filename))
         if path not in self._cache:
             try:
                 img = pygame.image.load(path).convert_alpha()

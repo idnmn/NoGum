@@ -2,6 +2,7 @@ import random
 import pygame
 import os
 import config
+from core import utils
 from collections import deque
 from models.game_state import GameState
 from models.room import Room
@@ -18,7 +19,7 @@ class LevelGenerator:
         else:
             # сканируем папку лайаутов на наличие новых лайаутов
             self.layout_pool = []
-            dir_path = config.LAYOUTS_DIR
+            dir_path = utils.get_resource_path(config.LAYOUTS_DIR)
 
             if os.path.exists(dir_path):
                 for file_name in os.listdir(dir_path):

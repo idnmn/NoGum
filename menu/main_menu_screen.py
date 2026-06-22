@@ -1,9 +1,7 @@
-from collections.abc import Callable
-
 import pygame
 import math
+from collections.abc import Callable
 from pygame import Vector2
-
 from menu.screen import MenuScreen
 from models.game_state import GameState
 from ui_elements.button import MenuButton
@@ -83,7 +81,7 @@ class MainMenuScreen(MenuScreen):
             width=0,
             height=35,
             is_active=True,
-            action=start_game,
+            action=print,
             uncentred=True
         )
 

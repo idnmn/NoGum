@@ -142,8 +142,8 @@ TERMINAL_CHANCE: int = 50 # шанс спавна терминала в комн
 MAX_ROOMS: int = 17
 MIN_ROOMS: int = 13
 # лимиты волн врагов в комнатах
-MAX_WAVES: int = 0
-MIN_WAVES: int = 0
+MAX_WAVES: int = 3
+MIN_WAVES: int = 1
 
 EXIT_COUNT = 3
 MAX_CHEST_COUNT = 4
@@ -168,7 +168,7 @@ DRAW_SLASH = False
 # Mini-Map
 MINIMAP_WIDTH: int = 400
 MINIMAP_HEIGHT: int = 400
-MINIMAP_EXPLORED: bool = True # отладочная функция для открытия всей миникарты сразу
+MINIMAP_EXPLORED: bool = False # отладочная функция для открытия всей миникарты сразу
 
 # Интерфейс терминалов
 TERMINAL_HUD_WIDTH: int = 1000

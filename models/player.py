@@ -59,7 +59,7 @@ class Player():
         self._tick_damage_cooldown = 3
 
         # счетчик обломков в кармане
-        self.scrap = 100
+        self.scrap = 0
 
         # другие предметы
         self.inventory = dict()
@@ -238,7 +238,7 @@ class Player():
     def death(self) -> None:
         self._state.reset_state()
 
-        self._state.stattracker.save_run(0)
+        self._state.stattracker.save_run()
 
     @property
     def hp_ratio(self) -> float:

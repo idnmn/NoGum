@@ -1,4 +1,5 @@
 from random import randint
+from core import utils
 from core.asset_manager import AssetManager
 from controllers.input_handler import InputHandler
 from core.audio_manager import AudioManager
@@ -54,6 +55,10 @@ class GameEngine:
         self._fx_layer = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
 
         pygame.display.set_caption(config.WINDOW_TITLE)
+
+        # иконка
+        icon = pygame.image.load(utils.get_resource_path('assets/icon.ico'))
+        pygame.display.set_icon(icon)
 
         # внутренний таймер перехода между сценами
         self._transition_timer = config.TRANSITION_TIME
@@ -149,7 +154,7 @@ class GameEngine:
 
                 # не на паузе
                 if not self._state.is_paused:
-                    self._state.stattracker._time += dt
+                    self._state.stattracker._play_time += dt
 
                     # hit-pause логика
                     if self._state.hit_pause_frames > 0:

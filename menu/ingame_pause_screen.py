@@ -1,6 +1,6 @@
 import pygame
 from pygame import Vector2
-
+from core import utils
 from menu.screen import MenuScreen
 from models.game_state import GameState
 from ui_elements.button import MenuButton, Button
@@ -143,7 +143,7 @@ class PauseScreen(MenuScreen):
         background.fill((30, 30, 30, 220))
         screen.blit(background, (0, 0))
 
-        font = pygame.font.Font("assets/QBF_font.ttf", 48)
+        font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 48)
         title = font.render("Pause", True, (220, 220, 220))
         title_x = (self._screen_w - title.get_width()) // 2
         title_y = 50
@@ -164,8 +164,8 @@ class PauseScreen(MenuScreen):
             text2 = 'При выходе данные забега'
             text2_2 = 'не сохранятся.'
             text3 = 'Всё равно выйти?'
-            font1 = pygame.font.Font("assets/QBF_font.ttf", 32)
-            font2 = pygame.font.Font("assets/QBF_font.ttf", 24)
+            font1 = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 32)
+            font2 = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 24)
             attension_msg_1 = font1.render(text1, True, (255, 100, 100))
             attension_msg_2 = font2.render(text2, True, (220, 220, 220))
             attension_msg_2_2 = font2.render(text2_2, True, (220, 220, 220))
