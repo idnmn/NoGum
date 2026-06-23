@@ -1,7 +1,3 @@
-import math
-import random
-import config
-from models.game_state import GameState
 from models.projectile import *
 
 
@@ -200,7 +196,7 @@ class Weapon:
 
         # анимация перезарядки
         else:
-            self.angle += 20
+            self.angle += 40
 
             # зеркалирование
             weapon_sprite = self.reload_sprite
@@ -217,6 +213,9 @@ class Weapon:
         wy = player_pos.y - rotated.get_height() / 2 + self.offset_y
 
         surface.blit(rotated, (wx, wy))
+
+    def update(self, dt: float) -> None:
+        pass
 
 
 # slasher
@@ -288,7 +287,7 @@ class Pointer(Weapon):
 
         origin = pygame.Vector2(state.player.rect.centerx, state.player.rect.centery)
         direction = state.player.mouse_world_pos - origin
-        angle = random.randint(-3, 3)
+        angle = random.uniform(-3, 3)
         spawn_pos = origin + direction.normalize() * offset_coef
         direction = direction.rotate(angle)
 
@@ -299,6 +298,7 @@ class Pointer(Weapon):
         vel = direction.normalize() * speed
 
         projectile = PointerProjectile(
+            state=self._state,
             x=spawn_pos.x, y=spawn_pos.y,
             size=self.param_1,
             velocity=vel,
@@ -345,6 +345,8 @@ class Tazer(Weapon):
         self.damage_coef = 1.0
         self.calculate_max()
 
+        self.reload_cooldown = 0.75
+
         self.clip_size = 12
         self.clip = 12
 
@@ -353,6 +355,11 @@ class Tazer(Weapon):
         self.can_upgrade = True
 
         self.is_autofired: bool = True
+
+        self.is_fire = False
+        self._burst_timer = 0.0
+        self._burst_time = 0.15
+        self._burst_counter = 0
 
     def upgrade(self):
         self.level += 1
@@ -371,12 +378,33 @@ class Tazer(Weapon):
 
         self._state.audio_manager.play_sound('weapon_upgrade')
 
-    def fire(self) -> None:
-        offset_coef = self.offset_x + (self._param_1 * self.coef_param_1) / 2
+    def update(self, dt: float) -> None:
+        if self.is_fire:
+            self._burst_timer -= dt
+
+            if self._burst_timer < self._burst_time / 2 and self._burst_counter == 1:
+                self.spawn_projectile()
+                self.clip -= 1
+
+            if self._burst_timer < 0:
+                self.spawn_projectile()
+                self.is_fire = False
+                self._burst_counter = 0
+                self.clip -= 1
+
+    def fire(self):
+        if not self.is_fire:
+            self.is_fire = True
+            self._burst_timer = self._burst_time
+            self.spawn_projectile()
+
+    def spawn_projectile(self) -> None:
+        self._burst_counter += 1
+        offset_coef = self.sprite.get_width() - self.offset_x * 2
 
         origin = pygame.Vector2(self._state.player.rect.centerx, self._state.player.rect.centery)
         direction = self._state.player.mouse_world_pos - origin
-        angle = random.randint(-3, 3)
+        angle = random.uniform(-1, 1)
         spawn_pos = origin + direction.normalize() * offset_coef
         direction = direction.rotate(angle)
 
@@ -387,10 +415,11 @@ class Tazer(Weapon):
         vel = direction.normalize() * speed
 
         projectile = TazerProjectile(
+            state=self._state,
             x=spawn_pos.x, y=spawn_pos.y,
             size=15,
             velocity=vel,
-            damage=self.damage,
+            damage=self.damage / 3,
             lifetime=10.0
         )
         self._state.projectile_system.projectiles.append(projectile)

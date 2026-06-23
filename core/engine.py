@@ -250,6 +250,9 @@ class GameEngine:
                         # обновляем камеру
                         self._state.camera.update(dt)
 
+                        # Обновляем оружие
+                        self._state.weapon.update(dt)
+
                         # обновляем снаряды
                         self._state.projectile_system.update(dt, self._state.enemy_system.enemies)
 
@@ -453,10 +456,10 @@ class GameEngine:
         self._state.stattracker.levels_completed += 1
 
         # увеличиваем тикающий урон по игроку
-        if self._state.player.tick_damage <= config.PLAYER_TICK_DAMAGE_LIMIT:
+        if self._state.player.tick_damage <= self._state.player.tick_damage_limit:
             self._state.player.tick_damage += 1.5
         else:
-            self._state.player.tick_damage = config.PLAYER_TICK_DAMAGE_LIMIT
+            self._state.player.tick_damage = self._state.player.tick_damage_limit
 
     def _load_sprites(self, assets_manager: AssetManager) -> None:
         # Уровень
@@ -615,7 +618,7 @@ class GameEngine:
         self._weapon_system = WeaponSystem(self._state)
 
         self._state.projectile_system = ProjectileSystem(self._state)
-        self._state.particle_system = ParticleSystem()
+        self._state.particle_system = ParticleSystem(self._state)
         self._state.collectable_system = CollectableSystem(self._state)
         self._state.enemy_system = EnemySystem()
         self._state.decals_system = DecalSystem()

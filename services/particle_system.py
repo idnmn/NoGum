@@ -9,6 +9,9 @@ import config
 import math
 from dataclasses import dataclass
 
+from models.game_state import GameState
+
+
 @dataclass
 class Particle:
     x: float; y: float; vx: float; vy: float
@@ -33,7 +36,8 @@ class Particle:
         surface.blit(draw_surface, self.rect)
 
 class ParticleSystem:
-    def __init__(self) -> None:
+    def __init__(self, state: GameState) -> None:
+        self._state = state
         self.particles: list[Particle] = []
 
         self._limit = 5000
@@ -187,6 +191,21 @@ class ParticleSystem:
                 size=5
             ))
 
+    def spawn_tazer_projectile(self, pos: tuple[float, float]) -> None:
+        for _ in range(random.randint(2, 3)):
+            rand_x = random.uniform(-5, 5)
+            rand_y = random.uniform(-5, 5)
+
+            self.particles.append(Particle(
+                x=pos[0] + rand_x, y=pos[1] + rand_y,
+                vx=0, vy=0,
+                lifetime=0.1,
+                max_lifetime=0.1,
+                color=self._state.weapon.signature_color,
+                size=random.uniform(1, 2),
+                is_square=True
+            ))
+
     def update(self, dt: float) -> None:
         for p in self.particles:
             p.x += p.vx * dt
@@ -199,5 +218,4 @@ class ParticleSystem:
 
         while len(self.particles) > self._limit:
             self.particles.pop(0)
-
 
