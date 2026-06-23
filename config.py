@@ -14,6 +14,8 @@ PRINT_FPS: bool = True # выводит счетчик FPS в реальном �
 # --- ГЕЙМПЛЕЙНЫЕ КОНСТАНТЫ ---
 PLAYER_TILT_MAX_ANGLE: float = 20.0   # Максимальный угол наклона в градусах
 PLAYER_TILT_SMOOTHING: float = 40.0    # Скорость плавного перехода к целевому углу
+FRICTION: float = 20.0
+SKILLS_COOLDOWN_COEF_LIMIT = 0.75
 
 # Рывок
 STANDARD_DASH_SPEED: float = 2000.0  # Скорость во время рывка
@@ -27,7 +29,6 @@ SLASH_DAMAGE: float = 10.0
 SLASH_STUN_TIME: float = 0.3
 SLASH_ATTACK_TIME: float = 0.06
 SLASH_COOLDOWN: float = 5.0
-
 
 # переход между этажами
 TRANSITION_TIME: float = 0.5
