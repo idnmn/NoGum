@@ -204,8 +204,13 @@ class Player():
             self.body.vy = 0.0
 
         # обновляем позицию
-        self.body.rect.x += self.body.vx * dt
-        self.body.rect.y += self.body.vy * dt
+        vel = self.body.velocity.magnitude()
+        if vel * dt > config.TILE_SIZE / 2:
+            self._state.collision_system.sub_step_moving(self.body, dt, vel)
+        else:
+            self.body.rect.x += self.body.vx * dt
+            self.body.rect.y += self.body.vy * dt
+
 
         # рисуем следы
         if self._step_timer <= 0:

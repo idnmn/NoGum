@@ -247,7 +247,7 @@ class StandardDash(Skill):
         self._state.player.ignore_enemy = False
 
     def use(self, mouse_pos: Vector2) -> None:
-        if self._state.player.body.dx != 0 or self._state.player.body.dy != 0:
+        if self._state.player.body.ax != 0 or self._state.player.body.ay != 0:
             self.dx, self.dy = Vector2(self._state.player.body.ax, self._state.player.body.ay).normalize()
             super().use(mouse_pos)
 

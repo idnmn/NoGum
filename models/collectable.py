@@ -90,7 +90,7 @@ class EnergyCell(Collectable):
     def __init__(self, x: float, y: float, size: int, lifetime: float, max_speed: float, collect_range: float,
                  acceleration: float = 0.0, magnet: bool = True, vx: float = 0.0, vy: float = 0.0) -> None:
         super().__init__(x, y, size * 2, lifetime, max_speed, collect_range, acceleration, magnet, vx, vy)
-        self._scale = random.randint(3, 8)
+        self._scale = random.randint(3, 6)
 
     def render(self, surface: pygame.Surface) -> None:
         pygame.draw.circle(surface, (255, 215, 80), self.rect.center,
@@ -208,8 +208,8 @@ class Cassette(BonusItem):
 
         state.player.max_speed *= 1.05
 
-        if state.player.max_speed >= config.PLAYER_MAX_SPEED_LIMIT:
-            state.player.max_speed = config.PLAYER_MAX_SPEED_LIMIT
+        if state.player.max_speed >= state.player.max_speed_limit:
+            state.player.max_speed = state.player.max_speed_limit
 
             if (Cassette, 'cassette') in state.drop_pool:
                 state.drop_pool.remove((Cassette, 'cassette'))
@@ -229,8 +229,8 @@ class Floppy(BonusItem):
 
         state.player.weapon.damage_coef += 0.15
 
-        if state.player.weapon.damage_coef >= config.DAMAGE_COEF_LIMIT:
-            state.player.weapon.damage_coef = config.DAMAGE_COEF_LIMIT
+        if state.player.weapon.damage_coef >= state.player.damage_coef_limit:
+            state.player.weapon.damage_coef = state.player.damage_coef_limit
 
             if (Floppy, 'floppy') in state.drop_pool:
                 state.drop_pool.remove((Floppy, 'floppy'))
@@ -252,8 +252,8 @@ class Monster(BonusItem):
         state.player.max_hp += 10
         state.player.hp += 10
 
-        if state.player.max_hp >= config.PLAYER_MAX_HP_LIMIT:
-            state.player.max_hp = config.PLAYER_MAX_HP_LIMIT
+        if state.player.max_hp >= state.player.max_hp_limit:
+            state.player.max_hp = state.player.max_hp_limit
             state.player.hp = state.player.max_hp
 
             if (Monster, 'monster') in state.drop_pool:
@@ -306,8 +306,8 @@ class MonsterWhite(BonusItem):
 
         state.player.tick_damage_coef -= 0.05
 
-        if state.player.tick_damage_coef <= config.PLAYER_TICK_DAMAGE_COEF_LIMIT:
-            state.player.tick_damage_coef = config.PLAYER_TICK_DAMAGE_COEF_LIMIT
+        if state.player.tick_damage_coef <= state.player.tick_damage_coef_limit:
+            state.player.tick_damage_coef = state.player.tick_damage_coef_limit
 
             if (MonsterWhite, 'monsterwhite') in state.drop_pool:
                 state.drop_pool.remove((MonsterWhite, 'monsterwhite'))
@@ -360,7 +360,7 @@ class Clock(BonusItem):
         state.player.first_skill.cool_down_coef -= 0.05
         state.player.second_skill.cool_down_coef -= 0.05
 
-        if state.player.first_skill.cool_down_coef < config.SKILLS_COOLDOWN_COEF_LIMIT:
+        if state.player.first_skill.cool_down_coef < state.player.max_hp_limit:
             state.player.first_skill.cool_down_coef = config.SKILLS_COOLDOWN_COEF_LIMIT
             state.player.second_skill.cool_down_coef = config.SKILLS_COOLDOWN_COEF_LIMIT
 

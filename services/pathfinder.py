@@ -109,6 +109,10 @@ class Pathfinder():
                 # проверка на уже посещённую клетку
                 if (nx, ny) in closed_set:
                     continue
+                # отсекаем диагональные маршруты через стены
+                cx, cy = next_cell.x + dx, next_cell.y + dy
+                if 0 not in (dx, dy) and (layout[cy][cx - dx] == '*' and layout[cy - dy][cx] == '*'):
+                    continue
 
                 # проверка на дубликат с лучшим весом
                 new_g = next_cell.weight + (14 if abs(dx) + abs(dy) == 2 else 10)

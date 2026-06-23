@@ -301,8 +301,12 @@ class BookWorm(Enemy):
                     self._damage_timer = self.damage_cooldown
 
             # обновляем позицию
-            self.body.rect.x += self.body.vx * dt
-            self.body.rect.y += self.body.vy * dt
+            vel = self.body.velocity.magnitude()
+            if vel * dt > config.TILE_SIZE / 2:
+                self._state.collision_system.sub_step_moving(self.body, dt, vel)
+            else:
+                self.body.rect.x += self.body.vx * dt
+                self.body.rect.y += self.body.vy * dt
 
             self.attack_hitbox.x = self.body.rect.x - 1
             self.attack_hitbox.y = self.body.rect.y - 1
@@ -617,11 +621,12 @@ class BookWormMommy(Enemy):
                     self._damage_timer = self.damage_cooldown
 
             # обновляем позицию
-            self.body.rect.x += self.body.vx * dt
-            self.body.rect.y += self.body.vy * dt
-
-            self.attack_hitbox.x = self.body.rect.x - 1
-            self.attack_hitbox.y = self.body.rect.y - 1
+            vel = self.body.velocity.magnitude()
+            if vel * dt > config.TILE_SIZE / 2:
+                self._state.collision_system.sub_step_moving(self.body, dt, vel)
+            else:
+                self.body.rect.x += self.body.vx * dt
+                self.body.rect.y += self.body.vy * dt
         else:
             if self._state_timer <= 0:
                 self.state = "chase"

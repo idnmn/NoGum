@@ -1,4 +1,6 @@
 from pygame import Vector2
+import math
+import config
 from models.collidable import CollisionBody
 from models.game_state import GameState
 from models.wall import Wall
@@ -27,14 +29,19 @@ class CollisionSystem:
                     mover_rect.right = obs_rect.left
                 else:
                     mover_rect.left = obs_rect.right
-                mover.vx = 0.0  # гасим скорость
+                mover.ax = 0.0  # гасим скорость
+                mover.vx = 0.0
+
             else:
                 # вертикальное столкновение
                 if mover_rect.centery < obs_rect.centery:
                     mover_rect.bottom = obs_rect.top
                 else:
                     mover_rect.top = obs_rect.bottom
-                mover.vy = 0.0  # аналогично гасим скорость
+                mover.ay = 0.0  # аналогично гасим скорость
+                mover.vy = 0.0
+
+
 
     def resolve_movers(self, movers: list[CollisionBody]) -> None:
         for i, mover_1 in enumerate(movers):
@@ -77,3 +84,19 @@ class CollisionSystem:
                         rect_1.top, rect_2.bottom = rect_2.bottom, rect_1.top
                     mover_1.vy = 0.0
                     mover_2.vy = 0.0
+
+
+    def sub_step_moving(self, mover: CollisionBody, dt: float, vel: float) -> None:
+        steps = max(1, math.ceil(vel * dt / (config.TILE_SIZE / 2)))
+        sub_dt = dt / steps
+
+        for _ in range(steps):
+            # Применяем движение частями
+            mover.rect.x += mover.vx * sub_dt
+            mover.rect.y += mover.vy * sub_dt
+
+            # Разрешаем коллизии на каждом подшаге
+            self.resolve_obstacles(mover, self._state.room_manager.active_room.walls)
+            if self._state.room_manager.active_room.terminal:
+                self._state.collision_system.resolve_obstacles(mover,
+                                                               [self._state.room_manager.active_room.terminal])
