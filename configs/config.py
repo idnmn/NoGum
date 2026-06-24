@@ -17,19 +17,6 @@ PLAYER_TILT_SMOOTHING: float = 40.0    # Скорость плавного пе�
 FRICTION: float = 20.0
 SKILLS_COOLDOWN_COEF_LIMIT = 0.75
 
-# Рывок
-STANDARD_DASH_SPEED: float = 2000.0  # Скорость во время рывка
-STANDARD_DASH_DURATION: float = 0.15  # Длительность
-STANDARD_DASH_COOLDOWN: float = 3.0  # Кд между рывками
-
-# Слэш
-SLASH_RADIUS: float = 150.0
-SLASH_ANGLE_SPAN: int = 120
-SLASH_DAMAGE: float = 10.0
-SLASH_STUN_TIME: float = 0.3
-SLASH_ATTACK_TIME: float = 0.06
-SLASH_COOLDOWN: float = 5.0
-
 # переход между этажами
 TRANSITION_TIME: float = 0.5
 
@@ -40,13 +27,8 @@ MAX_POWER_LIMIT: int = 1000
 # --- ЦВЕТА ---
 BACKGROUND_COLOR: tuple[int, int, int] = (10, 10, 10)
 
-# индикатор рывка
-UI_DASH_COLOR: tuple[int, int, int] = (115, 245, 155)
-UI_DASH_BG_COLOR: tuple[int, int, int] = (50, 100, 70)
-
-# индикатор слэша
-UI_SLASH_COLOR: tuple[int, int, int] = (115, 190, 185)
-UI_SLASH_BG_COLOR: tuple[int, int, int] = (50, 85, 100)
+# цвета статусов
+ELECTRICITY_COLOR: tuple[int, int, int] = (155, 240, 255)
 
 UI_HP_COLOR: tuple[int, int, int] = (255, 255, 40)
 UI_HP_BG_COLOR: tuple[int, int, int] = (45, 45, 20)

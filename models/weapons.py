@@ -41,7 +41,7 @@ class Weapon:
         self.name_param_2 = ''
         self._param_2 = 0.0
         self.min_param_2 = 0.0
-        self.max_param_1 = 0.0
+        self.max_param_2 = 0.0
         self.coef_param_2 = 0.0
 
         self.name_param_3 = ''
@@ -168,11 +168,15 @@ class Weapon:
                 self._param_1 = self.power / (self._param_3 * self._param_2)
 
     def calculate_max(self) -> None:
-        self.max_param_1 = round(self.power / (self.min_param_2 * self.min_param_3), 0)
-        self.max_param_2 = round(self.power / (self.min_param_1 * self.min_param_3), 0)
+        self.max_param_1 = round(self.power / (self.min_param_2 * self.min_param_3), 1)
+        self.max_param_2 = round(self.power / (self.min_param_1 * self.min_param_3), 1)
         self.max_param_3 = round(self.power / (self.min_param_1 * self.min_param_2), 1)
 
         self._param_2 = round(self.power / (self._param_1 * self._param_3), 1)
+
+    @property
+    def fire_rate(self) -> float:
+        pass
 
     # отрисовка
     def render(self, surface: pygame.Surface,
@@ -274,6 +278,7 @@ class Pointer(Weapon):
         self.calculate_max()
 
         if self.power >= config.MAX_POWER_LIMIT:
+            self.power = config.MAX_POWER_LIMIT
             self.can_upgrade = False
 
         self._state.audio_manager.play_sound('weapon_upgrade')
@@ -308,6 +313,10 @@ class Pointer(Weapon):
         self._state.projectile_system.projectiles.append(projectile)
         self._state.audio_manager.play_sound('pointer_shot')
 
+    @property
+    def fire_rate(self) -> float:
+        return self._param_2
+
 
 # electron
 class Tazer(Weapon):
@@ -318,16 +327,16 @@ class Tazer(Weapon):
 
         # балансировочные переменные
         """балансировочная формула:
-            power = const; power = shock * fire_rate * speed; damage = shock * speed
+            power = const; power * shock = fire_rate * speed; damage = speed/shock; shock = fire_rate * speed / power 
             +shock = -fire_rate
             +speed = -shock
             +fire_rate = -speed"""
         # ключевые параметры из трех переменных
         self.name_param_1 = 'Shock'
-        self._param_1 = 2.0  # ms
+        self._param_1 = 2.0  # electrified points
         self.min_param_1 = 2.0
         self.max_param_1 = 0.0
-        self.coef_param_1 = 0.003
+        self.coef_param_1 = 1.6
 
         self.name_param_2 = 'Fire rate'
         self._param_2 = 1.0
@@ -342,7 +351,7 @@ class Tazer(Weapon):
         self.coef_param_3 = 100.0
 
         self.power = 25
-        self.damage_coef = 1.0
+        self.damage_coef = 0.6
         self.calculate_max()
 
         self.reload_cooldown = 0.75
@@ -354,7 +363,7 @@ class Tazer(Weapon):
         self.upgrade_cost = 10
         self.can_upgrade = True
 
-        self.is_autofired: bool = True
+        self.is_autofired: bool = False
 
         self.is_fire = False
         self._burst_timer = 0.0
@@ -374,6 +383,7 @@ class Tazer(Weapon):
         self.calculate_max()
 
         if self.power >= config.MAX_POWER_LIMIT:
+            self.power = config.MAX_POWER_LIMIT
             self.can_upgrade = False
 
         self._state.audio_manager.play_sound('weapon_upgrade')
@@ -392,15 +402,26 @@ class Tazer(Weapon):
                 self._burst_counter = 0
                 self.clip -= 1
 
-    def fire(self):
+    def calculate_max(self) -> None:
+        self.max_param_1 = round(self.power / (self.min_param_2 * self.min_param_3), 1)
+        self.max_param_2 = round(self.power / (self.min_param_1 * self.min_param_3), 1)
+        self.max_param_3 = round(self.power / (self.min_param_1 * self.min_param_2), 1)
+
+        self._param_3 = round(self.power / (self._param_1 * self._param_2), 1)
+
+    def fire(self, _: GameState) -> None:
         if not self.is_fire:
             self.is_fire = True
             self._burst_timer = self._burst_time
             self.spawn_projectile()
 
+    @property
+    def fire_rate(self) -> float:
+        return self._param_2
+
     def spawn_projectile(self) -> None:
         self._burst_counter += 1
-        offset_coef = self.sprite.get_width() - self.offset_x * 2
+        offset_coef = self.sprite.get_width() - self.offset_x * 3
 
         origin = pygame.Vector2(self._state.player.rect.centerx, self._state.player.rect.centery)
         direction = self._state.player.mouse_world_pos - origin
@@ -423,11 +444,15 @@ class Tazer(Weapon):
             lifetime=10.0
         )
         self._state.projectile_system.projectiles.append(projectile)
-        self._state.audio_manager.play_sound('pointer_shot')
+        self._state.audio_manager.play_sound('tazer_shot')
 
     @property
     def damage(self) -> float:
-        return self._param_3 * self._param_1 * self.damage_coef
+        return self.power / self._param_1 / self._param_2 * self.damage_coef
+
+    @property
+    def electrified_points(self) -> float:
+        return (self._param_1) * self.coef_param_1
 
 
 # tank

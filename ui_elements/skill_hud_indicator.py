@@ -1,6 +1,6 @@
 import pygame
 
-import config
+from configs import config
 from skills.skills import Skill
 
 

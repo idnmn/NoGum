@@ -1,5 +1,5 @@
 import pygame
-import config
+from configs import config
 from core import utils
 from menu.screen import MenuScreen
 from models.game_state import GameState

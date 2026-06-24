@@ -1,5 +1,5 @@
 import pygame
-import config
+from configs import config
 from models.game_state import GameState
 
 # Обработчик входов
@@ -56,14 +56,13 @@ class InputHandler:
                 elif event.key == pygame.K_e and not self._state.is_paused:
                     self._interactive_requested = True
 
-
             # отжатия
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_TAB:  # миникарта
                     self._state.is_minimap_visible = False
 
             # нажатия мыши
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not self._state.weapon_fired:
                 self._shoot_requested = True
                 self._state.weapon_fired = True
 

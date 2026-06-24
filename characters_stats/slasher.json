@@ -6,7 +6,7 @@
   "acceleration": 4000,
   "friction": 20,
 
-  "max_speed_limit": 900,
+  "max_speed_limit": 800,
   "max_hp_limit": 300,
   "damage_coef_limit": 3.0,
   "tick_damage_limit": 50,

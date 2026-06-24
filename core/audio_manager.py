@@ -1,6 +1,6 @@
 import pygame
 import os
-import config
+from configs import config
 from core.music_crossfade_system import CrossfadeMusicSystem
 from core import utils
 from models.game_state import GameState
@@ -42,6 +42,9 @@ class AudioManager:
             'slash': 'skills/slash.wav',
             'skill_reloaded': 'skills/reloaded.wav',
             'skill_get_charge': 'skills/get_charge.wav',
+            'zap': 'skills/zap.wav',
+            'zap_reloaded': 'skills/zap_reloaded.wav',
+            'magnet_hit': 'skills/magnet_hit.wav',
 
             "mommy_explode": "enemies/mommy_explode.wav",
             "mommy_pre_explode": "enemies/mommy_pre_explode.wav",
@@ -92,7 +95,8 @@ class AudioManager:
 
             'pointer_shot': 'weapons/pointer/shot.wav',
             'pointer_reload': 'weapons/pointer/reload.wav',
-            'pointer_reload_end': 'weapons/pointer/reload_end.wav'
+            'pointer_reload_end': 'weapons/pointer/reload_end.wav',
+            'tazer_shot': 'weapons/tazer/shot.wav',
         }
 
         for sound, filename in sound_mapping.items():

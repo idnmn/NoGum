@@ -1,6 +1,6 @@
 import pygame
 import math
-import config
+from configs import config
 import random
 from pygame import Vector2
 from models.collidable import CollisionBody
@@ -21,6 +21,10 @@ class Projectile():
         self.damage = damage
         self.lifetime = lifetime
         self.is_active = True
+        self.penetrating_count = 0
+        self.penetrating_counter = 0
+
+        self.hitted_enemies = set()
 
     def update(self, dt: float) -> None:
         self.rect.x += self.velocity.x * dt
@@ -46,6 +50,7 @@ class Projectile():
         self._state.camera.shake(config.IMPACT_SHAKE_AMOUNT * ratio, config.IMPACT_SHAKE_DURATION)
 
         self._state.audio_manager.play_sound(f'wall_impact_{random.randint(1, 4)}', ratio)
+
 
 class PointerProjectile(Projectile):
     def __init__(self, state: GameState, x: float, y: float, size: int, velocity: pygame.Vector2 | None = None,
@@ -98,3 +103,37 @@ class TazerProjectile(Projectile):
     def enemy_impact(self, pos: tuple[float, float], enemy: Enemy) -> None:
         self._state.particle_system.spawn_enemy_impact(pos, color=self._state.weapon.signature_color)
         enemy.take_damage(self.damage)
+        enemy.status_manager.electrified += self._state.weapon.electrified_points
+
+
+class ZapProjectile(Projectile):
+    def __init__(self, state: GameState, x: float, y: float, size: int, velocity: pygame.Vector2 | None = None,
+                 damage: float = 0.0, lifetime: float = 0.0, stun_time = 0, electrified = 0) -> None:
+        super().__init__(state, x, y, size, velocity, damage, lifetime)
+        self.body = CollisionBody(
+            rect=pygame.Rect((x - size / 2), (y - size / 2), size, size),
+            layer="dynamic",
+            tags={"projectile", "player_owner"}
+        )
+        self.penetrating_count = 100
+
+        self.electrified = electrified
+        self.stun_time = stun_time
+
+    def update(self, dt: float) -> None:
+        self.rect.x += self.velocity.x * dt
+        self.rect.y += self.velocity.y * dt
+
+        self.lifetime -= dt
+
+        self._state.particle_system.spawn_zap_projectile_trail(self.body.center, self.velocity.normalize())
+
+    def render(self, surface: pygame.Surface) -> None:
+        self._state.particle_system.spawn_zap_projectile(self.body.center, self.velocity.normalize())
+
+    def enemy_impact(self, pos: tuple[float, float], enemy: Enemy) -> None:
+        self._state.particle_system.spawn_enemy_impact(pos, color=self._state.weapon.signature_color)
+        enemy.status_manager.electrified += self.electrified
+        enemy._state_timer = self.stun_time
+        enemy.state = 'stun'
+

@@ -1,12 +1,9 @@
-import math
-import random
-
-import config
 from models.collectable import *
 from models.collidable import CollisionBody
 from models.decal import Decal
 from models.game_state import GameState
 from services.pathfinder import Pathfinder
+from services.status_manager import StatusManager
 
 
 class Enemy():
@@ -19,17 +16,21 @@ class Enemy():
         )
         self._state = state
 
+        self.status_manager = StatusManager(state, self)
+
         self.attack_hitbox = pygame.Rect(
                 self.body.rect.x - 1,
                 self.body.rect.y - 1,
                 self.body.rect.width + 2,
                 self.body.rect.height + 2
             )
-        self.sprite = pygame.Surface((self.body.rect.width, self.body.rect.height))
+        self._source_sprite = pygame.Surface((self.body.rect.width, self.body.rect.height))
+        self.sprite = self._source_sprite.copy()
         self.mask = pygame.mask.from_surface(self.sprite)
 
         self.type = enemy_type
         self.hp = 0.0
+        self.max_hp = 0.0
         self.defence = 0.0
         self.max_speed = 0.0
         self.attack_damage = 0.0
@@ -61,6 +62,9 @@ class Enemy():
         if self.slash_marked and random.randint(0, 100) < 20:
             self._state.particle_system.spawn_slash_marked(self.rect.center, max(self.rect.width, self.rect.height))
 
+        # обновление статусов
+        self.status_manager.update(dt)
+
     def update_timers(self, dt: float) -> None:
         if self._repath_timer > 0:
             self._repath_timer -= dt
@@ -77,8 +81,9 @@ class Enemy():
         if self._visual_damage_timer > 0:
             self._visual_damage_timer -= dt
 
-    def take_damage(self, amount: float) -> bool:
-        damage = max(0, amount - self.defence)
+    def take_damage(self, amount: float, no_defence: bool=False) -> bool:
+        if not no_defence: damage = max(0.0, amount - self.defence)
+        else: damage = amount
         self.hp -= damage
 
         if self.hp <= 0:
@@ -91,7 +96,11 @@ class Enemy():
         return damage
 
     def render(self, surface: pygame.Surface) -> None:
-        pygame.draw.rect(surface, (255, 255, 255), self.body.rect)
+        bx, by = self.body.rect.x, self.body.rect.y - (self.body.rect.height - self.sprite.get_height() + 5)
+        bw, bh = self.body.rect.width, 3
+        if self.hp != self.max_hp:
+            pygame.draw.rect(surface, (30, 12, 12), (bx, by, bw, bh))
+            pygame.draw.rect(surface, (255, 100, 100), (bx, by, bw * (self.hp / self.max_hp), bh))
 
     def drop(self):
         pass
@@ -112,6 +121,7 @@ class BookWorm(Enemy):
         # определяем статы
         self.level = level
         self.hp = 20 * level
+        self.max_hp = 20 * level
         self.max_hp = 20 * level
         self.max_speed = 500
         self.defence = 0.0
@@ -137,12 +147,13 @@ class BookWorm(Enemy):
 
         self._repath_cooldown = 0.5
 
-    def take_damage(self, amount: float) -> None:
-        super().take_damage(amount)
+    def take_damage(self, amount: float, no_defence: bool = False) -> None:
+        super().take_damage(amount, no_defence)
 
         self._state.audio_manager.play_sound(f'bookworm_damaged_{random.randint(1, 4)}')
 
     def render(self, surface: pygame.Surface) -> None:
+        super().render(surface)
         # цветовая индикация состояния
         if self.state == "charge":
             color = (2, 0, 0, 0)  # Подготовка
@@ -184,7 +195,10 @@ class BookWorm(Enemy):
 
         # Вектор и дистанция до игрока
         dist_to_player = Vector2(self.rect.center).distance_to(self._state.player.rect.center)
-        dir_to_player = (pygame.Vector2(self._state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
+        if dist_to_player != 0:
+            dir_to_player = (pygame.Vector2(self._state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
+        else:
+            dir_to_player = Vector2(0, 0)
 
         # Обрабатываем логику по состояниям
         if not self.state == 'stun':
@@ -280,7 +294,7 @@ class BookWorm(Enemy):
 
                 # сбрасываем рывок при контакте или по истечению таймера
                 if self.attack_hitbox.colliderect(self._state.player.rect) or self._state_timer <= 0:
-                    if self.attack_hitbox.colliderect(self._state.player.rect):
+                    if self.attack_hitbox.colliderect(self._state.player.rect) and not self._state.player.ignore_enemy:
                         self._state.player.take_damage(self.attack_damage)
                         self._damage_timer = self.damage_cooldown
 
@@ -295,7 +309,8 @@ class BookWorm(Enemy):
                     self._state_timer = self.between_dash_cooldown
 
             # контактный урон
-            if self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase":
+            if (self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase"
+                    and not  self._state.player.ignore_enemy):
                 if self._damage_timer <= 0:
                     self._state.player.take_damage(self.contact_damage)
                     self._damage_timer = self.damage_cooldown
@@ -444,6 +459,7 @@ class BookWormMommy(Enemy):
         self._shake_amount = 0.0
 
     def render(self, surface: pygame.Surface) -> None:
+        super().render(surface)
         # зеркалирование
         if self.body.vx < 0 and self._facing_right:
             self.sprite = pygame.transform.flip(self.sprite, True, False)
@@ -454,7 +470,7 @@ class BookWormMommy(Enemy):
             self._source_sprite = pygame.transform.flip(self._source_sprite, True, False)
             self._facing_right = True
 
-        sprite = self.sprite.copy()
+        sprite = self.sprite.copy().convert_alpha()
         max_offset = 10 * self._shake_amount
         offset_x = random.uniform(-max_offset, max_offset)
         offset_y = random.uniform(-max_offset, max_offset)
@@ -474,8 +490,12 @@ class BookWormMommy(Enemy):
         if self._visual_damage_timer > 0 and self.state != 'death':
             sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)
 
+        # for color in self.status_manager.get_status_colors():
+        #     print(color)
+        #     sprite.fill(color, None, pygame.BLEND_RGBA_MULT)
 
         surface.blit(sprite, (self.rect.x + offset_x, self.rect.y + offset_y))
+        self.sprite = self._source_sprite.copy().convert_alpha()
 
     def update(self, dt: float, surface: pygame.Surface) -> None:
         super().update(dt, surface)
@@ -495,7 +515,10 @@ class BookWormMommy(Enemy):
 
         # Вектор и дистанция до игрока
         dist_to_player = Vector2(self.rect.center).distance_to(self._state.player.rect.center)
-        dir_to_player = (pygame.Vector2(self._state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
+        if dist_to_player != 0:
+            dir_to_player = (pygame.Vector2(self._state.player.rect.center) - pygame.Vector2(self.rect.center)).normalize()
+        else:
+            dir_to_player = Vector2(0, 0)
 
         # Обрабатываем логику по состояниям
         if not self.state == 'stun':
@@ -589,7 +612,8 @@ class BookWormMommy(Enemy):
                                                              (220, 220, 220), self.rect.height)
 
                 # сбрасываем рывок при контакте или по истечению таймера
-                if self.attack_hitbox.colliderect(self._state.player.rect) or self._state_timer <= 0:
+                if (self.attack_hitbox.colliderect(self._state.player.rect) or self._state_timer <= 0
+                        and not self._state.player.ignore_enemy):
                     if self.attack_hitbox.colliderect(self._state.player.rect):
                         self._state.player.take_damage(self.attack_damage)
                         self._damage_timer = self.damage_cooldown
@@ -615,7 +639,7 @@ class BookWormMommy(Enemy):
                     self.is_alive = False
 
             # контактный урон
-            if self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase":
+            if (self.attack_hitbox.colliderect(self._state.player.rect) and self.state == "chase"):
                 if self._damage_timer <= 0:
                     self._state.player.take_damage(self.contact_damage)
                     self._damage_timer = self.damage_cooldown
@@ -627,13 +651,18 @@ class BookWormMommy(Enemy):
             else:
                 self.body.rect.x += self.body.vx * dt
                 self.body.rect.y += self.body.vy * dt
+
+                self.attack_hitbox.x = self.body.rect.x - 1
+                self.attack_hitbox.y = self.body.rect.y - 1
         else:
             if self._state_timer <= 0:
                 self.state = "chase"
 
     # переопределённый метод получения урона
-    def take_damage(self, amount: float) -> bool:
-        damage = max(0, amount - self.defence)
+    def take_damage(self, amount: float, no_defence: bool = False) -> bool:
+        if not no_defence: damage = max(0.0, amount - self.defence)
+        else: damage = amount
+        if damage: self._visual_damage_timer = self._visual_damage_cooldown
         self.hp -= damage
         self._state.audio_manager.play_sound(f'bookworm_damaged_{random.randint(1, 4)}', 1.2)
         if self.hp <= 0 and self.state != 'death':

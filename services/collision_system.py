@@ -1,6 +1,6 @@
 from pygame import Vector2
 import math
-import config
+from configs import config
 from models.collidable import CollisionBody
 from models.game_state import GameState
 from models.wall import Wall
@@ -9,6 +9,7 @@ from models.wall import Wall
 class CollisionSystem:
     def __init__(self, state: GameState) -> None:
         self.impulses: dict[tuple[int, int], Vector2] = dict()
+        self.collided_with_player = []
         self._state = state
 
     def resolve_obstacles(self, mover: CollisionBody, obstacles: list[Wall]) -> None:
@@ -42,17 +43,34 @@ class CollisionSystem:
                 mover.vy = 0.0
 
 
-
     def resolve_movers(self, movers: list[CollisionBody]) -> None:
-        for i, mover_1 in enumerate(movers):
+        for i, _mover_1 in enumerate(movers):
+            mover_1 = _mover_1.body
             if "terminal" in mover_1.tags:
                 continue
 
-            for mover_2 in movers[i+1:]:
+            for _mover_2 in movers[i+1:]:
+                mover_2 = _mover_2.body
                 if "terminal" in mover_2.tags:
                     continue
 
                 if "player" in mover_1.tags or "player" in mover_2.tags:
+                    enemy = _mover_1 if "player" in mover_2.tags else _mover_2
+                    if mover_1.rect.colliderect(mover_2.rect) and enemy not in self.collided_with_player:
+                        self._state.player.on_enemy_collide(enemy)
+                        self.collided_with_player.append(enemy)
+                    elif not mover_1.rect.colliderect(mover_2.rect) and enemy in self.collided_with_player:
+                        self.collided_with_player.remove(enemy)
+
+                    if enemy not in self.collided_with_player:
+                        # проверяем хитбоксы скиллов
+                        if self._state.player.first_skill.hitbox.colliderect(enemy.rect):
+                            self._state.player.first_skill.on_enemy_collide(enemy)
+                            self.collided_with_player.append(enemy)
+                        if self._state.player.second_skill.hitbox.colliderect(enemy.rect):
+                            self._state.player.second_skill.on_enemy_collide(enemy)
+                            self.collided_with_player.append(enemy)
+
                     if self._state.player.ignore_enemy:
                         continue
 

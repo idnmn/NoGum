@@ -1,18 +1,18 @@
 {
-  "max_speed": 800,
+  "max_speed": 750,
   "max_hp": 80,
   "tick_damage": 3,
-  "tick_damage_time": 5,
-  "acceleration": 4000,
+  "tick_damage_time": 3,
+  "acceleration": 9000,
   "friction": 20,
 
-  "max_speed_limit": 1100,
+  "max_speed_limit": 1000,
   "max_hp_limit": 200,
   "damage_coef_limit": 3.0,
   "tick_damage_limit": 50,
   "tick_damage_coef_limit": 0.75,
 
-  "first_skill": "standart_dash",
-  "second_skill": "slash",
+  "first_skill": "magnet_dash",
+  "second_skill": "zap",
   "weapon": "tazer"
 }

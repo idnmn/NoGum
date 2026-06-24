@@ -1,6 +1,6 @@
 import pygame
 import os
-import config
+from configs import config
 from core import utils
 
 # подгрузчик спрайтов

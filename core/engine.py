@@ -23,7 +23,7 @@ from services.terminal_system import TerminalSystem
 from services.weapon_system import WeaponSystem
 from services.projectile_system import ProjectileSystem
 from services.particle_system import ParticleSystem
-from skills.skills import StandardDash, Slash
+from skills.skills import StandardDash, Slash, MagnetDash, Zap
 from views.renderer import Renderer
 from views.ui_renderer import UIRenderer
 from views.map_renderer import MinimapRenderer
@@ -43,7 +43,7 @@ class GameEngine:
 
         # инициализируем игру
         self._state = GameState()
-        self._renderer = None
+        self._state.renderer = None
         self._state.clock = pygame.time.Clock()
         self._state.audio_manager = AudioManager(self._state)
         self._state.audio_manager.play_music('astra')
@@ -83,6 +83,8 @@ class GameEngine:
         self._state.skills_pool = {
             'standart_dash': StandardDash,
             'slash': Slash,
+            'magnet_dash': MagnetDash,
+            'zap': Zap,
         }
         self._state.character_pool = {
             'slasher': Slasher,
@@ -136,8 +138,8 @@ class GameEngine:
                 else:
                     ratio = min(255, int(255 * ((self._transition_timer / (config.TRANSITION_TIME)) ** 3)))
 
-                self._renderer.fx_surface.fill((0, 0, 0))
-                self._renderer.fx_surface.set_alpha(ratio)
+                self._state.renderer.fx_surface.fill((0, 0, 0))
+                self._state.renderer.fx_surface.set_alpha(ratio)
 
                 if self._transition_timer < 0 and not self._state.is_post_transition:
                     if self._state.in_game:
@@ -203,7 +205,7 @@ class GameEngine:
                         self._state.projectile_system.update(dt, self._state.enemy_system.enemies)
                         self._state.particle_system.update(dt)
                         self._state.collectable_system.update(dt)
-                        self._state.enemy_system.update(dt, self._state, self._renderer.debug_surface)
+                        self._state.enemy_system.update(dt, self._state, self._state.renderer.debug_surface)
                         self._state.decals_system.update(dt)
                         self._state.decals_system.update_shadows(entities)
 
@@ -277,6 +279,7 @@ class GameEngine:
                                                                             [self._state.room_manager.active_room.terminal.body])
 
                         # обрабатываем коллизию существ
+                        entities = self._state.enemy_system.enemies + [self._state.player]
                         self._state.collision_system.resolve_movers(entities)
 
                         # обработка стрельбы и перезарядки
@@ -284,7 +287,7 @@ class GameEngine:
                             shot_fired = self._weapon_system.update(dt, self._input.is_shooting_requested(),
                                                                     self._input.is_reload_requested())
                             if shot_fired:
-                                self._state.weapon.fire()
+                                self._state.weapon.fire(self._state)
 
                         # обработка скиллов
                         if self._input.is_first_skill_used() and self._state.player.first_skill.is_ready:
@@ -346,7 +349,7 @@ class GameEngine:
                 # открытая пауза
                 if (not (self._state.is_upgrade_ui_open or self._state.is_terminal_ui_open or self._state.is_transition)
                         and self._state.is_paused):
-                    self._renderer.render(False) # не обновляет кадр
+                    self._state.renderer.render(False) # не обновляет кадр
                     self._state.menu_manager.active_screen.update(dt, pygame.mouse.get_pos(), events)
                     self._state.menu_manager.active_screen.render(self._screen)
                     pygame.display.flip()
@@ -361,7 +364,7 @@ class GameEngine:
 
                     self._state.decals_system.update_shadows(entities)
 
-                    self._renderer.render(False) # не обновляет кадр
+                    self._state.renderer.render(False) # не обновляет кадр
                     self._state.terminal_system.render()
 
                 # вне post_tp рендерим только интерфейс терминалов
@@ -370,7 +373,7 @@ class GameEngine:
 
                 # стандартный рендерер
                 elif not self._state.is_terminal_ui_open:
-                    self._renderer.render()
+                    self._state.renderer.render()
 
 
                 if self._input.spawn:
@@ -403,7 +406,7 @@ class GameEngine:
                 self._state.menu_manager.active_screen.update(dt, pygame.mouse.get_pos(), events)
                 self._state.menu_manager.active_screen.render(self._screen)
                 if self._state.is_transition:
-                    self._screen.blit(self._renderer.fx_surface, (0, 0))
+                    self._screen.blit(self._state.renderer.fx_surface, (0, 0))
 
                 pygame.display.flip()
         pygame.quit()
@@ -426,8 +429,8 @@ class GameEngine:
 
         # пересчитываем границы мира
         world_bounds = self._state.room_manager.world_bounds
-        self._renderer._world_bounds = world_bounds
-        self._renderer.world_surface = pygame.Surface((world_bounds.width, world_bounds.height))
+        self._state.renderer._world_bounds = world_bounds
+        self._state.renderer.world_surface = pygame.Surface((world_bounds.width, world_bounds.height))
 
         # переносим игрока на новый спавн
         spawn_center = self._state.room_manager.start_room.bounds.center
@@ -465,11 +468,11 @@ class GameEngine:
         # Уровень
         self._state.level_seed = randint(1, 9)
         self._state.assets['wall_sprite'] = assets_manager.load_sprite(f"room/wall{self._state.level_seed}.png",
-                                                 (config.TILE_SIZE, config.TILE_SIZE * 2))
+                                                                       (config.TILE_SIZE, config.TILE_SIZE * 2))
         self._state.assets['floor_sprite'] = assets_manager.load_sprite(f"room/floor{self._state.level_seed}.png",
-                                                  (config.TILE_SIZE, config.TILE_SIZE))
+                                                                        (config.TILE_SIZE, config.TILE_SIZE))
         self._state.assets['exit_sprite'] = assets_manager.load_sprite(f"room/exit{self._state.level_seed}.png",
-                                                  (config.EXIT_SIZE, config.EXIT_SIZE))
+                                                                       (config.EXIT_SIZE, config.EXIT_SIZE))
         self._state.assets['exit_arrow'] = assets_manager.load_sprite(f"hud/exit_arrow.png", (48, 48))
 
         self._state.assets['chest_opened'] = assets_manager.load_sprite(f"room/chest_opened.png",
@@ -478,14 +481,14 @@ class GameEngine:
                                                                         (113, 75))
 
         self._state.assets['slasher'] = assets_manager.load_sprite("characters/slasher.png",
-                                                                         (config.PLAYER_SIZE,
-                                                                          config.PLAYER_SIZE + 20))
+                                                                   (config.PLAYER_SIZE,
+                                                                    config.PLAYER_SIZE + 20))
         self._state.assets['electron'] = assets_manager.load_sprite("characters/electron.png",
-                                                                   (config.PLAYER_SIZE,
-                                                                    config.PLAYER_SIZE + 20))
+                                                                    (config.PLAYER_SIZE,
+                                                                     config.PLAYER_SIZE + 20))
         self._state.assets['tank'] = assets_manager.load_sprite("characters/tank.png",
-                                                                   (config.PLAYER_SIZE,
-                                                                    config.PLAYER_SIZE + 20))
+                                                                (config.PLAYER_SIZE,
+                                                                 config.PLAYER_SIZE + 20))
 
         self._state.assets['pointer'] = assets_manager.load_sprite("weapons/pointer.png",
                                                                           (90, 60))
@@ -522,11 +525,11 @@ class GameEngine:
                                                                        (1, 50))
 
         self._state.assets['terminal_sprite_active'] = assets_manager.load_sprite("room/terminal_active.png",
-                                                                                 (config.TILE_SIZE,
-                                                                                 int(config.TILE_SIZE * 1.33)))
-        self._state.assets['terminal_sprite_inactive'] = assets_manager.load_sprite("room/terminal_inactive.png",
                                                                                   (config.TILE_SIZE,
                                                                                    int(config.TILE_SIZE * 1.33)))
+        self._state.assets['terminal_sprite_inactive'] = assets_manager.load_sprite("room/terminal_inactive.png",
+                                                                                    (config.TILE_SIZE,
+                                                                                     int(config.TILE_SIZE * 1.33)))
 
         self._state.assets['scrap_sprites'] = [assets_manager.load_sprite(f"items/scrap_{i}.png",
                                                                           (28, 28)) for i in range(1, 6)]
@@ -534,6 +537,7 @@ class GameEngine:
 
         self._state.assets['dash_ico'] = assets_manager.load_sprite("hud/dash_ico.png", (48, 32))
         self._state.assets['slash_ico'] = assets_manager.load_sprite("hud/slash_ico.png", (48, 32))
+        self._state.assets['zap_ico'] = assets_manager.load_sprite("hud/zap_ico.png", (48, 48))
 
         # Бонусы
         self._state.assets['cassette'] = assets_manager.load_sprite("items/cassette.png", (35, 30))
@@ -573,9 +577,9 @@ class GameEngine:
             menu_screen.resize(*self._screen.get_size())
         self._fx_layer = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
         # обновляем ссылки
-        if self._renderer:
-            self._renderer._screen = self._screen
-            self._renderer.fx_surface = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
+        if self._state.renderer:
+            self._state.renderer._screen = self._screen
+            self._state.renderer.fx_surface = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
             self._ui_renderer._screen = self._screen
             self._state.terminal_system._screen = self._screen
             self._map_renderer._screen = self._screen
@@ -661,7 +665,7 @@ class GameEngine:
         self._map_renderer = MinimapRenderer(self._screen, self._state)
         self._ui_renderer = UIRenderer(self._screen, self._state)
         self._ui_renderer._map_renderer = self._map_renderer
-        self._renderer = Renderer(self._state, self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
+        self._state.renderer = Renderer(self._state, self._screen, self._state.room_manager.world_bounds, self._ui_renderer)
 
         # resizable объекты (требуют изменений при изменении размеров окна)
         self._state.resizable_elements.append(self._ui_renderer)

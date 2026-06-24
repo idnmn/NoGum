@@ -1,13 +1,14 @@
 import math
 import random
 import pygame
-import config
+from configs import config
 import json
 from pygame import Vector2
 from core import utils
 from models.collidable import CollisionBody
 from models.game_state import GameState
 from models.decal import Decal
+from services.status_manager import StatusManager
 
 
 class Player():
@@ -20,7 +21,10 @@ class Player():
         self.character_name = character_name
         self._state = state
 
+        self.status_manager = StatusManager(state, self)
+
         self._source_sprite = state.assets[self.character_name]
+        self.sprite = self._source_sprite.copy()
         self.step_sprite = state.assets['player_step']
 
         file = utils.get_resource_path(f"characters_stats\\{self.character_name}.json")
@@ -151,6 +155,9 @@ class Player():
         self.body.dx = dx
         self.body.dy = dy
 
+        # обновление статусов
+        self.status_manager.update(dt)
+
         # обновление скиллов
         self.first_skill.update(dt)
         self.second_skill.update(dt)
@@ -173,6 +180,7 @@ class Player():
             self._visual_damage_timer -= dt
 
         if self._visual_damage_timer <= 0:
+            del self.sprite
             self.sprite = self._source_sprite.copy()
 
         # вычисляем ускорение по направлению
@@ -229,22 +237,23 @@ class Player():
                                 min(config.PLAYER_TILT_MAX_ANGLE, self.current_tilt))
 
     def take_damage(self, amount: float, no_shake: bool = False) -> None:
-        self.hp -= int(amount)
+        if self._visual_damage_timer <= 0:
+            self.hp -= int(amount)
 
-        if not no_shake:
-            self._state.camera.shake(5, 0.15)
+            if not no_shake:
+                self._state.camera.shake(5, 0.15)
 
-        self._state.particle_system.spawn_player_damaged(self.body.rect.center)
+            self._state.particle_system.spawn_player_damaged(self.body.rect.center)
 
-        self._visual_damage_timer = self._visual_damage_cooldown
-        self.sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)
-        if self.hp <= 0:
-            self.is_alive = False
-            self.death()
+            self._visual_damage_timer = self._visual_damage_cooldown
+            self.sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)
+            if self.hp <= 0:
+                self.is_alive = False
+                self.death()
 
-        self._state.stattracker.damage_taken += int(amount)
+            self._state.stattracker.damage_taken += int(amount)
 
-        self._state.audio_manager.play_sound(f'player_damaged_{random.randint(1, 3)}', 1.2)
+            self._state.audio_manager.play_sound(f'player_damaged_{random.randint(1, 3)}', 1.2)
 
     def death(self) -> None:
         self._state.reset_state()
@@ -255,3 +264,6 @@ class Player():
     @property
     def hp_ratio(self) -> float:
         return max(0.0, min(1.0, self.hp / self.max_hp))
+
+    def on_enemy_collide(self, enemy):
+        pass

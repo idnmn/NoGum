@@ -2,7 +2,7 @@ import pygame
 from pygame import Vector2
 from core import utils
 
-import config
+from configs import config
 from models.game_state import GameState
 
 

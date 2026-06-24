@@ -1,5 +1,5 @@
 import pygame
-import config
+from configs import config
 from pygame import Vector2
 from models.game_state import GameState
 from models.terminal import Terminal

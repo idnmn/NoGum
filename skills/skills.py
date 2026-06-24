@@ -1,14 +1,17 @@
 import pygame
 import math
 from pygame import Vector2
-import config
+from configs import config, skills_stats
+from models.enemies import Enemy
 from models.game_state import GameState
+from models.projectile import ZapProjectile
 
 
 # общий шаблон класса для способностей
 class Skill():
     def __init__(self, state: GameState) -> None:
         self._state = state
+        self.hitbox = state.player.rect.copy()
 
         self._cool_down = 0.0
         self.cool_down_coef = 1.0
@@ -44,6 +47,9 @@ class Skill():
             else:
                 self._cooldown_timer = self.cool_down
 
+        self.hitbox.x = self._state.player.rect.x
+        self.hitbox.y = self._state.player.rect.y
+
     def render(self, surface: pygame.Surface) -> None:
         pass
 
@@ -69,18 +75,21 @@ class Skill():
     def cooldown_ratio(self):
         return max(0.0, min(1.0, 1.0 - (self._cooldown_timer / (self.cool_down))))
 
+    def on_enemy_collide(self, enemy: Enemy):
+        pass
+
 
 # ближняя атака (аля добивание) для игрока
 class Slash(Skill):
     def __init__(self, state: GameState) -> None:
         super().__init__(state)
 
-        self.radius = config.SLASH_RADIUS
-        self.angle_span = config.SLASH_ANGLE_SPAN
-        self.damage =  config.SLASH_DAMAGE
-        self.stun_time = config.SLASH_STUN_TIME
-        self.attack_time = config.SLASH_ATTACK_TIME
-        self._cool_down = config.SLASH_COOLDOWN
+        self.radius = skills_stats.SLASH_RADIUS
+        self.angle_span = skills_stats.SLASH_ANGLE_SPAN
+        self.damage =  skills_stats.SLASH_DAMAGE
+        self.stun_time = skills_stats.SLASH_STUN_TIME
+        self.attack_time = skills_stats.SLASH_ATTACK_TIME
+        self._cool_down = skills_stats.SLASH_COOLDOWN
 
         self.max_charges = 2
         self.charges_count = 2
@@ -113,8 +122,8 @@ class Slash(Skill):
         self._facing_right = False
 
         # констранты для рендера индикатора
-        self.indicator_background_color = config.UI_SLASH_BG_COLOR
-        self.indicator_fill_color = config.UI_SLASH_COLOR
+        self.indicator_background_color = skills_stats.UI_SLASH_BG_COLOR
+        self.indicator_fill_color = skills_stats.UI_SLASH_COLOR
         self.indicator_sprite = self._state.assets['slash_ico']
 
     def render(self, surface: pygame.Surface) -> None:
@@ -128,13 +137,13 @@ class Slash(Skill):
         # дебаг отрисовка
         if config.DRAW_SLASH:
             colored_surf = pygame.Surface(rotated_surface.get_size(), pygame.SRCALPHA)
-            colored_surf.fill((*config.UI_DASH_COLOR, 100))
+            colored_surf.fill((*self._state.player.signature_color, 100))
 
             temp_surf = rotated_surface.copy()
             temp_surf.set_colorkey((0, 0, 0))
 
             final_surf = rotated_surface.copy()
-            final_surf.fill((*config.UI_DASH_COLOR, 128), special_flags=pygame.BLEND_RGBA_MULT)
+            final_surf.fill((*self._state.player.signature_color, 128), special_flags=pygame.BLEND_RGBA_MULT)
 
             rect = final_surf.get_rect(center=self._state.player.rect.center)
             surface.blit(final_surf, rect)
@@ -209,9 +218,9 @@ class StandardDash(Skill):
     def __init__(self, state: GameState) -> None:
         super().__init__(state)
 
-        self.speed = config.STANDARD_DASH_SPEED
-        self._cool_down = config.STANDARD_DASH_COOLDOWN
-        self.duration = config.STANDARD_DASH_DURATION
+        self.speed = skills_stats.STANDARD_DASH_SPEED
+        self._cool_down = skills_stats.STANDARD_DASH_COOLDOWN
+        self.duration = skills_stats.STANDARD_DASH_DURATION
         self._ui_timer: float = 0.0
 
         # фиксируем направление игрока в начале рывка
@@ -219,8 +228,8 @@ class StandardDash(Skill):
         self.dy = 0.0
 
         # констранты для рендера индикатора
-        self.indicator_background_color = config.UI_DASH_BG_COLOR
-        self.indicator_fill_color = config.UI_DASH_COLOR
+        self.indicator_background_color = skills_stats.UI_DASH_BG_COLOR
+        self.indicator_fill_color = skills_stats.UI_DASH_COLOR
         self.indicator_sprite = self._state.assets['dash_ico']
 
 
@@ -230,7 +239,7 @@ class StandardDash(Skill):
         if self.is_using:
             self._state.particle_system.spawn_while_dash(self._state.player.rect.center, Vector2(self._state.player.body.dx,
                                                                                            self._state.player.body.dy),
-                                                         config.UI_DASH_COLOR, config.PLAYER_SIZE)
+                                                         self._state.player.signature_color, config.PLAYER_SIZE)
             # фиксируем направление игрока
             self._state.player.body.dx, self._state.player.body.dy = self.dx, self.dy
 
@@ -261,3 +270,135 @@ class StandardDash(Skill):
             self._state.player.ignore_enemy = True
 
             self._state.audio_manager.play_sound('dash')
+
+
+# магнитный рывок
+class MagnetDash(Skill):
+    def __init__(self, state: GameState) -> None:
+        super().__init__(state)
+
+        px, py = state.player.rect.x, state.player.rect.y
+        w, h = state.player.rect.width * 3, state.player.rect.height * 3
+        self.hitbox = pygame.rect.Rect(px - w // 2, py // 2, w, h)
+
+        self.min_damage = skills_stats.MAGNET_MIN_DAMAGE
+        self.max_damage = skills_stats.MAGNET_MAX_DAMAGE
+        self.speed = skills_stats.MAGNET_DASH_SPEED
+        self._cool_down = skills_stats.MAGNET_DASH_COOLDOWN
+        self.duration = skills_stats.MAGNET_DASH_DURATION
+        self.max_charges = 3
+        self.charges_count = 3
+        self._ui_timer: float = 0.0
+        self.damage_coef = 0.5
+
+        # фиксируем направление игрока в начале рывка
+        self.dx = 0.0
+        self.dy = 0.0
+
+        # констранты для рендера индикатора
+        self.indicator_background_color = skills_stats.UI_MAGNET_BG_COLOR
+        self.indicator_fill_color = skills_stats.UI_MAGNET_COLOR
+        self.indicator_sprite = self._state.assets['dash_ico']
+
+
+    def update(self, dt: float) -> None:
+        super().update(dt)
+
+        if self.is_using:
+            self._state.particle_system.spawn_magnet_dash_trail(self._state.player.rect.center,
+                                                         self._state.player.signature_color, config.PLAYER_SIZE)
+            # фиксируем направление игрока
+            self._state.player.body.dx, self._state.player.body.dy = self.dx, self.dy
+
+        self.hitbox.x -= self.hitbox.width // 2
+        self.hitbox.y -= self.hitbox.height // 2
+
+    def reload(self) -> None:
+        super().reload()
+        self._state.particle_system.spawn_dash_reloaded(self._state.player.rect.center,
+                                                        self._state.player.signature_color)
+
+    def ended(self) -> None:
+        super().ended()
+
+        # сбрасываем ускорение
+        self._state.player.acceleration //= 100
+        self._state.player.current_max_speed = self._state.player.max_speed
+        self._state.player.ignore_enemy = False
+
+    def use(self, mouse_pos: Vector2) -> None:
+        mouse_pos += self._state.room_manager.active_room.offset
+        self.dx = mouse_pos[0] - self._state.player.rect.centerx
+        self.dy = mouse_pos[1] - self._state.player.rect.centery
+        super().use(mouse_pos)
+
+        self._use_timer = self.duration
+
+        self._state.particle_system.spawn_magnet_dashed(self._state.player.rect.center)
+
+        # ускоряем игрока
+        self._state.player.acceleration *= 100
+        self._state.player.current_max_speed = self.speed
+        self._state.player.ignore_enemy = True
+
+        self._state.audio_manager.play_sound('dash')
+
+    def on_enemy_collide(self, enemy: Enemy):
+        if enemy.status_manager.electrified and self.is_using:
+            damage = min(self.max_damage, max(self.min_damage, self.damage_coef * enemy.status_manager.electrified))
+
+            enemy.take_damage(damage)
+            self._state.audio_manager.play_sound('magnet_hit', 1.2)
+            self._state.particle_system.spawn_magnet_hitted(enemy.rect.center)
+
+
+# электро заряд
+class Zap(Skill):
+    def __init__(self, state: GameState) -> None:
+        super().__init__(state)
+
+        self.speed = skills_stats.ZAP_SPEED
+        self.electrified = skills_stats.ZAP_ELECTRIFIED
+        self.stun_time = skills_stats.ZAP_STUN_TIME
+        self._cool_down = skills_stats.ZAP_COOLDOWN
+
+        self.max_charges = 1
+        self.charges_count = 1
+
+        # констранты для рендера индикатора
+        self.indicator_background_color = skills_stats.UI_ZAP_BG_COLOR
+        self.indicator_fill_color = skills_stats.UI_ZAP_COLOR
+        self.indicator_sprite = self._state.assets['zap_ico']
+
+    def reload(self) -> None:
+        super().reload()
+        self._state.audio_manager.play_sound('zap_reloaded', 1.8)
+
+    def update(self, dt: float) -> None:
+        super().update(dt)
+
+    def use(self, mouse_pos: Vector2) -> None:
+        super().use(mouse_pos)
+
+        self._state.camera.shake(20, 0.1)
+        self._use_timer = 0.0
+
+        mouse_pos += self._state.room_manager.active_room.offset
+        dx = mouse_pos[0] - self._state.player.rect.centerx
+        dy = mouse_pos[1] - self._state.player.rect.centery
+        dir = Vector2(dx, dy).normalize()
+        vel = dir * self.speed
+
+        offset_coef = self._state.weapon.sprite.get_width() - self._state.weapon.offset_x * 3
+        spawn_pos = self._state.player.rect.center + dir.normalize() * offset_coef
+
+        self._state.projectile_system.projectiles.append(ZapProjectile(
+            state=self._state,
+            x=spawn_pos.x, y=spawn_pos.y,
+            size=30,
+            velocity=vel,
+            electrified=self.electrified,
+            lifetime=10.0
+        ))
+
+        self._state.audio_manager.play_sound('zap', 2)

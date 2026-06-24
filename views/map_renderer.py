@@ -1,5 +1,5 @@
 import pygame
-import config
+from configs import config
 from models.game_state import GameState
 from services.room_manager import RoomManager
 
@@ -12,8 +12,8 @@ class MinimapRenderer:
 
         # позиция по центру
         self._map_rect = pygame.Rect(
-            int((screen.get_width()  - config.MINIMAP_WIDTH) / 2),
-            int((screen.get_height()  - config.MINIMAP_HEIGHT) / 2),
+            int((screen.get_width() - config.MINIMAP_WIDTH) / 2),
+            int((screen.get_height() - config.MINIMAP_HEIGHT) / 2),
             config.MINIMAP_WIDTH,
             config.MINIMAP_HEIGHT
         )

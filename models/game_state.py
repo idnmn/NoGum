@@ -46,6 +46,7 @@ class GameState:
     menu_manager = None
     menu_screens = dict()
     audio_manager = None
+    renderer = None
 
     # словари с персонажами и скиллами
     skills_pool = dict()

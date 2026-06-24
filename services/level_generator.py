@@ -1,7 +1,7 @@
 import random
 import pygame
 import os
-import config
+from configs import config
 from core import utils
 from collections import deque
 from models.game_state import GameState
@@ -138,9 +138,9 @@ class LevelGenerator:
             else:
                 layout_path = random.choice(self.layout_pool)
                 chest_room = Room(layout_path, offset_x, offset_y, depth, connections,
-                            wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite,
-                            terminal_sprites=self.terminal_sprites, waves_count=random.randint(config.MIN_WAVES,
-                                                                                               config.MAX_WAVES))
+                                  wall_sprite=self.wall_sprite, floor_sprite=self.floor_sprite,
+                                  terminal_sprites=self.terminal_sprites, waves_count=random.randint(config.MIN_WAVES,
+                                                                                                     config.MAX_WAVES))
 
                 # с n-м шансом генерируем терминал
                 if random.randint(0, 100) <= config.TERMINAL_CHANCE * min(1, (chest_room.depth / max_depth) ** 2):

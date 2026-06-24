@@ -1,5 +1,4 @@
-import pygame
-import config
+from configs import config
 from typing import List
 from pygame import Vector2
 from models.room import Room

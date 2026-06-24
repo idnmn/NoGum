@@ -1,6 +1,3 @@
-import pygame
-import random
-from pygame import Vector2
 from models.collectable import *
 from models.collidable import CollisionBody
 from models.game_state import GameState

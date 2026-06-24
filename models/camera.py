@@ -1,5 +1,5 @@
 import pygame
-import config
+from configs import config
 import random
 
 # класс камеры

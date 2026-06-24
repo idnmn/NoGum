@@ -1,6 +1,6 @@
 import pygame
 import random
-import config
+from configs import config
 import os
 from core import utils
 from models.game_state import GameState

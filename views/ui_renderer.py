@@ -108,8 +108,8 @@ class UIRenderer:
         weapon.upgrade()
 
         self._slider_param_1.max_value = weapon.max_param_1
-        self._slider_param_2.max_value = weapon.max_param_3
         self._slider_param_2.max_value = weapon.max_param_2
+        self._slider_param_3.max_value = weapon.max_param_3
 
     # единый расчёт геометрии панели
     def _get_panel_layout(self) -> dict:
@@ -243,7 +243,7 @@ class UIRenderer:
 
     # индикатор зарядки скилла
     def _draw_skill_indicator(self, world_surface: pygame.Surface, skill: Skill, skill_number: int) -> None:
-        if skill.is_ready:
+        if skill.charges_count == skill.max_charges:
             return
 
         background_color = skill.indicator_background_color
@@ -325,7 +325,7 @@ class UIRenderer:
 
             # количество
             counter = self._font.render(f"{self._state.player.inventory[item[1].capitalize()][0]}",
-                                          True, config.UI_TEXT_COLOR)
+                                        True, config.UI_TEXT_COLOR)
             self._screen.blit(counter, (start_x + 40, start_y + (60 * i)))
 
     # счетчик FPS
@@ -336,11 +336,11 @@ class UIRenderer:
         pygame.draw.rect(self._screen, (30, 30, 30), (x, y, 35, 20))
 
         fps = int(self._state.clock.get_fps())
-        if fps < 40:
+        if fps < 30:
             color = (255, 60, 60)
-        elif fps < 60:
+        elif fps < 50:
             color = (255, 125, 75)
-        elif fps < 80:
+        elif fps < 60:
             color = (255, 245, 140)
         else:
             color = (110, 255, 60)

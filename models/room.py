@@ -1,6 +1,6 @@
 import random
 import pygame
-import config
+from configs import config
 from models.game_state import GameState
 from models.wall import Wall
 from models.camera import Camera
@@ -160,7 +160,8 @@ class Room:
             if r == 0 or r == config.ROOM_ROWS - 1:
                 rows.append(config.ROOM_SYMBOL_WALL * config.ROOM_COLS)
             else:
-                rows.append(config.ROOM_SYMBOL_WALL + config.ROOM_SYMBOL_EMPTY * (config.ROOM_COLS - 2) + config.ROOM_SYMBOL_WALL)
+                rows.append(config.ROOM_SYMBOL_WALL + config.ROOM_SYMBOL_EMPTY * (
+                            config.ROOM_COLS - 2) + config.ROOM_SYMBOL_WALL)
         return rows
 
     def contains_point(self, point: tuple[float, float]) -> bool:

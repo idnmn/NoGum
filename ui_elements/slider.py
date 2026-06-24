@@ -1,5 +1,5 @@
 import pygame
-import config
+from configs import config
 from core import utils
 from pygame import Vector2
 from collections.abc import Callable

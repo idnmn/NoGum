@@ -3,7 +3,7 @@ import pygame
 import math
 from pygame import Vector2
 
-import config
+from configs import config
 from services.particle_system import Particle
 from models.collidable import CollisionBody
 from models.game_state import GameState

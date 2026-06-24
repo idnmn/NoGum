@@ -1,5 +1,5 @@
 import pygame
-import config
+from configs import config
 from models.game_state import GameState
 from views.ui_renderer import UIRenderer
 

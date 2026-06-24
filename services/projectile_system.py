@@ -41,10 +41,14 @@ class ProjectileSystem:
             # коллизия с врагами
             for enemy in enemies:
                 if p.rect.colliderect(enemy.body.rect):
-                    p.is_active = False
+                    if enemy not in p.hitted_enemies:
+                        p.hitted_enemies.add(enemy)
+                        p.penetrating_counter += 1
+                    if p.penetrating_counter > p.penetrating_count:
+                        p.is_active = False
                     if enemy.take_damage(p.damage):
                         self._state.stattracker.damage_dealt += int(p.damage)
-                        p.enemy_impact((p.rect.centerx, p.rect.centery), enemy)
+                    p.enemy_impact((p.rect.centerx, p.rect.centery), enemy)
 
         # очистка неактивных снарядов
         self.projectiles = [p for p in self.projectiles if p.is_active]
