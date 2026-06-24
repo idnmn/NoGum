@@ -336,7 +336,7 @@ class Tazer(Weapon):
         self._param_1 = 2.0  # electrified points
         self.min_param_1 = 2.0
         self.max_param_1 = 0.0
-        self.coef_param_1 = 1.6
+        self.coef_param_1 = 1.3
 
         self.name_param_2 = 'Fire rate'
         self._param_2 = 1.0
@@ -351,7 +351,7 @@ class Tazer(Weapon):
         self.coef_param_3 = 100.0
 
         self.power = 25
-        self.damage_coef = 0.6
+        self.damage_coef = 0.5
         self.calculate_max()
 
         self.reload_cooldown = 0.75

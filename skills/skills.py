@@ -289,7 +289,7 @@ class MagnetDash(Skill):
         self.max_charges = 3
         self.charges_count = 3
         self._ui_timer: float = 0.0
-        self.damage_coef = 0.5
+        self.damage_coef = 0.2
 
         # фиксируем направление игрока в начале рывка
         self.dx = 0.0

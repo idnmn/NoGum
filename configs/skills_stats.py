@@ -15,8 +15,8 @@ STANDARD_DASH_COOLDOWN: float = 3.0  # Кд между рывками
 UI_DASH_COLOR: tuple[int, int, int] = (115, 245, 155)
 UI_DASH_BG_COLOR: tuple[int, int, int] = (50, 100, 70)
 
-# Рывок
-MAGNET_MIN_DAMAGE: float = 10
+# магнитный удар
+MAGNET_MIN_DAMAGE: float = 5
 MAGNET_MAX_DAMAGE: float = 50
 MAGNET_DASH_SPEED: float = 8000.0  # Скорость во время рывка
 MAGNET_DASH_DURATION: float = 0.07  # Длительность

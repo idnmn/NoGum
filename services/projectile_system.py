@@ -44,11 +44,11 @@ class ProjectileSystem:
                     if enemy not in p.hitted_enemies:
                         p.hitted_enemies.add(enemy)
                         p.penetrating_counter += 1
+                        p.enemy_impact((p.rect.centerx, p.rect.centery), enemy)
                     if p.penetrating_counter > p.penetrating_count:
                         p.is_active = False
                     if enemy.take_damage(p.damage):
                         self._state.stattracker.damage_dealt += int(p.damage)
-                    p.enemy_impact((p.rect.centerx, p.rect.centery), enemy)
 
         # очистка неактивных снарядов
         self.projectiles = [p for p in self.projectiles if p.is_active]

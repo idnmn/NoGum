@@ -29,6 +29,8 @@ BACKGROUND_COLOR: tuple[int, int, int] = (10, 10, 10)
 
 # цвета статусов
 ELECTRICITY_COLOR: tuple[int, int, int] = (155, 240, 255)
+HEAT_COLOR: tuple[int, int, int] = (255, 90, 40)
+COLD_COLOR: tuple[int, int, int] = (145, 235, 255)
 
 UI_HP_COLOR: tuple[int, int, int] = (255, 255, 40)
 UI_HP_BG_COLOR: tuple[int, int, int] = (45, 45, 20)

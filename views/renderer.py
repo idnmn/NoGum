@@ -67,8 +67,8 @@ class Renderer:
                 render_queue.append(room.terminal)
             if room.chest:
                 render_queue.append(room.chest)
-        if room.exit:
-            room.exit.render(self.world_surface)
+            if room.exit:
+                room.exit.render(self.world_surface)
 
         # добавляем игрока в очередь
         if self._state.player:

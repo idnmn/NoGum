@@ -59,7 +59,7 @@ class GameEngine:
         pygame.display.set_caption(config.WINDOW_TITLE)
 
         # иконка
-        icon = pygame.image.load(utils.get_resource_path('assets/icon.ico'))
+        icon = pygame.image.load(utils.get_resource_path(f'assets/icons/icon_{self._state.character}.ico'))
         pygame.display.set_icon(icon)
 
         # внутренний таймер перехода между сценами
@@ -547,7 +547,7 @@ class GameEngine:
         self._state.assets['clock'] = assets_manager.load_sprite("items/clock.png", (35, 22))
         self._state.assets['nothing'] = assets_manager.load_sprite("items/nothing.png", (35, 35))
 
-        self._state.assets['main_menu_art'] = assets_manager.load_sprite("menu/main_menu_art.png")
+        self._state.assets['main_menu_art'] = assets_manager.load_sprite(f"menu/main_menu_art_{self._state.character}.png")
 
         self._state.assets['n'] = assets_manager.load_sprite("menu/N.png")
         self._state.assets['o'] = assets_manager.load_sprite("menu/O.png")

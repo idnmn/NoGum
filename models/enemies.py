@@ -96,11 +96,15 @@ class Enemy():
         return damage
 
     def render(self, surface: pygame.Surface) -> None:
-        bx, by = self.body.rect.x, self.body.rect.y - (self.body.rect.height - self.sprite.get_height() + 5)
+        bx, by = self.body.rect.x, self.body.rect.y - (self.body.rect.height - self.sprite.get_height() + 10)
         bw, bh = self.body.rect.width, 3
         if self.hp != self.max_hp:
             pygame.draw.rect(surface, (30, 12, 12), (bx, by, bw, bh))
             pygame.draw.rect(surface, (255, 100, 100), (bx, by, bw * (self.hp / self.max_hp), bh))
+
+        for i, (value, color) in enumerate(self.status_manager.status_list):
+            pygame.draw.rect(surface, (30, 30, 30, 100), (bx, by + i * 2 + 4, bw, 2))
+            pygame.draw.rect(surface, color, (bx, by + i + 4, bw * (value / 100), bh))
 
     def drop(self):
         pass
@@ -365,8 +369,9 @@ class BookWorm(Enemy):
                 ))
 
             # с шансом 50% спавним скрап
-            if random.randint(1, 100) <= 50:
-                count = random.randint(int(2 * self.level), int(3 * self.level))
+            if random.randint(1, 100) <= 30:
+                count = random.randint(int(1 * self.level), int(2
+                                                                * self.level))
                 for _ in range(count):
                     self._state.collectable_system.items.append(Scrap(
                         x=random.uniform(self.rect.x, self.rect.x + self.rect.width),
@@ -484,15 +489,11 @@ class BookWormMommy(Enemy):
             color = (min(255, int(255 * self._shake_amount ** 2)), 0, 0, 0)  # смэрть
             sprite.fill(color, None, pygame.BLEND_RGB_ADD)
         else:
-            sprite = self._source_sprite.copy()
+            sprite = self._source_sprite.copy().convert_alpha()
 
         # получение урона
         if self._visual_damage_timer > 0 and self.state != 'death':
             sprite.fill((255, 0, 0, 0), None, pygame.BLEND_RGBA_ADD)
-
-        # for color in self.status_manager.get_status_colors():
-        #     print(color)
-        #     sprite.fill(color, None, pygame.BLEND_RGBA_MULT)
 
         surface.blit(sprite, (self.rect.x + offset_x, self.rect.y + offset_y))
         self.sprite = self._source_sprite.copy().convert_alpha()
@@ -740,8 +741,8 @@ class BookWormMommy(Enemy):
                 ))
 
             # с шансом 80% спавним скрап
-            if random.randint(1, 100) <= 80:
-                count = random.randint(int(2 * self.level), int(4 * self.level))
+            if random.randint(1, 100) <= 60:
+                count = random.randint(int(1 * self.level), int(2 * self.level))
                 for _ in range(count):
                     self._state.collectable_system.items.append(Scrap(
                         x=random.uniform(self.rect.x, self.rect.x + self.rect.width),

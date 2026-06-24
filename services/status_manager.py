@@ -34,11 +34,21 @@ class StatusManager:
                 self._state.particle_system.spawn_electricity_marked(self._owner.rect.center,
                                                                      self._owner.rect.width)
 
-    def get_status_colors(self):
-        colors = []
-        if self.electrified:
-            colors.append((*configs.config.ELECTRICITY_COLOR, self.electrified / 100))
+    @property
+    def status_list(self):
+        heat, cold = 0, 0
+        if self.temperature > 0.0:
+            heat = self.temperature
+            cold = 0.0
+        elif self.temperature < 0.0:
+            heat = 0.0
+            cold = self.temperature
 
-        return colors
+        status_list = [
+            (self.electrified, configs.config.ELECTRICITY_COLOR),
+            (heat, configs.config.HEAT_COLOR),
+            (cold, configs.config.COLD_COLOR),
+        ]
+        return [status for status in status_list if status[0]]
 
 
