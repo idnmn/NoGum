@@ -82,6 +82,7 @@ class TazerProjectile(Projectile):
         )
 
         self._time_param = random.uniform(-90, 90)
+        self.penetrating_count = 1
 
     def update(self, dt: float) -> None:
         self._time_param += dt * 20
