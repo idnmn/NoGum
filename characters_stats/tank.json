@@ -1,0 +1,29 @@
+{
+  "max_speed": 500,
+  "max_hp": 200,
+  "tick_damage": 5,
+  "tick_damage_time": 5,
+  "acceleration": 4000,
+  "friction": 20,
+
+  "max_speed_limit": 650,
+  "max_hp_limit": 400,
+  "damage_coef_limit": 3.0,
+  "tick_damage_limit": 40,
+  "tick_damage_coef_limit": 0.5,
+
+  "first_skill": "standart_dash",
+  "second_skill": "slash",
+  "weapon": "bulldog",
+
+  "description": [
+    "* Защитная стойка увеличивает",
+    "урон и защиту, но лишает",
+    "возможности передвигаться",
+    "* Волновой барьер отталкивает и",
+    "оглушает врагов",
+    "* Каждое получение урона от",
+    "врага уменьшает его урон по вам",
+    "на 15% (не более 60%)"
+  ]
+}

@@ -1,5 +1,7 @@
 import pygame
 
+VERSION_TITLE: str = "v1.2:electron_build"
+
 # --- ЛОГИЧЕСКОЕ РАЗРЕШЕНИЕ ---
 # Это размер холста на котором происходит вся физика и отрисовка игры.
 INTERNAL_WIDTH: int = 1248

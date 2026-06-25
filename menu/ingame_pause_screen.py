@@ -186,6 +186,7 @@ class PauseScreen(MenuScreen):
     def _exit_to_menu(self):
         self._state.in_game = False
         self._state.menu_manager.set_active_screen(self._state.menu_screens['main_menu'])
+        self._state.engine._load_sprites(self._state.engine._assets_manager)
 
         self._exit_dialogue_active = False
 

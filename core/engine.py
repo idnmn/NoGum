@@ -1,3 +1,4 @@
+import json
 from random import randint
 from core import utils
 from core.asset_manager import AssetManager
@@ -8,6 +9,7 @@ from menu.ingame_pause_screen import PauseScreen
 from menu.main_menu_screen import MainMenuScreen
 from menu.menu_manager import MenuManager
 from menu.options_screen import OptionsScreen
+from menu.select_character_screen import SelectCharacter
 from services.room_manager import RoomManager
 from models.camera import Camera
 from models.weapons import *
@@ -43,11 +45,14 @@ class GameEngine:
 
         # инициализируем игру
         self._state = GameState()
+        self._state.engine = self
         self._state.renderer = None
         self._state.clock = pygame.time.Clock()
         self._state.audio_manager = AudioManager(self._state)
         self._state.audio_manager.play_music('astra')
         pygame.mixer.set_num_channels(16)
+
+        self._load_state()
 
         # Инициализация окна
         self._screen = pygame.display.set_mode(
@@ -56,7 +61,10 @@ class GameEngine:
         )
         self._fx_layer = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
 
-        pygame.display.set_caption(config.WINDOW_TITLE)
+        file = utils.get_resource_path('configs\\titles.json')
+        with open(file, "r", encoding="utf-8") as f:
+            title = random.choice(json.load(f)['titles'])
+        pygame.display.set_caption(config.WINDOW_TITLE + f" - {title}")
 
         # иконка
         icon = pygame.image.load(utils.get_resource_path(f'assets/icons/icon_{self._state.character}.ico'))
@@ -68,16 +76,6 @@ class GameEngine:
         # ГРУЗИМ СПРАЙТЫ
         self._assets_manager = AssetManager()
         self._load_sprites(self._assets_manager)
-
-        # меню
-        self._state.menu_manager = MenuManager(self._state)
-        menu_screens = {
-            'main_menu': MainMenuScreen(self._state, *self._screen.get_size(), self._start_game),
-            'options': OptionsScreen(self._state, *self._screen.get_size()),
-            'help': HelpWindow(self._state, *self._screen.get_size()),
-            'pause': PauseScreen(self._state, *self._screen.get_size())
-        }
-        self._state.menu_screens = menu_screens
 
         # заполняем пулы
         self._state.skills_pool = {
@@ -96,6 +94,17 @@ class GameEngine:
             'tazer': Tazer,
             'bulldog': Bulldog
         }
+
+        # меню
+        self._state.menu_manager = MenuManager(self._state)
+        menu_screens = {
+            'main_menu': MainMenuScreen(self._state, *self._screen.get_size(), self._start_game),
+            'options': OptionsScreen(self._state, *self._screen.get_size()),
+            'help': HelpWindow(self._state, *self._screen.get_size()),
+            'pause': PauseScreen(self._state, *self._screen.get_size()),
+            'select_character': SelectCharacter(self._state, *self._screen.get_size()),
+        }
+        self._state.menu_screens = menu_screens
 
         self._state.menu_manager.set_active_screen(menu_screens['main_menu'])
 
@@ -409,7 +418,30 @@ class GameEngine:
                     self._screen.blit(self._state.renderer.fx_surface, (0, 0))
 
                 pygame.display.flip()
+        self._save_state()
         pygame.quit()
+
+    def _load_state(self):
+        file = utils.get_resource_path(f"configs\\game_state.json")
+        with open(file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        self._state.character = data["character"]
+        self._state.audio_manager.master_volume = data["master_volume"]
+        self._state.audio_manager.sound_volume = data["sound_volume"]
+        self._state.audio_manager.music_volume = data["music_volume"]
+
+    def _save_state(self):
+        data = {
+            "character": self._state.character,
+            "master_volume": self._state.audio_manager.master_volume,
+            "sound_volume": self._state.audio_manager.sound_volume,
+            "music_volume": self._state.audio_manager.music_volume
+        }
+
+        file = utils.get_resource_path(f"configs\\game_state.json")
+        with open(file, "w+", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
 
     def _goto_new_level(self):
         # перезагружаем спрайты
@@ -465,6 +497,10 @@ class GameEngine:
             self._state.player.tick_damage = self._state.player.tick_damage_limit
 
     def _load_sprites(self, assets_manager: AssetManager) -> None:
+        # иконка
+        icon = pygame.image.load(utils.get_resource_path(f'assets/icons/icon_{self._state.character}.ico'))
+        pygame.display.set_icon(icon)
+
         # Уровень
         self._state.level_seed = randint(1, 9)
         self._state.assets['wall_sprite'] = assets_manager.load_sprite(f"room/wall{self._state.level_seed}.png",
@@ -503,6 +539,13 @@ class GameEngine:
                                                                           (90, 60))
         self._state.assets['tazer_crosshair'] = assets_manager.load_sprite("hud/tazer_crosshair.png",
                                                                              (20, 20))
+
+        self._state.assets['bulldog'] = assets_manager.load_sprite("weapons/bulldog.png",
+                                                                 (110, 70))
+        self._state.assets['bulldog_reload'] = assets_manager.load_sprite("weapons/bulldog_reload.png",
+                                                                        (90, 60))
+        self._state.assets['bulldog_crosshair'] = assets_manager.load_sprite("hud/tazer_crosshair.png",
+                                                                           (20, 20))
 
 
         self._state.assets['bullet_indicator'] = assets_manager.load_sprite("hud/bullet_indicator.png",
@@ -547,7 +590,13 @@ class GameEngine:
         self._state.assets['clock'] = assets_manager.load_sprite("items/clock.png", (35, 22))
         self._state.assets['nothing'] = assets_manager.load_sprite("items/nothing.png", (35, 35))
 
+        # меню
         self._state.assets['main_menu_art'] = assets_manager.load_sprite(f"menu/main_menu_art_{self._state.character}.png")
+        if self._state.menu_screens:
+            for screen in self._state.menu_screens.values():
+                if hasattr(screen, '_background_art'):
+                    screen._background_art = pygame.transform.scale(self._state.assets['main_menu_art'],
+                                                                    self._screen.get_size())
 
         self._state.assets['n'] = assets_manager.load_sprite("menu/N.png")
         self._state.assets['o'] = assets_manager.load_sprite("menu/O.png")

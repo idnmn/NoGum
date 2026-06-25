@@ -17,3 +17,4 @@ class Electron(Player):
 class Tank(Player):
     def __init__(self, x: float, y: float, state: GameState) -> None:
         super().__init__(x, y, state, 'tank')
+        self.signature_color = (235, 175, 0)

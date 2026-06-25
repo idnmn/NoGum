@@ -26,6 +26,7 @@ class GameState:
     hit_pause_frames: int = 0
 
     # системы и объедки
+    engine = None
     player = None
     character = 'tank'
     weapon = None

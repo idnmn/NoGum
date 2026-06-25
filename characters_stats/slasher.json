@@ -14,5 +14,14 @@
 
   "first_skill": "standart_dash",
   "second_skill": "slash",
-  "weapon": "pointer"
+  "weapon": "pointer",
+
+  "description": [
+    "* Рывок позволяет уклоняться",
+    "от атак врагов",
+    "* Враги, добитые Slash'ом",
+    "дают дополнительный дроп",
+    "* Враги доступные для",
+    "добивания Slash'ом помечаются"
+  ]
 }

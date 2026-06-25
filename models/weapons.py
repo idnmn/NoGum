@@ -50,6 +50,9 @@ class Weapon:
         self.max_param_3 = 0.0
         self.coef_param_3 = 0.0
 
+        self.clip_size = 0
+        self.clip = 0
+
     @property
     def param_1(self) -> float:
         return self._param_1 * self.coef_param_1
@@ -457,6 +460,8 @@ class Tazer(Weapon):
 
 # tank
 class Bulldog(Weapon):
-    def __init__(self, sprite: pygame.Surface, reload_sprite: pygame.Surface,
-                 crosshair: pygame.Surface, state: GameState) -> None:
+    def __init__(self, state: GameState) -> None:
         super().__init__(state, 'bulldog')
+        self._state = state
+        self.offset_x = 15
+

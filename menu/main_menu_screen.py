@@ -2,6 +2,8 @@ import pygame
 import math
 from collections.abc import Callable
 from pygame import Vector2
+from core import utils
+import configs.config
 from menu.screen import MenuScreen
 from models.game_state import GameState
 from ui_elements.button import MenuButton
@@ -35,10 +37,11 @@ class MainMenuScreen(MenuScreen):
         self._idle_par = 0
         self._idle_timer = 0
 
-        self._button_start_y = 240
+        self._button_start_y = 280
         self._button_start_x = 80
         self._button_gap = 40
 
+        self.start_game = start_game
         self._start_game_button = MenuButton(
             title="Start Game",
             x=self._button_start_x,
@@ -50,10 +53,22 @@ class MainMenuScreen(MenuScreen):
             uncentred=True
         )
 
+        self._select_character_button = MenuButton(
+            title="Select character",
+            x=self._button_start_x,
+            y=self._screen_h - self._button_start_y + self._button_gap,
+            width=0,
+            height=35,
+            is_active=True,
+            action=lambda: (setattr(self._state.menu_manager, 'active_screen', self._state.menu_screens['select_character']),
+                            self._state.audio_manager.crossfade_system.set_muted(True)),
+            uncentred=True
+        )
+
         self._options_button = MenuButton(
             title="Options",
             x=self._button_start_x,
-            y=self._screen_h - self._button_start_y + self._button_gap,
+            y=self._screen_h - self._button_start_y + self._button_gap * 2,
             width=0,
             height=35,
             is_active=True,
@@ -66,7 +81,7 @@ class MainMenuScreen(MenuScreen):
         self._help_button = MenuButton(
             title="Help",
             x=self._button_start_x,
-            y=self._screen_h - self._button_start_y + self._button_gap * 2,
+            y=self._screen_h - self._button_start_y + self._button_gap * 3,
             width=0,
             height=35,
             is_active=True,
@@ -78,7 +93,7 @@ class MainMenuScreen(MenuScreen):
         self._obituary_button = MenuButton(
             title="Obituary",
             x=self._button_start_x,
-            y=self._screen_h - self._button_start_y + self._button_gap * 3,
+            y=self._screen_h - self._button_start_y + self._button_gap * 4,
             width=0,
             height=35,
             is_active=True,
@@ -89,7 +104,7 @@ class MainMenuScreen(MenuScreen):
         self._exit_button = MenuButton(
             title="Exit",
             x=self._button_start_x,
-            y=self._screen_h - self._button_start_y + self._button_gap * 4,
+            y=self._screen_h - self._button_start_y + self._button_gap * 5,
             width=0,
             height=35,
             is_active=True,
@@ -97,8 +112,8 @@ class MainMenuScreen(MenuScreen):
             uncentred=True
         )
 
-        self._buttons = [self._start_game_button, self._options_button, self._help_button,
-                         self._obituary_button, self._exit_button]
+        self._buttons = [self._start_game_button, self._select_character_button, self._options_button,
+                         self._help_button, self._obituary_button, self._exit_button]
         self.ui_elements.extend(self._buttons)
 
     def update(self, dt: float, mouse_pos: Vector2, events: list[pygame.event.Event]) -> None:
@@ -133,5 +148,10 @@ class MainMenuScreen(MenuScreen):
             render_y = self._title_start_y + 20 * math.cos(self._idle_par + i * 0.5)
             screen.blit(char, (self._title_start_x + rendered_width, render_y))
             rendered_width += char.get_width() + self._char_gap
-            
+
+        font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 20)
+        ver_title = font.render(configs.config.VERSION_TITLE, True, (50, 50, 50))
+        x, y = self._screen_w - ver_title.get_width() - 10, self._screen_h - ver_title.get_height() - 10
+        screen.blit(ver_title, (x, y))
+
         super().render(screen)
