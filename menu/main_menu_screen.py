@@ -97,7 +97,8 @@ class MainMenuScreen(MenuScreen):
             width=0,
             height=35,
             is_active=True,
-            action=print,
+            action=lambda: (setattr(self._state.menu_manager, 'active_screen', self._state.menu_screens['obituary']),
+                            self._state.audio_manager.crossfade_system.set_muted(True)),
             uncentred=True
         )
 

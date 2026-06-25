@@ -28,7 +28,7 @@ class GameState:
     # системы и объедки
     engine = None
     player = None
-    character = 'tank'
+    character = 'default'
     weapon = None
     clock = None
     room_manager = None

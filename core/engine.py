@@ -8,6 +8,7 @@ from menu.help_window import HelpWindow
 from menu.ingame_pause_screen import PauseScreen
 from menu.main_menu_screen import MainMenuScreen
 from menu.menu_manager import MenuManager
+from menu.obituary_screen import ObituaryScreen
 from menu.options_screen import OptionsScreen
 from menu.select_character_screen import SelectCharacter
 from services.room_manager import RoomManager
@@ -103,6 +104,7 @@ class GameEngine:
             'help': HelpWindow(self._state, *self._screen.get_size()),
             'pause': PauseScreen(self._state, *self._screen.get_size()),
             'select_character': SelectCharacter(self._state, *self._screen.get_size()),
+            'obituary': ObituaryScreen(self._state, *self._screen.get_size()),
         }
         self._state.menu_screens = menu_screens
 
@@ -300,10 +302,10 @@ class GameEngine:
 
                         # обработка скиллов
                         if self._input.is_first_skill_used() and self._state.player.first_skill.is_ready:
-                            self._state.player.first_skill.use(pygame.mouse.get_pos())
+                            self._state.player.first_skill.use()
 
                         if self._input.is_second_skill_used() and self._state.player.second_skill.is_ready:
-                            self._state.player.second_skill.use(pygame.mouse.get_pos())
+                            self._state.player.second_skill.use()
 
                         # проверяем взаимодействие с объектами
                         if self._input.is_interactive_requested():
@@ -492,7 +494,7 @@ class GameEngine:
 
         # увеличиваем тикающий урон по игроку
         if self._state.player.tick_damage <= self._state.player.tick_damage_limit:
-            self._state.player.tick_damage += 1.5
+            self._state.player.tick_damage += 1
         else:
             self._state.player.tick_damage = self._state.player.tick_damage_limit
 
@@ -693,6 +695,7 @@ class GameEngine:
             y=spawn_center[1] - config.PLAYER_SIZE / 2,
             state=self._state
         )
+        self._state.stattracker.character = self._state.character
 
         # kамера тоже стартует с центра стартовой комнаты
         self._state.camera.position = pygame.Vector2(spawn_center) + Vector2(0, -20)

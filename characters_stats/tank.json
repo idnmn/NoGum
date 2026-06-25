@@ -9,7 +9,7 @@
   "max_speed_limit": 650,
   "max_hp_limit": 400,
   "damage_coef_limit": 3.0,
-  "tick_damage_limit": 40,
+  "tick_damage_limit": 12,
   "tick_damage_coef_limit": 0.5,
 
   "first_skill": "standart_dash",

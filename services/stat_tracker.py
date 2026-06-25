@@ -1,11 +1,15 @@
 import json
 import datetime
+from core import utils
 from dataclasses import dataclass, asdict
 from pathlib import Path
+
+import pygame
 
 
 @dataclass
 class StatTracker:
+    character: str = ''
     damage_dealt: int = 0
     damage_taken: int = 0
     kills: int = 0
@@ -14,8 +18,8 @@ class StatTracker:
     terminal_teleportations: int = 0
     scrap_collected: int = 0
     inventory: dict[str: int] | None = None
-    _play_time: float = 0.0
     _date_time: str = None
+    _play_time: float = 0.0
 
     @property
     def date_time(self) -> str:
@@ -61,9 +65,16 @@ class StatTracker:
             return cls()
 
     # сохраняет в runs/run_{id}.json
-    def save_run(self) -> None:
+    def save_run(self, screenshot: pygame.Surface) -> None:
         path = Path("runs") / f"run_{self.date_time}.json"
         self.save(path)
+
+        screenshots_dir = Path("runs") / "screenshots"
+        screenshots_dir.mkdir(parents=True, exist_ok=True)
+
+        screenshot_path = screenshots_dir / f"run_{self.date_time}_screenshot.png"
+        pygame.image.save(screenshot, str(screenshot_path))
+
 
     # загружает из runs/run_{id}.json
     @classmethod

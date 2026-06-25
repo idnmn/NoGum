@@ -63,7 +63,7 @@ class Skill():
         if self._cooldown_timer <= 0:
             self._cooldown_timer = self.cool_down
 
-    def use(self, mouse_pos: Vector2) -> None:
+    def use(self) -> None:
         self.is_using = True
         self.charges_count -= 1
 
@@ -161,13 +161,13 @@ class Slash(Skill):
             else:
                 self._draw_angle -= (dt / self.attack_time) * self.angle_span
 
-    def use(self, mouse_pos: Vector2) -> None:
-        super().use(mouse_pos)
+    def use(self) -> None:
+        super().use()
 
         self._state.camera.shake(20, self.attack_time)
         self._use_timer = self.attack_time
 
-        mouse_pos += self._state.room_manager.active_room.offset
+        mouse_pos = self._state.player.mouse_world_pos
         dx = mouse_pos[0] - self._state.player.rect.centerx
         dy = mouse_pos[1] - self._state.player.rect.centery
 
@@ -255,10 +255,10 @@ class StandardDash(Skill):
         self._state.player.current_max_speed = self._state.player.max_speed
         self._state.player.ignore_enemy = False
 
-    def use(self, mouse_pos: Vector2) -> None:
+    def use(self) -> None:
         if self._state.player.body.ax != 0 or self._state.player.body.ay != 0:
             self.dx, self.dy = Vector2(self._state.player.body.ax, self._state.player.body.ay).normalize()
-            super().use(mouse_pos)
+            super().use()
 
             self._use_timer = self.duration
 
@@ -326,11 +326,11 @@ class MagnetDash(Skill):
         self._state.player.current_max_speed = self._state.player.max_speed
         self._state.player.ignore_enemy = False
 
-    def use(self, mouse_pos: Vector2) -> None:
-        mouse_pos += self._state.room_manager.active_room.offset
+    def use(self) -> None:
+        mouse_pos = self._state.player.mouse_world_pos
         self.dx = mouse_pos[0] - self._state.player.rect.centerx
         self.dy = mouse_pos[1] - self._state.player.rect.centery
-        super().use(mouse_pos)
+        super().use()
 
         self._use_timer = self.duration
 
@@ -377,13 +377,13 @@ class Zap(Skill):
     def update(self, dt: float) -> None:
         super().update(dt)
 
-    def use(self, mouse_pos: Vector2) -> None:
-        super().use(mouse_pos)
+    def use(self) -> None:
+        super().use()
 
         self._state.camera.shake(20, 0.1)
         self._use_timer = 0.0
 
-        mouse_pos += self._state.room_manager.active_room.offset
+        mouse_pos = self._state.player.mouse_world_pos
         dx = mouse_pos[0] - self._state.player.rect.centerx
         dy = mouse_pos[1] - self._state.player.rect.centery
         dir = Vector2(dx, dy).normalize()

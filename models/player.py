@@ -256,10 +256,20 @@ class Player():
             self._state.audio_manager.play_sound(f'player_damaged_{random.randint(1, 3)}', 1.2)
 
     def death(self) -> None:
-        self._state.reset_state()
-        self._state.menu_manager.set_active_screen(self._state.menu_screens['main_menu'])
+        x, y = (max(0, self.rect.x - config.TILE_SIZE),
+                max(0, self.rect.y - config.TILE_SIZE))
+        size = config.TILE_SIZE * 3
+        rect = pygame.Rect(x, y, size, size)
 
-        self._state.stattracker.save_run()
+        sub = self._state.renderer.world_surface.subsurface(rect)
+        screenshot = pygame.Surface(rect.size)  # Создаём поверхность нужного размера
+        screenshot.blit(sub, (0, 0))  # Копируем подчасть на новую поверхность
+
+        self._state.stattracker.save_run(screenshot)
+        self._state.menu_screens['obituary'].reinit()
+
+        self._state.reset_state()
+        self._state.menu_manager.set_active_screen(self._state.menu_screens['obituary'])
 
     @property
     def hp_ratio(self) -> float:

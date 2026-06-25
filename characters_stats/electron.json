@@ -9,7 +9,7 @@
   "max_speed_limit": 1000,
   "max_hp_limit": 150,
   "damage_coef_limit": 3.0,
-  "tick_damage_limit": 50,
+  "tick_damage_limit": 15,
   "tick_damage_coef_limit": 0.75,
 
   "first_skill": "magnet_dash",

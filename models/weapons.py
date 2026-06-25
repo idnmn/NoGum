@@ -258,7 +258,7 @@ class Pointer(Weapon):
         self.coef_param_3 = 200.0
 
         self.power = 25
-        self.damage_coef = 1.0
+        self.damage_coef = 0.7
         self.calculate_max()
 
         self.clip_size = 5
