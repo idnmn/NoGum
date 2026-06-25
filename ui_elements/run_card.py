@@ -86,12 +86,12 @@ class RunCard:
         surface.blit(self.preview, (prev_x, prev_y))
 
         font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 22)
-        start_y = self.rect.y + self.preview.get_height() - 40
+        start_y = self.rect.y + self.preview.get_height() + 40
         for i,(key, value) in list(enumerate(self.data.items()))[1:]:
             if key != 'inventory':
                 surface.blit(font.render(f'{key.replace('_', ' ').capitalize()}: {value}',
                                          True, (220, 220, 220)), (self.rect.x + 30,
-                                                                  self.rect.y + start_y + i * 30))
+                                                                  start_y + i * 30))
 
             else:
                 for j, (item, count) in list(enumerate(self.data[key].items())):
@@ -100,10 +100,10 @@ class RunCard:
                     sprite = pygame.transform.scale(source, (w * 0.5, h * 0.5))
 
                     surface.blit(sprite, (self.rect.x + 60 * (j + 1),
-                                                              self.rect.y + start_y + i * 30))
+                                                              start_y + i * 30))
                     surface.blit(font.render(f'{count}',
                                              True, (220, 220, 220)),
-                                        (self.rect.x + 60 * (j + 1) + w * 0.5 + 3, self.rect.y + start_y + i * 30))
+                                        (self.rect.x + 60 * (j + 1) + w * 0.5 + 3, start_y + i * 30))
 
 
 

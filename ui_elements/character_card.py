@@ -80,7 +80,7 @@ class CharacterCard:
         start_y = self.rect.y + self.preview.get_height() + 80
         for i, text in enumerate(self.character_config['description']):
             surface.blit(font.render(text, True, (220, 220, 220)), (self.rect.x + 30,
-                                                                    self.rect.y + start_y + i * 20))
+                                                                    start_y + (i + 2) * 20))
 
         font = pygame.font.Font(utils.get_resource_path("assets/QBF_font.ttf"), 36)
         hp_x = self.rect.x + self.rect.width // 2 - 140

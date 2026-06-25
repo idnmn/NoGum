@@ -239,6 +239,8 @@ class Player():
     def take_damage(self, amount: float, no_shake: bool = False) -> None:
         if self._visual_damage_timer <= 0:
             self.hp -= int(amount)
+            self._state.stattracker.damage_taken += int(amount)
+            self._state.audio_manager.play_sound(f'player_damaged_{random.randint(1, 3)}', 1.2)
 
             if not no_shake:
                 self._state.camera.shake(5, 0.15)
@@ -250,10 +252,6 @@ class Player():
             if self.hp <= 0:
                 self.is_alive = False
                 self.death()
-
-            self._state.stattracker.damage_taken += int(amount)
-
-            self._state.audio_manager.play_sound(f'player_damaged_{random.randint(1, 3)}', 1.2)
 
     def death(self) -> None:
         x, y = (max(0, self.rect.x - config.TILE_SIZE),
@@ -270,6 +268,8 @@ class Player():
 
         self._state.reset_state()
         self._state.menu_manager.set_active_screen(self._state.menu_screens['obituary'])
+
+        self._state.audio_manager.crossfade_system.stop()
 
     @property
     def hp_ratio(self) -> float:

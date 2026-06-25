@@ -103,3 +103,17 @@ class SelectCharacter(MenuScreen):
     def _back(self) -> None:
         self._state.audio_manager.crossfade_system.set_muted(False)
         self._state.menu_manager.set_active_screen(self._state.menu_screens['main_menu'])
+
+    def _handle_events(self, events: list[pygame.event.Event]) -> None:
+        super()._handle_events(events)
+
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_d:
+                    self._next_character_button.click()
+
+                if event.key == pygame.K_a:
+                    self._prev_character_button.click()
+
+                if event.key == pygame.K_RETURN:
+                    self._character_cards[self._current_character_index].start_button.click()

@@ -429,9 +429,9 @@ class GameEngine:
             data = json.load(f)
 
         self._state.character = data["character"]
-        self._state.audio_manager.master_volume = data["master_volume"]
-        self._state.audio_manager.sound_volume = data["sound_volume"]
-        self._state.audio_manager.music_volume = data["music_volume"]
+        self._state.audio_manager.set_master_volume(data["master_volume"] * 100)
+        self._state.audio_manager.set_sound_volume(data["sound_volume"] * 100)
+        self._state.audio_manager.set_music_volume(data["music_volume"] * 100)
 
     def _save_state(self):
         data = {

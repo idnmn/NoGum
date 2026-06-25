@@ -1,5 +1,6 @@
 import os
 import pygame
+import random
 from core import utils
 from pygame import Vector2
 from menu.screen import MenuScreen
@@ -59,11 +60,27 @@ class ObituaryScreen(MenuScreen):
                                    self.current_run_index - 1),
         )
 
+        self._start_button = MenuButton(
+            title="Start >",
+            x=self._screen_w - 170,
+            y=self._screen_h - 50,
+            width=0,
+            height=45,
+            is_active=True,
+            uncentred=True,
+            action=lambda: (setattr(self._state, "character", self._run_cards[self._current_run_index].data['character']),
+                            self._state.engine._start_game(),
+                            self._state.audio_manager.crossfade_system.set_muted(False),
+                            self._state.audio_manager.crossfade_system.stop(),
+                            self._state.audio_manager.play_music(random.choice(
+                                self._state.audio_manager.crossfade_system._music_list)),)
+        )
+
         self._run_cards = []
         for run in list(self._runs_list)[::-1]:
             self._run_cards.append(RunCard(state, run, screen_w, screen_h))
 
-        self._buttons = [self._back_button, self._prev_run_button, self._next_run_button]
+        self._buttons = [self._back_button, self._prev_run_button, self._next_run_button, self._start_button]
         self.ui_elements.extend(self._buttons)
 
     def reinit(self) -> None:
@@ -94,6 +111,7 @@ class ObituaryScreen(MenuScreen):
         self._back_button.change_position(20, self._screen_h - 50)
         self._prev_run_button.change_position(20, (self._screen_h - 45) // 2)
         self._next_run_button.change_position(self._screen_w - 160, (self._screen_h - 45) // 2)
+        self._start_button.change_position(self._screen_w - 350, self._screen_h - 50)
 
         for card in self._run_cards:
             card.resize(width, height)
@@ -118,3 +136,17 @@ class ObituaryScreen(MenuScreen):
     def _back(self) -> None:
         self._state.audio_manager.crossfade_system.set_muted(False)
         self._state.menu_manager.set_active_screen(self._state.menu_screens['main_menu'])
+
+    def _handle_events(self, events: list[pygame.event.Event]) -> None:
+        super()._handle_events(events)
+
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_d:
+                    self._next_run_button.click()
+
+                if event.key == pygame.K_a:
+                    self._prev_run_button.click()
+
+                if event.key == pygame.K_RETURN:
+                    self._start_button.click()
