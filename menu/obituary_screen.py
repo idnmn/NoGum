@@ -82,7 +82,8 @@ class ObituaryScreen(MenuScreen):
 
     @current_run_index.setter
     def current_run_index(self, value):
-        self._current_run_index = max(0, value % len(self._runs_list))
+        if self._run_cards:
+            self._current_run_index = max(0, value % len(self._runs_list))
 
     def resize(self, width: int, height: int) -> None:
         self._screen_w = width
@@ -100,7 +101,8 @@ class ObituaryScreen(MenuScreen):
     def update(self, dt: float, mouse_pos: Vector2, events: list[pygame.event.Event]):
         super().update(dt, mouse_pos, events)
 
-        self._run_cards[self._current_run_index].update(dt, mouse_pos, events)
+        if self._run_cards:
+            self._run_cards[self._current_run_index].update(dt, mouse_pos, events)
 
     def render(self, screen: pygame.Surface) -> None:
         background = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
@@ -108,7 +110,8 @@ class ObituaryScreen(MenuScreen):
         screen.blit(self._background_art, (0, 0))
         screen.blit(background, (0, 0))
 
-        self._run_cards[self._current_run_index].render(screen)
+        if self._run_cards:
+            self._run_cards[self._current_run_index].render(screen)
 
         super().render(screen)
 

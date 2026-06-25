@@ -67,13 +67,13 @@ class StatTracker:
     # сохраняет в runs/run_{id}.json
     def save_run(self, screenshot: pygame.Surface) -> None:
         path = Path("runs") / f"run_{self.date_time}.json"
-        self.save(path)
+        self.save(utils.get_resource_path(path))
 
-        screenshots_dir = Path("runs") / "screenshots"
+        screenshots_dir = Path(utils.get_resource_path("runs")) / "screenshots"
         screenshots_dir.mkdir(parents=True, exist_ok=True)
 
         screenshot_path = screenshots_dir / f"run_{self.date_time}_screenshot.png"
-        pygame.image.save(screenshot, str(screenshot_path))
+        pygame.image.save(screenshot, utils.get_resource_path(str(screenshot_path)))
 
 
     # загружает из runs/run_{id}.json
