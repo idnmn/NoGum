@@ -77,7 +77,7 @@ class UIRenderer:
         self._slider_param_2 = Slider(
             title=weapon.name_param_2,
             x=self._layout['px'] + 20,
-            y=self._layout['start_y'] + self._layout['gap'] * 2,
+            y=self._layout['start_y'] + self._layout['gap'],
             width=self._layout['slider_w'],
             max_value=self._state.weapon.max_param_2,
             min_value=self._state.weapon.min_param_2,
@@ -88,7 +88,7 @@ class UIRenderer:
         self._slider_param_3 = Slider(
             title=weapon.name_param_3,
             x=self._layout['px'] + 20,
-            y=self._layout['start_y'] + self._layout['gap'],
+            y=self._layout['start_y'] + self._layout['gap'] * 2,
             width=self._layout['slider_w'],
             max_value=self._state.weapon.max_param_3,
             min_value=self._state.weapon.min_param_3,
@@ -192,7 +192,7 @@ class UIRenderer:
         # прицел виден только когда игра активна и нет открытых оверлеев
         if not state.is_paused and not state.is_minimap_visible:
             if state.weapon and state.weapon.crosshair:
-                self._draw_crosshair(state.weapon.crosshair)
+                self._draw_crosshair()
 
         if state.is_upgrade_ui_open:
             self._draw_upgrade_panel()
@@ -347,11 +347,8 @@ class UIRenderer:
         self._screen.blit(self._micro_font.render(str(fps), True, color), (x + 1, y + 1))
 
     # прицел
-    def _draw_crosshair(self, sprite: pygame.Surface) -> None:
-        pos = pygame.mouse.get_pos()
-        ox = sprite.get_width() // 2
-        oy = sprite.get_height() // 2
-        self._screen.blit(sprite, (pos[0] - ox, pos[1] - oy))
+    def _draw_crosshair(self) -> None:
+        self._state.weapon.draw_crosshair(self._screen)
 
     # панель настройки оружия
     def _draw_upgrade_panel(self) -> None:
@@ -399,12 +396,20 @@ class UIRenderer:
         self._screen.blit(self._title_font.render("Stats:", True, (140, 140, 170)), (px + 20, stats_y))
         stats_y += 40
 
-        texts = [
-            ("Damage", f"{weapon.damage:.1f}"),
-            ("Power", f"{weapon.power:.1f}"),
-            ("Clip size", f"{weapon.clip_size}"),
-            ("Reload time", f"{weapon.reload_cooldown:.1f}")
-        ]
+        if not type(weapon.damage) == tuple:
+            texts = [
+                ("Damage", f"{weapon.damage:.1f}"),
+                ("Power", f"{weapon.power:.1f}"),
+                ("Clip size", f"{weapon.clip_size}"),
+                ("Reload time", f"{weapon.reload_cooldown:.1f}")
+            ]
+        else:
+            texts = [
+                ("Damage", f"{weapon.damage[0]:.1f}X{weapon.damage[1]}"),
+                ("Power", f"{weapon.power:.1f}"),
+                ("Clip size", f"{weapon.clip_size}"),
+                ("Reload time", f"{weapon.reload_cooldown:.1f}")
+            ]
 
         for label, val in texts:
             self._screen.blit(self._small_font.render(f"{label}: {val}", True, (200, 200, 220)), (px + 20, stats_y))

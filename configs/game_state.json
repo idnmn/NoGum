@@ -1,6 +1,6 @@
 {
-    "character": "slasher",
-    "master_volume": 1.0,
+    "character": "tank",
+    "master_volume": 0.05,
     "sound_volume": 0.65,
     "music_volume": 0.5
 }

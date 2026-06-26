@@ -107,6 +107,28 @@ class TazerProjectile(Projectile):
         enemy.status_manager.electrified += self._state.weapon.electrified_points
 
 
+class BulldogProjectile(Projectile):
+    def __init__(self, state: GameState, x: float, y: float, size: int, velocity: pygame.Vector2 | None = None,
+                 damage: float = 0.0, lifetime: float = 0.0) -> None:
+        super().__init__(state, x, y, size, velocity, damage, lifetime)
+        self.body = CollisionBody(
+            rect=pygame.Rect((x - size / 2), (y - size / 2), size, size),
+            layer="dynamic",
+            tags={"projectile", "player_owner", "shot_gun_bullet"}
+        )
+
+    def render(self, surface: pygame.Surface) -> None:
+        pygame.draw.rect(surface, (255, 245, 65), self.rect)
+
+    def enemy_impact(self, pos: tuple[float, float], enemy: Enemy) -> None:
+        super().enemy_impact(pos, enemy)
+        enemy.take_damage(self.damage)
+
+    def update(self, dt: float) -> None:
+        super().update(dt)
+        self._state.particle_system.spawn_bulldog_projectile_trail(self.body.center)
+
+
 class ZapProjectile(Projectile):
     def __init__(self, state: GameState, x: float, y: float, size: int, velocity: pygame.Vector2 | None = None,
                  damage: float = 0.0, lifetime: float = 0.0, stun_time = 0, electrified = 0) -> None:

@@ -20,6 +20,7 @@ class CollisionBody:
     current_max_speed: float = 0.0
     have_shadow: bool = False
     shadow_offset: float = 0.0
+    impulse: Vector2 = field(default_factory=Vector2)
 
     @property
     def velocity(self):

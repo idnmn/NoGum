@@ -58,12 +58,17 @@ class Enemy():
         self.slash_marked = False
         self.slash_killed = False
 
+        self.damage_buffer = 0.0
+
     def update(self, dt: float, surface: pygame.Surface) -> None:
         if self.slash_marked and random.randint(0, 100) < 20:
             self._state.particle_system.spawn_slash_marked(self.rect.center, max(self.rect.width, self.rect.height))
 
         # обновление статусов
         self.status_manager.update(dt)
+        if self.damage_buffer:
+            self.take_damage(self.damage_buffer)
+            self.damage_buffer = 0.0
 
     def update_timers(self, dt: float) -> None:
         if self._repath_timer > 0:
@@ -82,8 +87,12 @@ class Enemy():
             self._visual_damage_timer -= dt
 
     def take_damage(self, amount: float, no_defence: bool=False) -> bool:
-        if not no_defence: damage = max(0.0, amount - self.defence)
-        else: damage = amount
+        if not no_defence:
+            damage = max(0.0, amount - self.defence)
+            if not damage:
+                self.damage_buffer += amount
+        else:
+            damage = amount
         self.hp -= damage
 
         if self.hp <= 0:
@@ -275,10 +284,28 @@ class BookWorm(Enemy):
                         self.body.vx *= scale
                         self.body.vy *= scale
 
+                    # добавляем импульс
+                    if self.body.impulse:
+                        self.body.ax += self.body.impulse.x
+                        self.body.ay += self.body.impulse.y
+                        self.body.vx += self.body.ax * dt
+                        self.body.vy += self.body.ay * dt
+
+                    damping = math.exp(-self.friction * dt)
+                    self.body.impulse *= damping
+
                     # защита от дрейфа
-                    if current_speed < 2.0:
+                    if self.body.velocity.magnitude() < 2.0:
                         self.body.vx = 0.0
                         self.body.vy = 0.0
+
+                    if self.body.impulse.magnitude() < 2:
+                        self.body.impulse = Vector2(0, 0)
+
+                    if self.body.ax < 2:
+                        self.body.ax = 0
+                    if self.body.ay < 2:
+                        self.body.ay = 0
 
             elif self.state == 'charge':  # готовится к рывку
                 self.body.vx = 0.0
@@ -591,10 +618,28 @@ class BookWormMommy(Enemy):
                         self.body.vx *= scale
                         self.body.vy *= scale
 
+                    # добавляем импульс
+                    if self.body.impulse:
+                        self.body.ax += self.body.impulse.x
+                        self.body.ay += self.body.impulse.y
+                        self.body.vx += self.body.ax * dt
+                        self.body.vy += self.body.ay * dt
+
+                    damping = math.exp(-self.friction * dt)
+                    self.body.impulse *= damping
+
                     # защита от дрейфа
-                    if current_speed < 2.0:
+                    if self.body.velocity.magnitude() < 2.0:
                         self.body.vx = 0.0
                         self.body.vy = 0.0
+
+                    if self.body.impulse.magnitude() < 2:
+                        self.body.impulse = Vector2(0, 0)
+
+                    if self.body.ax < 2:
+                        self.body.ax = 0
+                    if self.body.ay < 2:
+                        self.body.ay = 0
 
             elif self.state == 'charge':  # готовится к рывку
                 self.body.vx = 0.0
@@ -661,8 +706,12 @@ class BookWormMommy(Enemy):
 
     # переопределённый метод получения урона
     def take_damage(self, amount: float, no_defence: bool = False) -> bool:
-        if not no_defence: damage = max(0.0, amount - self.defence)
-        else: damage = amount
+        if not no_defence:
+            damage = max(0.0, amount - self.defence)
+            if not damage:
+                self.damage_buffer += amount
+        else:
+            damage = amount
         if damage: self._visual_damage_timer = self._visual_damage_cooldown
         self.hp -= damage
         self._state.audio_manager.play_sound(f'bookworm_damaged_{random.randint(1, 4)}', 1.2)

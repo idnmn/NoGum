@@ -339,6 +339,18 @@ class ParticleSystem:
                 is_square=True
             ))
 
+    def spawn_bulldog_projectile_trail(self, pos: tuple[float, float]) -> None:
+        g = random.randint(30, 120)
+        color = (g, g, g)
+        rand_x, rand_y = random.uniform(-2, 2), random.uniform(-2, 2)
+        self.particles.append(Particle(
+            x=pos[0] + rand_x, y=pos[1] + rand_y,
+            vx=random.uniform(-10, 10), vy=random.uniform(-10, 10),
+            lifetime=0.5,
+            max_lifetime=0.5,
+            color=color,
+            size=random.uniform(2, 5),
+        ))
 
     def update(self, dt: float) -> None:
         for p in self.particles:

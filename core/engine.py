@@ -42,6 +42,7 @@ class GameEngine:
         self.last_win_w = 0
         self.last_win_h = 0
         self.target_aspect = config.INTERNAL_WIDTH / config.INTERNAL_HEIGHT
+        self.current_aspect = 0
         self.is_fullscreen = False
 
         # инициализируем игру
@@ -61,6 +62,7 @@ class GameEngine:
             pygame.RESIZABLE
         )
         self._fx_layer = pygame.Surface(self._screen.get_size(), pygame.SRCALPHA)
+        self.current_aspect = self._screen.get_width() / config.INTERNAL_WIDTH
 
         file = utils.get_resource_path('configs\\titles.json')
         with open(file, "r", encoding="utf-8") as f:
@@ -171,7 +173,6 @@ class GameEngine:
             if self._state.in_game:
                 # заглушка дроппула
                 if not self._state.drop_pool:
-                    print('clear')
                     self._state.drop_pool = [(Nothing, 'nothing')]
 
                 # перераспределяем хэндлеры
@@ -298,7 +299,7 @@ class GameEngine:
                             shot_fired = self._weapon_system.update(dt, self._input.is_shooting_requested(),
                                                                     self._input.is_reload_requested())
                             if shot_fired:
-                                self._state.weapon.fire(self._state)
+                                self._state.weapon.fire()
 
                         # обработка скиллов
                         if self._input.is_first_skill_used() and self._state.player.first_skill.is_ready:
@@ -546,8 +547,12 @@ class GameEngine:
                                                                  (110, 70))
         self._state.assets['bulldog_reload'] = assets_manager.load_sprite("weapons/bulldog_reload.png",
                                                                         (90, 60))
-        self._state.assets['bulldog_crosshair'] = assets_manager.load_sprite("hud/tazer_crosshair.png",
+        self._state.assets['bulldog_crosshair'] = assets_manager.load_sprite("hud/bulldog_crosshair.png",
                                                                            (20, 20))
+        self._state.assets['bulldog_crosshair_side'] = assets_manager.load_sprite("hud/bulldog_crosshair_side.png",
+                                                                             (20, 20))
+        self._state.assets['bulldog_crosshair_cursor'] = assets_manager.load_sprite("hud/bulldog_crosshair_cursor.png",
+                                                                             (20, 20))
 
 
         self._state.assets['bullet_indicator'] = assets_manager.load_sprite("hud/bullet_indicator.png",
@@ -634,6 +639,8 @@ class GameEngine:
             self._ui_renderer._screen = self._screen
             self._state.terminal_system._screen = self._screen
             self._map_renderer._screen = self._screen
+
+        self.current_aspect = self._screen.get_width() / config.INTERNAL_WIDTH
 
     # переключает между оконным и полноэкранным режимом
     def _toggle_fullscreen(self) -> None:

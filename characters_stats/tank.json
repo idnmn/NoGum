@@ -1,6 +1,6 @@
 {
   "max_speed": 500,
-  "max_hp": 200,
+  "max_hp": 150,
   "tick_damage": 5,
   "tick_damage_time": 5,
   "acceleration": 4000,

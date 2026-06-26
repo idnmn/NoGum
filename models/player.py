@@ -206,10 +206,28 @@ class Player():
             self.body.vx *= scale
             self.body.vy *= scale
 
+        # добавляем импульс
+        if self.body.impulse:
+            self.body.ax += self.body.impulse.x
+            self.body.ay += self.body.impulse.y
+            self.body.vx += self.body.ax * dt
+            self.body.vy += self.body.ay * dt
+
+        damping = math.exp(-self.friction * dt)
+        self.body.impulse *= damping
+
         # защита от дрейфа
-        if current_speed < 2.0:
+        if self.body.velocity.magnitude() < 2.0:
             self.body.vx = 0.0
             self.body.vy = 0.0
+
+        if self.body.impulse.magnitude() < 2:
+            self.body.impulse = Vector2(0, 0)
+
+        if self.body.ax < 2:
+            self.body.ax = 0
+        if self.body.ay < 2:
+            self.body.ay = 0
 
         # обновляем позицию
         vel = self.body.velocity.magnitude()
@@ -218,7 +236,6 @@ class Player():
         else:
             self.body.rect.x += self.body.vx * dt
             self.body.rect.y += self.body.vy * dt
-
 
         # рисуем следы
         if self._step_timer <= 0:
